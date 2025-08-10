@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKey-android',
-    appId: '1:123456789:android:demo',
-    messagingSenderId: '123456789',
-    projectId: 'bar-boss-demo',
-    storageBucket: 'bar-boss-demo.appspot.com',
+    apiKey: 'AIzaSyCkyrMvVH3OU5sXytcetHgsiXuti0Pz-yY',
+    appId: '1:779191401505:android:a22435f1dc76a95d3e3760',
+    messagingSenderId: '779191401505',
+    projectId: 'bar-boss-mobile',
+    storageBucket: 'bar-boss-mobile.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKey-ios',
-    appId: '1:123456789:ios:demo',
-    messagingSenderId: '123456789',
-    projectId: 'bar-boss-demo',
-    storageBucket: 'bar-boss-demo.appspot.com',
+    apiKey: 'AIzaSyCEOV29Gizf6FUos0ngB92KJvt0YKrT3Oo',
+    appId: '1:779191401505:ios:e086dbc3989f9dc03e3760',
+    messagingSenderId: '779191401505',
+    projectId: 'bar-boss-mobile',
+    storageBucket: 'bar-boss-mobile.firebasestorage.app',
     iosBundleId: 'com.example.barBossMobile',
   );
 

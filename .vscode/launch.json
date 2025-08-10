@@ -6,21 +6,33 @@
       "type": "dart",
       "request": "launch",
       "cwd": "bar_boss_mobile",
-      "flutterMode": "debug"
+      "flutterMode": "debug",
+      "args": [
+        "--dart-define-from-file",
+        "../dart_defines.json"
+      ]
     },
     {
       "name": "bar_boss_mobile (profile)",
       "type": "dart",
       "request": "launch",
       "cwd": "bar_boss_mobile",
-      "flutterMode": "profile"
+      "flutterMode": "profile",
+      "args": [
+        "--dart-define-from-file",
+        "../dart_defines.json"
+      ]
     },
     {
       "name": "bar_boss_mobile (release)",
       "type": "dart",
       "request": "launch",
       "cwd": "bar_boss_mobile",
-      "flutterMode": "release"
+      "flutterMode": "release",
+      "args": [
+        "--dart-define-from-file",
+        "../dart_defines.json"
+      ]
     }
   ]
 }

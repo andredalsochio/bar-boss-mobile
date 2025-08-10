@@ -87,6 +87,7 @@ GoogleService-Info.plist
 .env
 .env.local
 .env.*.local
+dart_defines.json
 
 # Clerk
 clerk_config.json

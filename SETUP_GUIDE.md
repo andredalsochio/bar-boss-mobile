@@ -4,6 +4,35 @@ Este guia te ajudará a configurar Firebase e Clerk **fora do código** para int
 
 ---
 
+## 🔐 0. Configuração das Variáveis de Ambiente
+
+### 0.1 Configurar dart_defines.json
+
+1. Copie o arquivo de exemplo:
+   ```bash
+   cp dart_defines.example.json dart_defines.json
+   ```
+
+2. Edite o arquivo `dart_defines.json` com suas chaves reais:
+   ```json
+   {
+     "CLERK_PUBLISHABLE_KEY": "pk_test_sua_chave_aqui",
+     "ENVIRONMENT": "development",
+     "DEBUG_MODE": "true"
+   }
+   ```
+
+3. **IMPORTANTE**: O arquivo `dart_defines.json` está no `.gitignore` e não deve ser commitado!
+
+### 0.2 Como Funciona
+
+- O VS Code usa o arquivo `launch.json` que referencia `dart_defines.json`
+- As variáveis são injetadas em tempo de compilação usando `--dart-define-from-file`
+- No código, acessamos via `String.fromEnvironment('CLERK_PUBLISHABLE_KEY')`
+- Isso garante que chaves sensíveis não fiquem hardcoded no código
+
+---
+
 ## 📱 1. Configuração do Firebase
 
 ### 1.1 Criar Projeto Firebase

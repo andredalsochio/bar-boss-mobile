@@ -16,12 +16,23 @@ import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository
 import 'package:bar_boss_mobile/app/modules/events/repositories/vip_request_repository.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
 
-// Configurações do Clerk
-const String clerkPublishableKey = 'pk_test_bmVhdC10b21jYXQtOTkuY2xlcmsuYWNjb3VudHMuZGV2JA';
+// Configurações do Clerk - usando variável de ambiente
+const String clerkPublishableKey = String.fromEnvironment(
+  'CLERK_PUBLISHABLE_KEY',
+  defaultValue: '',
+);
 
 void main() async {
   // Garante que os widgets sejam inicializados
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Valida se a chave do Clerk foi configurada
+  if (clerkPublishableKey.isEmpty) {
+    throw Exception(
+      'CLERK_PUBLISHABLE_KEY não foi configurada. '
+      'Verifique o arquivo launch.json ou as variáveis de ambiente.',
+    );
+  }
   
   // Inicializa o Firebase
   await Firebase.initializeApp(

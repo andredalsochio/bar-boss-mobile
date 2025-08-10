@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "bar_boss_mobile (debug)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "bar_boss_mobile",
+      "flutterMode": "debug"
+    },
+    {
+      "name": "bar_boss_mobile (profile)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "bar_boss_mobile",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "bar_boss_mobile (release)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "bar_boss_mobile",
+      "flutterMode": "release"
+    }
+  ]
+}

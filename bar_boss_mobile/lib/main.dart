@@ -16,8 +16,8 @@ import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository
 import 'package:bar_boss_mobile/app/modules/events/repositories/vip_request_repository.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
 
-// Configurações do Firebase
-const String clerkPublishableKey = 'pk_test_YWdlbmRhLWRlLWJvdGVjby0xMC5jbGVyay5hY2NvdW50cy5kZXYk';
+// Configurações do Clerk
+const String clerkPublishableKey = 'pk_test_bmVhdC10b21jYXQtOTkuY2xlcmsuYWNjb3VudHMuZGV2JA';
 
 void main() async {
   // Garante que os widgets sejam inicializados

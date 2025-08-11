@@ -8,18 +8,16 @@ import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/auth/views/login_page.dart';
-import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step1_page.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step2_page.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step3_page.dart';
 import 'package:bar_boss_mobile/app/modules/home/views/home_page.dart';
-import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/events_list_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/event_form_page.dart';
 
 /// Widget principal do aplicativo
 class AppWidget extends StatefulWidget {
-  const AppWidget({Key? key}) : super(key: key);
+  const AppWidget({super.key});
 
   @override
   State<AppWidget> createState() => _AppWidgetState();

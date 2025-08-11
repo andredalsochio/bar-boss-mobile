@@ -57,13 +57,13 @@ class _EventsListPageState extends State<EventsListPage> {
 
   void _goToEventDetails(EventModel event) {
     context.pushNamed(
-      AppRoutes.eventForm,
+      'eventEdit',
       pathParameters: {'id': event.id},
     );
   }
 
   void _goToNewEvent() {
-    context.pushNamed(AppRoutes.eventForm);
+    context.pushNamed('eventForm');
   }
 
   @override

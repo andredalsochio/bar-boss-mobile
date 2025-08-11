@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: ButtonWidget(
                     text: AppStrings.scheduleButton,
-                    onPressed: () => context.push(AppRoutes.eventsList),
+                    onPressed: () => context.pushNamed('eventsList'),
                     icon: Icons.calendar_today,
                   ),
                 ),
@@ -72,7 +72,7 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: ButtonWidget(
                     text: AppStrings.newEventButton,
-                    onPressed: () => context.push(AppRoutes.eventForm),
+                    onPressed: () => context.pushNamed('eventForm'),
                     icon: Icons.add_circle,
                   ),
                 ),
@@ -98,7 +98,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => context.push(AppRoutes.eventsList),
+                  onPressed: () => context.pushNamed('eventsList'),
                   child: Text(
                     AppStrings.manageScheduleLabel,
                     style: const TextStyle(
@@ -147,7 +147,7 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: AppSizes.spacingLarge),
                         ButtonWidget(
                           text: AppStrings.createFirstEventMessage,
-                          onPressed: () => context.push(AppRoutes.eventForm),
+                          onPressed: () => context.pushNamed('eventForm'),
                           icon: Icons.add_circle,
                         ),
                       ],
@@ -176,8 +176,8 @@ class _HomePageState extends State<HomePage> {
   Widget _buildEventCard(EventModel event) {
     return EventCardWidget(
       event: event,
-      onViewDetails: () => context.push(AppRoutes.eventDetailsPath(event.id)),
-      onEdit: () => context.push(AppRoutes.eventEditPath(event.id)),
+      onViewDetails: () => context.pushNamed('eventDetails', pathParameters: {'id': event.id}),
+                onEdit: () => context.pushNamed('eventEdit', pathParameters: {'id': event.id}),
       onViewVipList: event.allowVipAccess
           ? () => _showVipRequestsDialog(event)
           : null,

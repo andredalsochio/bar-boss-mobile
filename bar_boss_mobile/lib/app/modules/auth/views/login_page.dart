@@ -55,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       // Navega para a tela inicial após o login bem-sucedido
-      context.goNamed(AppRoutes.home);
+      context.goNamed('home');
     } catch (e) {
       setState(() {
         _errorMessage = AppStrings.loginErrorMessage;
@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       // Navega para a tela inicial após o login bem-sucedido
-      context.goNamed(AppRoutes.home);
+      context.goNamed('home');
     } catch (e) {
       setState(() {
         _errorMessage = AppStrings.loginErrorMessage;
@@ -111,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       // Navega para a tela inicial após o login bem-sucedido
-      context.goNamed(AppRoutes.home);
+      context.goNamed('home');
     } catch (e) {
       setState(() {
         _errorMessage = AppStrings.loginErrorMessage;
@@ -139,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       // Navega para a tela inicial após o login bem-sucedido
-      context.goNamed(AppRoutes.home);
+      context.goNamed('home');
     } catch (e) {
       setState(() {
         _errorMessage = AppStrings.loginErrorMessage;
@@ -155,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _goToRegisterBar() {
-    context.pushNamed(AppRoutes.registerBarStep1);
+    context.pushNamed('registerStep1');
   }
 
   @override

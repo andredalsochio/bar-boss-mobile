@@ -45,38 +45,46 @@ class _AppWidgetState extends State<AppWidget> {
         // Rotas de autenticação
         GoRoute(
           path: AppRoutes.login,
+          name: 'login',
           builder: (context, state) => const LoginPage(),
         ),
         
         // Rotas de cadastro
         GoRoute(
           path: AppRoutes.registerStep1,
+          name: 'registerStep1',
           builder: (context, state) => const Step1Page(),
         ),
         GoRoute(
           path: AppRoutes.registerStep2,
+          name: 'registerStep2',
           builder: (context, state) => const Step2Page(),
         ),
         GoRoute(
           path: AppRoutes.registerStep3,
+          name: 'registerStep3',
           builder: (context, state) => const Step3Page(),
         ),
         
         // Rotas principais
         GoRoute(
           path: AppRoutes.home,
+          name: 'home',
           builder: (context, state) => const HomePage(),
         ),
         GoRoute(
           path: AppRoutes.eventsList,
+          name: 'eventsList',
           builder: (context, state) => const EventsListPage(),
         ),
         GoRoute(
           path: AppRoutes.eventForm,
+          name: 'eventForm',
           builder: (context, state) => const EventFormPage(),
         ),
         GoRoute(
           path: AppRoutes.eventEdit,
+          name: 'eventEdit',
           builder: (context, state) {
             final eventId = state.pathParameters['id'] ?? '';
             return EventFormPage(eventId: eventId);
@@ -84,6 +92,7 @@ class _AppWidgetState extends State<AppWidget> {
         ),
         GoRoute(
           path: AppRoutes.eventDetails,
+          name: 'eventDetails',
           builder: (context, state) {
             final eventId = state.pathParameters['id'] ?? '';
             return EventFormPage(eventId: eventId, readOnly: true);

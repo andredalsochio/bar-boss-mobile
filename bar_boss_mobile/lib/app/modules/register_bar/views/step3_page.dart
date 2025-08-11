@@ -86,7 +86,7 @@ class _Step3PageState extends State<Step3Page> {
         );
 
         // Navega para a tela inicial após o cadastro bem-sucedido
-        context.goNamed(AppRoutes.home);
+        context.goNamed('home');
       }
     } catch (e) {
       // O erro já é tratado no ViewModel

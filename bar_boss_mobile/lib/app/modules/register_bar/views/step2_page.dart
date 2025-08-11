@@ -108,7 +108,7 @@ class _Step2PageState extends State<Step2Page> {
 
   void _goToNextStep() {
     if (_viewModel.isStep2Valid) {
-      context.pushNamed(AppRoutes.registerBarStep3);
+      context.pushNamed('registerStep3');
     }
   }
 

@@ -15,7 +15,7 @@ import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.d
 
 /// Tela de listagem de eventos
 class EventsListPage extends StatefulWidget {
-  const EventsListPage({Key? key}) : super(key: key);
+  const EventsListPage({super.key});
 
   @override
   State<EventsListPage> createState() => _EventsListPageState();
@@ -42,9 +42,11 @@ class _EventsListPageState extends State<EventsListPage> {
     try {
       await _viewModel.loadEvents();
     } catch (e) {
-      setState(() {
-        _errorMessage = AppStrings.loadEventsErrorMessage;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = AppStrings.loadEventsErrorMessage;
+        });
+      }
       debugPrint('Erro ao carregar eventos: $e');
     } finally {
       if (mounted) {

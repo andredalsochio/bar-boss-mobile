@@ -16,7 +16,7 @@ import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registra
 
 /// Tela de cadastro de bar - Passo 2 (Endereço)
 class Step2Page extends StatefulWidget {
-  const Step2Page({Key? key}) : super(key: key);
+  const Step2Page({super.key});
 
   @override
   State<Step2Page> createState() => _Step2PageState();

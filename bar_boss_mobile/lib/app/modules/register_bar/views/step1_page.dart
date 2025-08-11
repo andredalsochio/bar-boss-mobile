@@ -16,7 +16,7 @@ import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registra
 
 /// Tela de cadastro de bar - Passo 1 (Informações de contato)
 class Step1Page extends StatefulWidget {
-  const Step1Page({Key? key}) : super(key: key);
+  const Step1Page({super.key});
 
   @override
   State<Step1Page> createState() => _Step1PageState();

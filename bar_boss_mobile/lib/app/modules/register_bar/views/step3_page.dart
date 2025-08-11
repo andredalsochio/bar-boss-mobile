@@ -17,7 +17,7 @@ import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registra
 
 /// Tela de cadastro de bar - Passo 3 (Senha)
 class Step3Page extends StatefulWidget {
-  const Step3Page({Key? key}) : super(key: key);
+  const Step3Page({super.key});
 
   @override
   State<Step3Page> createState() => _Step3PageState();

@@ -19,7 +19,7 @@ class EventFormPage extends StatefulWidget {
   final String? eventId;
   final bool readOnly;
 
-  const EventFormPage({Key? key, this.eventId, this.readOnly = false}) : super(key: key);
+  const EventFormPage({super.key, this.eventId, this.readOnly = false});
 
   @override
   State<EventFormPage> createState() => _EventFormPageState();
@@ -152,6 +152,7 @@ class _EventFormPageState extends State<EventFormPage> {
         textColor: AppColors.white,
       );
 
+      if (!mounted) return;
       context.pop();
     } catch (e) {
       debugPrint('Erro ao salvar evento: $e');
@@ -197,6 +198,7 @@ class _EventFormPageState extends State<EventFormPage> {
         textColor: AppColors.white,
       );
 
+      if (!mounted) return;
       context.pop();
     } catch (e) {
       debugPrint('Erro ao excluir evento: $e');
@@ -502,3 +504,4 @@ class _EventFormPageState extends State<EventFormPage> {
     );
   }
 }
+// Remover imports não utilizados se necessário, baseado na análise.

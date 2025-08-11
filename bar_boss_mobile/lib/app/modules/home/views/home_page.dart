@@ -17,7 +17,7 @@ import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 
 /// Tela inicial do aplicativo
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -177,7 +177,7 @@ class _HomePageState extends State<HomePage> {
     return EventCardWidget(
       event: event,
       onViewDetails: () => context.pushNamed('eventDetails', pathParameters: {'id': event.id}),
-                onEdit: () => context.pushNamed('eventEdit', pathParameters: {'id': event.id}),
+      onEdit: () => context.pushNamed('eventEdit', pathParameters: {'id': event.id}),
       onViewVipList: event.allowVipAccess
           ? () => _showVipRequestsDialog(event)
           : null,

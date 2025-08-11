@@ -62,71 +62,33 @@ class AuthViewModel extends ChangeNotifier {
   }
   
   /// Faz login com e-mail e senha
-  Future<void> signInWithEmailAndPassword(
+  Future<void> loginWithEmailAndPassword(
+    BuildContext context,
     String email,
     String password,
   ) async {
-    _setLoading(true);
-    _clearError();
-    
     try {
-      // Login será implementado via Clerk UI components
-      // Por enquanto, apenas simula sucesso
+      _setLoading(true);
+      _clearError();
+      // Implementar login com Clerk
+      // await AuthService.signInWithEmailAndPassword(context, email, password);
       _setState(AuthState.authenticated);
     } catch (e) {
-      _setError(AppStrings.loginErrorMessage);
-      rethrow;
+      _setError('Erro ao fazer login com e-mail. Por favor, tente novamente.');
     } finally {
       _setLoading(false);
     }
   }
   
   /// Faz login com Google
-  Future<void> signInWithGoogle() async {
-    _setLoading(true);
-    _clearError();
-    
+  Future<void> loginWithGoogle(BuildContext context) async {
     try {
-      // Login com Google será implementado via Clerk UI components
-      // Por enquanto, apenas simula sucesso
+      _setLoading(true);
+      _clearError();
+      await AuthService.signInWithGoogle(context);
       _setState(AuthState.authenticated);
     } catch (e) {
-      _setError(AppStrings.loginErrorMessage);
-      rethrow;
-    } finally {
-      _setLoading(false);
-    }
-  }
-  
-  /// Faz login com Apple
-  Future<void> signInWithApple() async {
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      // Login com Apple será implementado via Clerk UI components
-      // Por enquanto, apenas simula sucesso
-      _setState(AuthState.authenticated);
-    } catch (e) {
-      _setError(AppStrings.loginErrorMessage);
-      rethrow;
-    } finally {
-      _setLoading(false);
-    }
-  }
-  
-  /// Faz login com Facebook
-  Future<void> signInWithFacebook() async {
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      // Login com Facebook será implementado via Clerk UI components
-      // Por enquanto, apenas simula sucesso
-      _setState(AuthState.authenticated);
-    } catch (e) {
-      _setError(AppStrings.loginErrorMessage);
-      rethrow;
+      _setError('Erro ao fazer login com Google. Por favor, tente novamente.');
     } finally {
       _setLoading(false);
     }
@@ -221,70 +183,32 @@ class AuthViewModel extends ChangeNotifier {
   }
   
   /// Faz login com Apple
-  Future<void> loginWithApple() async {
+  Future<void> loginWithApple(BuildContext context) async {
     try {
       _setLoading(true);
       _clearError();
-      
-      // TODO: Implementar login com Apple usando Clerk
-      // await AuthService.signInWithApple();
-      
+      await AuthService.signInWithApple(context);
       _setState(AuthState.authenticated);
     } catch (e) {
-      _setError('Erro ao fazer login com Apple: ${e.toString()}');
+      _setError('Erro ao fazer login com Apple. Por favor, tente novamente.');
     } finally {
       _setLoading(false);
     }
   }
-  
+
   /// Faz login com Facebook
-  Future<void> loginWithFacebook() async {
+  Future<void> loginWithFacebook(BuildContext context) async {
     try {
       _setLoading(true);
       _clearError();
-      
-      // TODO: Implementar login com Facebook usando Clerk
-      // await AuthService.signInWithFacebook();
-      
+      await AuthService.signInWithFacebook(context);
       _setState(AuthState.authenticated);
     } catch (e) {
-      _setError('Erro ao fazer login com Facebook: ${e.toString()}');
+      _setError('Erro ao fazer login com Facebook. Por favor, tente novamente.');
     } finally {
       _setLoading(false);
     }
   }
-  
-  /// Faz login com email e senha
-  Future<void> loginWithEmailAndPassword(String email, String password) async {
-    try {
-      _setLoading(true);
-      _clearError();
-      
-      // TODO: Implementar login com email e senha usando Clerk
-      // await AuthService.signInWithEmailAndPassword(email, password);
-      
-      _setState(AuthState.authenticated);
-    } catch (e) {
-      _setError('Erro ao fazer login: ${e.toString()}');
-    } finally {
-      _setLoading(false);
-    }
-  }
-  
-  /// Faz login com Google
-  Future<void> loginWithGoogle() async {
-    try {
-      _setLoading(true);
-      _clearError();
-      
-      // TODO: Implementar login com Google usando Clerk
-      // await AuthService.signInWithGoogle();
-      
-      _setState(AuthState.authenticated);
-    } catch (e) {
-      _setError('Erro ao fazer login com Google: ${e.toString()}');
-    } finally {
-      _setLoading(false);
-    }
-  }
+
+
 }

@@ -132,4 +132,37 @@ class AuthService {
       throw Exception('Erro ao criar conta: $e');
     }
   }
+  
+  /// Faz login com Google usando Clerk
+  static Future<void> signInWithGoogle(BuildContext context) async {
+    try {
+      // Por enquanto, implementação simplificada
+      // O Clerk Flutter ainda está em desenvolvimento
+      throw UnimplementedError('Login com Google não implementado ainda no Clerk Flutter');
+    } catch (e) {
+      throw Exception('Erro ao fazer login com Google: $e');
+    }
+  }
+
+  /// Faz login com Apple usando Clerk
+  static Future<void> signInWithApple(BuildContext context) async {
+    try {
+      // Por enquanto, implementação simplificada
+      // O Clerk Flutter ainda está em desenvolvimento
+      throw UnimplementedError('Login com Apple não implementado ainda no Clerk Flutter');
+    } catch (e) {
+      throw Exception('Erro ao fazer login com Apple: $e');
+    }
+  }
+
+  /// Faz login com Facebook usando Clerk
+  static Future<void> signInWithFacebook(BuildContext context) async {
+    try {
+      // Por enquanto, implementação simplificada
+      // O Clerk Flutter ainda está em desenvolvimento
+      throw UnimplementedError('Login com Facebook não implementado ainda no Clerk Flutter');
+    } catch (e) {
+      throw Exception('Erro ao fazer login com Facebook: $e');
+    }
+  }
 }

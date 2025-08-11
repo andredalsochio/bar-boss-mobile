@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
-import 'package:bar_boss_mobile/app/core/constants/app_routes.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/utils/validators.dart';
@@ -16,7 +15,7 @@ import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart'
 
 /// Tela de login
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -48,6 +47,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final authViewModel = context.read<AuthViewModel>();
       await authViewModel.loginWithEmailAndPassword(
+        context,
         _emailController.text.trim(),
         _passwordController.text,
       );
@@ -78,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithGoogle();
+      await authViewModel.loginWithGoogle(context);
 
       if (!mounted) return;
 
@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithApple();
+      await authViewModel.loginWithApple(context);
 
       if (!mounted) return;
 
@@ -134,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithFacebook();
+      await authViewModel.loginWithFacebook(context);
 
       if (!mounted) return;
 
@@ -318,7 +318,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow.withOpacity(0.1),
+              color: AppColors.shadow.withAlpha(26),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),

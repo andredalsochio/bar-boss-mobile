@@ -8,8 +8,9 @@
       "cwd": "bar_boss_mobile",
       "flutterMode": "debug",
       "args": [
-        "--dart-define-from-file",
-        "../dart_defines.json"
+        "--dart-define=CLERK_PUBLISHABLE_KEY=pk_test_bmVhdC10b21jYXQtOTkuY2xlcmsuYWNjb3VudHMuZGV2JA",
+        "--dart-define=CLERK_SECRET_KEY=sk_test_Ndzx5AaMwttU3VZw3GxeVni10ttdQNqfitOgng52Fg",
+        "--dart-define=ENVIRONMENT=development"
       ]
     },
     {
@@ -19,8 +20,9 @@
       "cwd": "bar_boss_mobile",
       "flutterMode": "profile",
       "args": [
-        "--dart-define-from-file",
-        "../dart_defines.json"
+        "--dart-define=CLERK_PUBLISHABLE_KEY=pk_test_bmVhdC10b21jYXQtOTkuY2xlcmsuYWNjb3VudHMuZGV2JA",
+        "--dart-define=CLERK_SECRET_KEY=sk_test_Ndzx5AaMwttU3VZw3GxeVni10ttdQNqfitOgng52Fg",
+        "--dart-define=ENVIRONMENT=development"
       ]
     },
     {
@@ -30,8 +32,9 @@
       "cwd": "bar_boss_mobile",
       "flutterMode": "release",
       "args": [
-        "--dart-define-from-file",
-        "../dart_defines.json"
+        "--dart-define=CLERK_PUBLISHABLE_KEY=pk_test_bmVhdC10b21jYXQtOTkuY2xlcmsuYWNjb3VudHMuZGV2JA",
+        "--dart-define=CLERK_SECRET_KEY=sk_test_Ndzx5AaMwttU3VZw3GxeVni10ttdQNqfitOgng52Fg",
+        "--dart-define=ENVIRONMENT=development"
       ]
     }
   ]

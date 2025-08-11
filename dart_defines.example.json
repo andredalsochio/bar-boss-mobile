@@ -1,7 +1,0 @@
-{
-  "CLERK_PUBLISHABLE_KEY": "pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "ENVIRONMENT": "development",
-  "DEBUG_MODE": "true",
-  "FIREBASE_PROJECT_ID": "your-firebase-project-id",
-  "FIREBASE_API_KEY": "your-firebase-api-key"
-}

@@ -19,7 +19,6 @@ import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_reposi
 // Configurações do Clerk - usando variável de ambiente
 const String clerkPublishableKey = String.fromEnvironment(
   'CLERK_PUBLISHABLE_KEY',
-  defaultValue: '',
 );
 
 void main() async {

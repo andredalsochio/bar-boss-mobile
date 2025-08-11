@@ -48,8 +48,12 @@ dependencies:
   firebase_core: ^3.6.0
   cloud_firestore: ^5.4.4  
   firebase_remote_config: ^5.1.4
+  
+  # Informações do app
+
   firebase_crashlytics: ^4.1.4
   firebase_analytics: ^11.3.3
+  package_info_plus: ^8.3.0
   
   # Autenticação
   clerk_flutter: ^0.0.10-beta

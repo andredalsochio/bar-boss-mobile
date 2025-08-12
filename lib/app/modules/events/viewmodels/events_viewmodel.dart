@@ -153,7 +153,7 @@ class EventsViewModel extends ChangeNotifier {
       _attractions = List<String>.from(event.attractions);
       _promotionImages = List<String>.from(event.promotionImages ?? []);
       _promotionDetails = event.promotionDetails ?? '';
-      _allowVipAccess = event.allowVipAccess ?? false;
+      _allowVipAccess = event.allowVipAccess;
 
       _validateDate();
       _validateAttractions();

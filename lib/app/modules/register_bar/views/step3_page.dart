@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
-import 'package:bar_boss_mobile/app/core/constants/app_routes.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/utils/validators.dart';

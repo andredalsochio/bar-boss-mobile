@@ -5,7 +5,6 @@
       "name": "bar_boss_mobile (debug)",
       "type": "dart",
       "request": "launch",
-      "cwd": "bar_boss_mobile",
       "flutterMode": "debug",
       "args": [
         "--dart-define",
@@ -20,7 +19,6 @@
       "name": "bar_boss_mobile (profile)",
       "type": "dart",
       "request": "launch",
-      "cwd": "bar_boss_mobile",
       "flutterMode": "profile",
       "args": [
         "--dart-define",
@@ -35,7 +33,6 @@
       "name": "bar_boss_mobile (release)",
       "type": "dart",
       "request": "launch",
-      "cwd": "bar_boss_mobile",
       "flutterMode": "release",
       "args": [
         "--dart-define",

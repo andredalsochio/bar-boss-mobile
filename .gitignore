@@ -91,8 +91,9 @@ GoogleService-Info.plist
 .env.*.local
 dart_defines.json
 
-# Clerk
-clerk_config.json
+# Firebase config files
+google-services.json
+GoogleService-Info.plist
 
 # Local database
 *.db

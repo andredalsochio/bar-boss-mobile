@@ -42,8 +42,6 @@ class FirestoreKeys {
   static const String vipRequestUserEmail = 'user_email';
   static const String vipRequestUserPhone = 'user_phone';
   static const String vipRequestStatus = 'status'; // pending, approved, rejected
-  static const String vipRequestCreatedAt = 'created_at';
-  static const String vipRequestUpdatedAt = 'updated_at';
   
   // Generic fields
   static const String createdAt = 'created_at';

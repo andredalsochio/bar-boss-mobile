@@ -73,6 +73,7 @@ class _EventFormPageState extends State<EventFormPage> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final BuildContext currentContext = context;
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _viewModel.eventDate,
@@ -97,9 +98,9 @@ class _EventFormPageState extends State<EventFormPage> {
       },
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
       final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
+        context: currentContext,
         initialTime: TimeOfDay.fromDateTime(_viewModel.eventDate),
         builder: (context, child) {
           return Theme(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_routes.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
@@ -14,11 +14,6 @@ import 'package:bar_boss_mobile/app/modules/register_bar/views/step3_page.dart';
 import 'package:bar_boss_mobile/app/modules/home/views/home_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/events_list_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/event_form_page.dart';
-
-// Configurações do Clerk - usando variável de ambiente
-const String clerkPublishableKey = String.fromEnvironment(
-  'CLERK_PUBLISHABLE_KEY',
-);
 
 /// Widget principal do aplicativo
 class AppWidget extends StatefulWidget {
@@ -126,13 +121,10 @@ class _AppWidgetState extends State<AppWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return ClerkAuth(
-      config: ClerkAuthConfig(
-        publishableKey: clerkPublishableKey,
-      ),
-      child: ClerkAuthBuilder(
-        builder: (context, authState) {
-          return MaterialApp.router(
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        return MaterialApp.router(
           title: AppStrings.appName,
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
@@ -141,7 +133,7 @@ class _AppWidgetState extends State<AppWidget> {
               seedColor: AppColors.primary,
               primary: AppColors.primary,
               secondary: AppColors.secondary,
-              background: AppColors.background,
+              surface: AppColors.background,
             ),
             scaffoldBackgroundColor: AppColors.background,
             appBarTheme: const AppBarTheme(
@@ -190,7 +182,6 @@ class _AppWidgetState extends State<AppWidget> {
           routerConfig: _router,
         );
       },
-      ),
     );
   }
 }

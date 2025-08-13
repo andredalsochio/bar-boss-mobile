@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
@@ -70,8 +69,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      // Implementar login com Clerk
-      // await AuthService.signInWithEmailAndPassword(context, email, password);
+      await AuthService.signInWithEmailAndPassword(email, password);
       _setState(AuthState.authenticated);
     } catch (e) {
       _setError('Erro ao fazer login com e-mail. Por favor, tente novamente.');

@@ -105,13 +105,13 @@ class VipRequestModel {
   /// Converte o modelo para um mapa para salvar no Firestore
   Map<String, dynamic> toFirestore() {
     return {
-      FirestoreKeys.eventId: eventId,
-      FirestoreKeys.barId: barId,
+      FirestoreKeys.vipRequestEventId: eventId,
+      FirestoreKeys.vipRequestBarId: barId,
       FirestoreKeys.userId: userId,
-      FirestoreKeys.userName: userName,
-      FirestoreKeys.userEmail: userEmail,
+      FirestoreKeys.vipRequestUserName: userName,
+      FirestoreKeys.vipRequestUserEmail: userEmail,
       if (userPhone != null && userPhone!.isNotEmpty)
-        FirestoreKeys.userPhone: userPhone,
+        FirestoreKeys.vipRequestUserPhone: userPhone,
       FirestoreKeys.vipRequestStatus: status.name,
       FirestoreKeys.createdAt: Timestamp.fromDate(createdAt),
       FirestoreKeys.updatedAt: Timestamp.fromDate(DateTime.now()),

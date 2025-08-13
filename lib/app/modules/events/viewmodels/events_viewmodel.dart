@@ -319,7 +319,7 @@ class EventsViewModel extends ChangeNotifier {
       }
 
       // Busca o bar do usuário
-      final bar = await _barRepository.getBarByUserId(user.id);
+      final bar = await _barRepository.getBarByUserId(user.uid);
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;

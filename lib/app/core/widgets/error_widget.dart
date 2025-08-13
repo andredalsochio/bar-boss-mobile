@@ -68,7 +68,7 @@ class ErrorDisplayWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: const Color.fromRGBO(0, 0, 0, 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

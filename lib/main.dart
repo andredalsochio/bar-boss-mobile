@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
-
 import 'firebase_options.dart';
 
 import 'package:bar_boss_mobile/app/app_widget.dart';
@@ -16,22 +15,9 @@ import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository
 import 'package:bar_boss_mobile/app/modules/events/repositories/vip_request_repository.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
 
-// Configurações do Clerk - usando variável de ambiente
-const String clerkPublishableKey = String.fromEnvironment(
-  'CLERK_PUBLISHABLE_KEY',
-);
-
 void main() async {
   // Garante que os widgets sejam inicializados
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Valida se a chave do Clerk foi configurada
-  if (clerkPublishableKey.isEmpty) {
-    throw Exception(
-      'CLERK_PUBLISHABLE_KEY não foi configurada. '
-      'Verifique o arquivo launch.json ou as variáveis de ambiente.',
-    );
-  }
   
   // Inicializa o Firebase
   await Firebase.initializeApp(
@@ -43,8 +29,6 @@ void main() async {
   
   // Configura o Remote Config
   await _setupRemoteConfig();
-  
-  // Clerk será inicializado no AppWidget
   
   // Executa o aplicativo
   runApp(

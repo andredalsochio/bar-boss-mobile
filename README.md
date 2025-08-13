@@ -6,7 +6,7 @@ Um aplicativo móvel completo desenvolvido em Flutter que permite aos proprietá
 
 ## 📱 Funcionalidades
 
-- **Autenticação completa** com Clerk (Google, Apple, Facebook, Email)
+- **Autenticação completa** com Firebase Auth (Google, Apple, Facebook, Email)
 - **Cadastro de estabelecimentos** com validação de CNPJ e CEP
 - **Gerenciamento de eventos** com datas, atrações e promoções
 - **Interface responsiva** para iOS e Android
@@ -36,8 +36,7 @@ lib/
 ## 🛠️ Tecnologias
 
 - **Flutter** 3.16+ / **Dart** 3.7+
-- **Firebase** (Firestore, Analytics, Crashlytics)
-- **Clerk** para autenticação
+- **Firebase** (Auth, Firestore, Analytics, Crashlytics)
 - **Provider** para gerenciamento de estado
 - **GoRouter** para navegação
 - **Drift** para persistência local
@@ -52,7 +51,6 @@ lib/
 - Xcode (para iOS)
 - Android Studio (para Android)
 - Conta Firebase
-- Conta Clerk
 
 ### Instalação
 
@@ -76,10 +74,10 @@ flutter pub get
      - `GoogleService-Info.plist` → `ios/Runner/`
    - Execute: `flutterfire configure`
 
-4. **Configure o Clerk**
-   - Crie uma conta em [Clerk.dev](https://clerk.dev)
-   - Configure os provedores de autenticação
-   - Adicione as chaves no arquivo de configuração
+4. **Configure a autenticação social**
+   - Configure Google Sign-In no Firebase Console
+   - Configure Apple Sign-In (para iOS)
+   - Configure Facebook Login (opcional)
 
 5. **Execute o projeto**
 ```bash

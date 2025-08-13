@@ -55,8 +55,11 @@ dependencies:
   firebase_analytics: ^11.3.3
   package_info_plus: ^8.3.0
   
-  # Autenticação
-  clerk_flutter: ^0.0.10-beta
+  # Autenticação Firebase
+  firebase_auth: ^5.3.1
+  google_sign_in: ^6.2.1
+  flutter_facebook_auth: ^7.0.1
+  sign_in_with_apple: ^6.1.1
   
   # Validação de formulários
   form_field_validator: ^1.1.0

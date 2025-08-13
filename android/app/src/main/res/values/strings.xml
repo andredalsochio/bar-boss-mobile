@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">bar_boss_mobile</string>
+    <string name="facebook_app_id">REPLACE_WITH_FACEBOOK_APP_ID</string>
+</resources>
+

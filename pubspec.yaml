@@ -54,10 +54,13 @@ dependencies:
   firebase_crashlytics: ^4.1.4
   firebase_analytics: ^11.3.3
   package_info_plus: ^8.3.0
-  
+
   # Autenticação
-  clerk_flutter: ^0.0.10-beta
-  
+  firebase_auth: ^5.0.0
+  google_sign_in: ^6.0.0
+  flutter_facebook_auth: ^6.0.0
+  sign_in_with_apple: ^5.0.0
+
   # Validação de formulários
   form_field_validator: ^1.1.0
   

@@ -1,168 +1,164 @@
-import 'package:flutter/material.dart';
-import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-/// Serviço de autenticação usando Clerk
+/// Serviço de autenticação usando Firebase
 class AuthService {
-  /// Getter para o usuário atual (compatibilidade)
-  static dynamic get currentUser => null; // Placeholder - use getCurrentUser(context) instead
-  
-  /// Getter para o ID do usuário atual (compatibilidade)
-  static String? get currentUserId => null; // Placeholder - use getCurrentUserId(context) instead
-  
-  /// Getter para o email do usuário atual (compatibilidade)
-  static String? get currentUserEmail => null; // Placeholder - use getCurrentUserEmail(context) instead
-  /// Obtém o usuário atual
-  static dynamic getCurrentUser(BuildContext context) {
+  static FirebaseAuth get _auth => FirebaseAuth.instance;
+
+  static User? get currentUser => _auth.currentUser;
+  static String? get currentUserId => currentUser?.uid;
+  static String? get currentUserEmail => currentUser?.email;
+  static String? get currentUserName => currentUser?.displayName;
+
+  /// Verifica se há usuário autenticado
+  static bool isAuthenticated([BuildContext? context]) => currentUser != null;
+
+  /// Token do usuário
+  static Future<String?> getToken() async {
     try {
-      final authState = ClerkAuth.of(context);
-      return authState.user;
+      return await currentUser?.getIdToken();
     } catch (e) {
+      debugPrint('Erro ao obter token: $e');
       return null;
     }
   }
 
-  /// Verifica se o usuário está autenticado
-  static bool isAuthenticated(BuildContext context) {
+  /// Mudanças no estado de autenticação
+  static Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  /// Logout
+  static Future<void> signOut([BuildContext? context]) async {
     try {
-      final authState = ClerkAuth.of(context);
-      return authState.user != null;
+      await _auth.signOut();
+      await GoogleSignIn().signOut();
+      await FacebookAuth.instance.logOut();
     } catch (e) {
-      return false;
+      debugPrint('Erro no logout: $e');
+      rethrow;
     }
   }
 
-  /// Obtém o ID do usuário atual
-  static String? getCurrentUserId(BuildContext context) {
-    try {
-      final user = getCurrentUser(context);
-      return user?.id;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Obtém o email do usuário atual
-  static String? getCurrentUserEmail(BuildContext context) {
-    try {
-      final user = getCurrentUser(context);
-      // Tentativa de acessar email de diferentes formas possíveis
-      return user?.primaryEmailAddress?.emailAddress ?? 
-             user?.emailAddresses?.first?.emailAddress ?? 
-             user?.email;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Obtém o nome do usuário atual
-  static String? getCurrentUserName(BuildContext context) {
-    try {
-      final user = getCurrentUser(context);
-      return user?.firstName ?? 
-             user?.fullName ?? 
-             user?.primaryEmailAddress?.emailAddress ?? 
-             user?.email;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Obtém o token de autenticação
-  static String? getToken(BuildContext context) {
-    try {
-      final authState = ClerkAuth.of(context);
-      // Fallback para session id se getToken não estiver disponível
-      return authState.session?.id;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Stream de mudanças no estado de autenticação
-  static Stream<bool> get authStateChanges {
-    // Implementação simplificada - retorna stream vazio por enquanto
-    return Stream.value(false);
-  }
-  
-  /// Faz logout do usuário
-  static Future<void> signOut(BuildContext context) async {
-    try {
-      final authState = ClerkAuth.of(context);
-      await authState.signOut();
-    } catch (e) {
-      throw Exception('Erro ao fazer logout: $e');
-    }
-  }
-  
-  /// Envia email de redefinição de senha
+  /// Redefinição de senha por e-mail
   static Future<void> sendPasswordResetEmail(String email) async {
     try {
-      // Implementação simplificada - esta funcionalidade pode não estar disponível
-      // na versão atual do Clerk Flutter
-      throw UnimplementedError('Funcionalidade não implementada no Clerk Flutter');
+      await _auth.sendPasswordResetEmail(email: email);
     } catch (e) {
-      throw Exception('Erro ao enviar email de redefinição: $e');
+      debugPrint('Erro ao enviar e-mail de redefinição: $e');
+      rethrow;
     }
   }
-  
-  /// Verifica se um email já está em uso
+
+  /// Verifica se o e-mail já está em uso
   static Future<bool> isEmailInUse(String email) async {
     try {
-      // Implementação simplificada - esta funcionalidade pode não estar disponível
-      // na versão atual do Clerk Flutter
-      // Por enquanto, sempre retorna false para permitir o cadastro
-      return false;
+      final methods = await _auth.fetchSignInMethodsForEmail(email);
+      return methods.isNotEmpty;
     } catch (e) {
-      throw Exception('Erro ao verificar email: $e');
+      debugPrint('Erro ao verificar e-mail: $e');
+      rethrow;
     }
   }
-  
-  /// Cria uma nova conta com email e senha
-  static Future<void> signUpWithEmailAndPassword(
+
+  /// Cadastro com e-mail e senha
+  static Future<UserCredential> signUpWithEmailAndPassword(
     String email,
     String password,
     String firstName,
     String lastName,
   ) async {
     try {
-      // Implementação simplificada - esta funcionalidade deve ser implementada
-      // usando os componentes de UI do Clerk Flutter
-      throw UnimplementedError('Use os componentes de UI do Clerk para cadastro');
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await credential.user?.updateDisplayName('$firstName $lastName'.trim());
+      return credential;
     } catch (e) {
-      throw Exception('Erro ao criar conta: $e');
-    }
-  }
-  
-  /// Faz login com Google usando Clerk
-  static Future<void> signInWithGoogle(BuildContext context) async {
-    try {
-      // Por enquanto, implementação simplificada
-      // O Clerk Flutter ainda está em desenvolvimento
-      throw UnimplementedError('Login com Google não implementado ainda no Clerk Flutter');
-    } catch (e) {
-      throw Exception('Erro ao fazer login com Google: $e');
+      debugPrint('Erro no cadastro: $e');
+      rethrow;
     }
   }
 
-  /// Faz login com Apple usando Clerk
-  static Future<void> signInWithApple(BuildContext context) async {
+  /// Login com e-mail e senha
+  static Future<UserCredential> signInWithEmailAndPassword(
+    BuildContext context,
+    String email,
+    String password,
+  ) async {
     try {
-      // Por enquanto, implementação simplificada
-      // O Clerk Flutter ainda está em desenvolvimento
-      throw UnimplementedError('Login com Apple não implementado ainda no Clerk Flutter');
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
     } catch (e) {
-      throw Exception('Erro ao fazer login com Apple: $e');
+      debugPrint('Erro no login com e-mail: $e');
+      rethrow;
     }
   }
 
-  /// Faz login com Facebook usando Clerk
-  static Future<void> signInWithFacebook(BuildContext context) async {
+  /// Login com Google
+  static Future<UserCredential> signInWithGoogle(BuildContext context) async {
     try {
-      // Por enquanto, implementação simplificada
-      // O Clerk Flutter ainda está em desenvolvimento
-      throw UnimplementedError('Login com Facebook não implementado ainda no Clerk Flutter');
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        throw Exception('Login cancelado');
+      }
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      return await _auth.signInWithCredential(credential);
     } catch (e) {
-      throw Exception('Erro ao fazer login com Facebook: $e');
+      debugPrint('Erro no login com Google: $e');
+      rethrow;
+    }
+  }
+
+  /// Login com Apple
+  static Future<UserCredential> signInWithApple(BuildContext context) async {
+    try {
+      final appleId = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      final credential = OAuthProvider('apple.com').credential(
+        idToken: appleId.identityToken,
+        accessToken: appleId.authorizationCode,
+      );
+      final userCred = await _auth.signInWithCredential(credential);
+      final name = [appleId.givenName, appleId.familyName]
+          .where((n) => n != null && n.isNotEmpty)
+          .join(' ');
+      if (name.isNotEmpty) {
+        await userCred.user?.updateDisplayName(name);
+      }
+      return userCred;
+    } catch (e) {
+      debugPrint('Erro no login com Apple: $e');
+      rethrow;
+    }
+  }
+
+  /// Login com Facebook
+  static Future<UserCredential> signInWithFacebook(BuildContext context) async {
+    try {
+      final result = await FacebookAuth.instance.login();
+      if (result.accessToken == null) {
+        throw Exception('Login cancelado');
+      }
+      final credential = FacebookAuthProvider.credential(
+        result.accessToken!.token,
+      );
+      return await _auth.signInWithCredential(credential);
+    } catch (e) {
+      debugPrint('Erro no login com Facebook: $e');
+      rethrow;
     }
   }
 }

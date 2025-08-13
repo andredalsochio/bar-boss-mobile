@@ -14,7 +14,7 @@ class AuthService {
   static String? get currentUserName => currentUser?.displayName;
 
   /// Verifica se há usuário autenticado
-  static bool isAuthenticated([BuildContext? context]) => currentUser != null;
+  static bool isAuthenticated() => currentUser != null;
 
   /// Token do usuário
   static Future<String?> getToken() async {
@@ -30,7 +30,7 @@ class AuthService {
   static Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   /// Logout
-  static Future<void> signOut([BuildContext? context]) async {
+  static Future<void> signOut() async {
     try {
       await _auth.signOut();
       await GoogleSignIn().signOut();
@@ -84,7 +84,6 @@ class AuthService {
 
   /// Login com e-mail e senha
   static Future<UserCredential> signInWithEmailAndPassword(
-    BuildContext context,
     String email,
     String password,
   ) async {
@@ -100,7 +99,7 @@ class AuthService {
   }
 
   /// Login com Google
-  static Future<UserCredential> signInWithGoogle(BuildContext context) async {
+  static Future<UserCredential> signInWithGoogle() async {
     try {
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
@@ -119,7 +118,7 @@ class AuthService {
   }
 
   /// Login com Apple
-  static Future<UserCredential> signInWithApple(BuildContext context) async {
+  static Future<UserCredential> signInWithApple() async {
     try {
       final appleId = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -146,7 +145,7 @@ class AuthService {
   }
 
   /// Login com Facebook
-  static Future<UserCredential> signInWithFacebook(BuildContext context) async {
+  static Future<UserCredential> signInWithFacebook() async {
     try {
       final result = await FacebookAuth.instance.login();
       if (result.accessToken == null) {

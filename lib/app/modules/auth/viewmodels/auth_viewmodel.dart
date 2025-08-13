@@ -62,7 +62,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      await AuthService.signInWithEmailAndPassword(context, email, password);
+      await AuthService.signInWithEmailAndPassword(email, password);
       _setState(AuthState.authenticated);
     } catch (e) {
       _setError('Erro ao fazer login com e-mail. Por favor, tente novamente.');
@@ -76,7 +76,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      await AuthService.signInWithGoogle(context);
+      await AuthService.signInWithGoogle();
       _setState(AuthState.authenticated);
     } catch (e) {
       _setError('Erro ao fazer login com Google. Por favor, tente novamente.');
@@ -178,7 +178,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      await AuthService.signInWithApple(context);
+      await AuthService.signInWithApple();
       _setState(AuthState.authenticated);
     } catch (e) {
       _setError('Erro ao fazer login com Apple. Por favor, tente novamente.');
@@ -192,7 +192,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      await AuthService.signInWithFacebook(context);
+      await AuthService.signInWithFacebook();
       _setState(AuthState.authenticated);
     } catch (e) {
       _setError('Erro ao fazer login com Facebook. Por favor, tente novamente.');

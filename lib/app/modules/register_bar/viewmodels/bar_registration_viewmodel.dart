@@ -354,7 +354,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _clearError();
     
     try {
-      // Verifica se o e-mail já está em uso no Clerk
+      // Verifica se o e-mail já está em uso no Firebase
       final isEmailInUse = await AuthService.isEmailInUse(_email);
       if (isEmailInUse) {
         _setError(AppStrings.emailInUseErrorMessage);
@@ -368,7 +368,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
         return;
       }
       
-      // Cria o usuário no Clerk
+      // Cria o usuário no Firebase
       final firstName = _responsibleName.split(' ').first;
       final lastName = _responsibleName.split(' ').length > 1
           ? _responsibleName.split(' ').sublist(1).join(' ')

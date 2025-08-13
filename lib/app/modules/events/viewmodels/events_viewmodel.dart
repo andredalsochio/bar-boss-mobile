@@ -312,14 +312,14 @@ class EventsViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      final user = AuthService.getCurrentUser(context);
+      final user = AuthService.currentUser;
       if (user == null) {
         _setError(AppStrings.userNotFoundErrorMessage);
         return;
       }
 
       // Busca o bar do usuário
-      final bar = await _barRepository.getBarByUserId(user.id);
+      final bar = await _barRepository.getBarByEmail(user.email!);
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;

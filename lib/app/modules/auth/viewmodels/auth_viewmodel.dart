@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
@@ -16,15 +18,18 @@ enum AuthState {
 /// ViewModel para a tela de login
 class AuthViewModel extends ChangeNotifier {
   final BarRepository _barRepository;
-  
+  StreamSubscription<User?>? _authSubscription;
+
   AuthState _state = AuthState.initial;
   String? _errorMessage;
   bool _isLoading = false;
-  
+
   AuthViewModel({
     required BarRepository barRepository,
   }) : _barRepository = barRepository {
-    _checkInitialAuthState();
+    _authSubscription = AuthService.authStateChanges.listen((user) {
+      _setState(user != null ? AuthState.authenticated : AuthState.unauthenticated);
+    });
   }
   
   /// Estado atual da autenticação
@@ -37,29 +42,16 @@ class AuthViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   
   /// Indica se o usuário está autenticado
-  bool isAuthenticated(BuildContext context) => AuthService.isAuthenticated(context);
+  bool isAuthenticated(BuildContext context) => AuthService.isAuthenticated();
   
   /// Retorna o ID do usuário atual
-  String? getUserId(BuildContext context) => AuthService.getCurrentUserId(context);
+  String? getUserId(BuildContext context) => AuthService.currentUserId;
   
   /// Retorna o e-mail do usuário atual
-  String? getUserEmail(BuildContext context) => AuthService.getCurrentUserEmail(context);
+  String? getUserEmail(BuildContext context) => AuthService.currentUserEmail;
   
   /// Retorna o nome do usuário atual
-  String? getUserName(BuildContext context) => AuthService.getCurrentUserName(context);
-  
-  /// Verifica o estado inicial da autenticação
-  Future<void> _checkInitialAuthState() async {
-    _setLoading(true);
-    try {
-      // Estado inicial será verificado na UI com context
-      _setState(AuthState.initial);
-    } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
+  String? getUserName(BuildContext context) => AuthService.currentUserName;
   
   /// Faz login com e-mail e senha
   Future<void> loginWithEmailAndPassword(
@@ -70,8 +62,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      // Implementar login com Clerk
-      // await AuthService.signInWithEmailAndPassword(context, email, password);
+      await AuthService.signInWithEmailAndPassword(context, email, password);
       _setState(AuthState.authenticated);
     } catch (e) {
       _setError('Erro ao fazer login com e-mail. Por favor, tente novamente.');
@@ -100,7 +91,7 @@ class AuthViewModel extends ChangeNotifier {
     _clearError();
     
     try {
-      await AuthService.signOut(context);
+      await AuthService.signOut();
       _setState(AuthState.unauthenticated);
     } catch (e) {
       _setError(AppStrings.logoutErrorMessage);
@@ -116,7 +107,7 @@ class AuthViewModel extends ChangeNotifier {
     _clearError();
     
     try {
-      await AuthService.signOut(context);
+      await AuthService.signOut();
       _setState(AuthState.unauthenticated);
     } catch (e) {
       _setError(AppStrings.logoutErrorMessage);
@@ -211,4 +202,9 @@ class AuthViewModel extends ChangeNotifier {
   }
 
 
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
 }

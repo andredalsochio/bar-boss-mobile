@@ -6,12 +6,7 @@ import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository
 import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
 
 /// Estados possíveis da operação de eventos
-enum EventsState {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum EventsState { initial, loading, success, error }
 
 /// ViewModel para gerenciar eventos
 class EventsViewModel extends ChangeNotifier {
@@ -41,9 +36,8 @@ class EventsViewModel extends ChangeNotifier {
   EventsViewModel({
     required EventRepository eventRepository,
     required BarRepository barRepository,
-  })
-      : _eventRepository = eventRepository,
-        _barRepository = barRepository;
+  }) : _eventRepository = eventRepository,
+       _barRepository = barRepository;
 
   /// Estado atual da operação
   EventsState get state => _state;
@@ -104,7 +98,9 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      final bar = await _barRepository.getBarByEmail(AuthService.currentUserEmail!);
+      final bar = await _barRepository.getBarByEmail(
+        AuthService.currentUserEmail!,
+      );
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;
@@ -236,7 +232,9 @@ class EventsViewModel extends ChangeNotifier {
   /// Valida as atrações
   void _validateAttractions() {
     // Deve ter pelo menos uma atração não vazia
-    _areAttractionsValid = _attractions.any((attraction) => attraction.trim().isNotEmpty);
+    _areAttractionsValid = _attractions.any(
+      (attraction) => attraction.trim().isNotEmpty,
+    );
   }
 
   /// Salva o evento (cria ou atualiza)
@@ -256,14 +254,17 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      final bar = await _barRepository.getBarByEmail(AuthService.currentUserEmail!);
+      final bar = await _barRepository.getBarByEmail(
+        AuthService.currentUserEmail!,
+      );
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;
       }
 
       // Remove atrações vazias
-      final filteredAttractions = _attractions.where((a) => a.trim().isNotEmpty).toList();
+      final filteredAttractions =
+          _attractions.where((a) => a.trim().isNotEmpty).toList();
 
       if (_currentEvent == null) {
         // Cria um novo evento
@@ -272,8 +273,10 @@ class EventsViewModel extends ChangeNotifier {
           barId: bar.id,
           date: _eventDate,
           attractions: filteredAttractions,
-          promotionImages: _promotionImages.isNotEmpty ? _promotionImages : null,
-          promotionDetails: _promotionDetails.isNotEmpty ? _promotionDetails : null,
+          promotionImages:
+              _promotionImages.isNotEmpty ? _promotionImages : null,
+          promotionDetails:
+              _promotionDetails.isNotEmpty ? _promotionDetails : null,
           allowVipAccess: _allowVipAccess,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -285,8 +288,10 @@ class EventsViewModel extends ChangeNotifier {
         final updatedEvent = _currentEvent!.copyWith(
           date: _eventDate,
           attractions: filteredAttractions,
-          promotionImages: _promotionImages.isNotEmpty ? _promotionImages : null,
-          promotionDetails: _promotionDetails.isNotEmpty ? _promotionDetails : null,
+          promotionImages:
+              _promotionImages.isNotEmpty ? _promotionImages : null,
+          promotionDetails:
+              _promotionDetails.isNotEmpty ? _promotionDetails : null,
           allowVipAccess: _allowVipAccess,
           updatedAt: DateTime.now(),
         );
@@ -318,8 +323,13 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      // Busca o bar do usuário
-      final bar = await _barRepository.getBarByUserId(user.id);
+      // Busca o bar do usuário pelo e-mail (compatível com cadastro atual)
+      final email = user.email;
+      if (email == null || email.isEmpty) {
+        _setError(AppStrings.userNotFoundErrorMessage);
+        return;
+      }
+      final bar = await _barRepository.getBarByEmail(email);
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;
@@ -328,10 +338,9 @@ class EventsViewModel extends ChangeNotifier {
       // Carrega eventos futuros
       final now = DateTime.now();
       final allEvents = await _eventRepository.getEventsByBarId(bar.id);
-      _upcomingEvents = allEvents
-          .where((event) => event.date.isAfter(now))
-          .toList()
-        ..sort((a, b) => a.date.compareTo(b.date));
+      _upcomingEvents =
+          allEvents.where((event) => event.date.isAfter(now)).toList()
+            ..sort((a, b) => a.date.compareTo(b.date));
 
       _setState(EventsState.success);
     } catch (e) {

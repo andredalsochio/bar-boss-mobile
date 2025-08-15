@@ -29,7 +29,11 @@ class _EventsListPageState extends State<EventsListPage> {
   void initState() {
     super.initState();
     _viewModel = context.read<EventsViewModel>();
-    _loadEvents();
+    
+    // Carrega os eventos após o build inicial para evitar setState durante build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadEvents();
+    });
   }
 
   Future<void> _loadEvents() async {

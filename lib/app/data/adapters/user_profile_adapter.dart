@@ -11,24 +11,8 @@ class UserProfileAdapter {
     final data = doc.data()!;
     
     // Converte Timestamp para DateTime se necessário
-    final createdAtData = data[FirestoreKeys.userCreatedAt];
-    final lastLoginAtData = data[FirestoreKeys.userLastLoginAt];
-    
-    DateTime createdAt;
-    if (createdAtData is Timestamp) {
-      createdAt = createdAtData.toDate();
-    } else if (createdAtData is DateTime) {
-      createdAt = createdAtData;
-    } else {
-      createdAt = DateTime.now();
-    }
-    
-    DateTime? lastLoginAt;
-    if (lastLoginAtData is Timestamp) {
-      lastLoginAt = lastLoginAtData.toDate();
-    } else if (lastLoginAtData is DateTime) {
-      lastLoginAt = lastLoginAtData;
-    }
+    final createdAt = _timestampToDateTime(data[FirestoreKeys.userCreatedAt]);
+    final lastLoginAt = _timestampToDateTimeNullable(data[FirestoreKeys.userLastLoginAt]);
     
     return UserProfile(
       uid: doc.id,
@@ -55,5 +39,39 @@ class UserProfileAdapter {
           ? Timestamp.fromDate(userProfile.lastLoginAt!)
           : null,
     };
+  }
+
+  /// Converte Timestamp para DateTime
+  /// Trata adequadamente valores null que podem ocorrer nos primeiros snapshots
+  /// quando FieldValue.serverTimestamp() ainda não foi processado pelo servidor
+  static DateTime _timestampToDateTime(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      return timestamp.toDate();
+    }
+    if (timestamp is DateTime) {
+      return timestamp;
+    }
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+    // Retorna data atual se timestamp for null (primeiro snapshot)
+    // ou se for de tipo inesperado
+    return DateTime.now();
+  }
+
+  /// Converte Timestamp para DateTime nullable
+  /// Retorna null se o valor for null ou inválido
+  static DateTime? _timestampToDateTimeNullable(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      return timestamp.toDate();
+    }
+    if (timestamp is DateTime) {
+      return timestamp;
+    }
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+    // Retorna null se timestamp for null ou de tipo inesperado
+    return null;
   }
 }

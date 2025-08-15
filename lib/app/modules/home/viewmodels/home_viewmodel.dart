@@ -59,6 +59,13 @@ class HomeViewModel extends ChangeNotifier {
       if (bars.isNotEmpty) {
         _currentBar = bars.first; // Assume que o usuário tem apenas um bar
         notifyListeners();
+      } else {
+        // Se não encontrou por owner, tenta por membership
+        final memberBars = await _barRepository.listBarsByMembership(currentUser.uid);
+        if (memberBars.isNotEmpty) {
+          _currentBar = memberBars.first;
+          notifyListeners();
+        }
       }
     } catch (e) {
       _setError(e.toString());

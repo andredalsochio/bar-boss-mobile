@@ -36,7 +36,11 @@ class _HomePageState extends State<HomePage> {
     _eventsViewModel = context.read<EventsViewModel>();
     _authViewModel = context.read<AuthViewModel>();
     _homeViewModel = context.read<HomeViewModel>();
-    _loadData();
+    
+    // Carrega os dados após o build inicial para evitar setState durante build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {

@@ -73,6 +73,8 @@ class EventAdapter {
   }
 
   /// Converte Timestamp para DateTime
+  /// Trata adequadamente valores null que podem ocorrer nos primeiros snapshots
+  /// quando FieldValue.serverTimestamp() ainda não foi processado pelo servidor
   static DateTime _timestampToDateTime(dynamic timestamp) {
     if (timestamp is Timestamp) {
       return timestamp.toDate();
@@ -80,6 +82,8 @@ class EventAdapter {
     if (timestamp is String) {
       return DateTime.parse(timestamp);
     }
+    // Retorna data atual se timestamp for null (primeiro snapshot)
+    // ou se for de tipo inesperado
     return DateTime.now();
   }
 

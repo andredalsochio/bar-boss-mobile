@@ -471,7 +471,6 @@ class BarRegistrationViewModel extends ChangeNotifier {
       // Atualiza a completude do perfil
       await _legacyBarRepository.updateBarFields(barId, {
         'profile.contactsComplete': isStep1Valid,
-        'updatedAt': DateTime.now(),
       });
     } catch (e) {
       _setError(e.toString());
@@ -504,7 +503,6 @@ class BarRegistrationViewModel extends ChangeNotifier {
       // Atualiza a completude do perfil
       await _legacyBarRepository.updateBarFields(barId, {
         'profile.addressComplete': isStep2Valid,
-        'updatedAt': DateTime.now(),
       });
     } catch (e) {
       _setError(e.toString());
@@ -580,7 +578,6 @@ class BarRegistrationViewModel extends ChangeNotifier {
        await _legacyBarRepository.updateBarFields(barId, {
          'profile.contactsComplete': contactsComplete,
          'profile.addressComplete': addressComplete,
-         'updatedAt': DateTime.now(),
        });
      }
 

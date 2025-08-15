@@ -41,7 +41,10 @@ class _EventFormPageState extends State<EventFormPage> {
     _viewModel = context.read<EventsViewModel>();
     _isEditing = widget.eventId != null;
 
-    _initForm();
+    // Inicializa o formulário após o build inicial para evitar setState durante build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initForm();
+    });
   }
 
   Future<void> _initForm() async {

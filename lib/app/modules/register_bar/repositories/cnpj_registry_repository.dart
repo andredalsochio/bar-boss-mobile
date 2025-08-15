@@ -10,6 +10,9 @@ class CnpjRegistryRepository {
   CnpjRegistryRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
   
+  /// Timestamp do servidor
+  FieldValue get _now => FieldValue.serverTimestamp();
+  
   /// Referência para a coleção de registro de CNPJs
   CollectionReference<Map<String, dynamic>> get _cnpjRegistryCollection =>
       _firestore.collection(FirestoreKeys.cnpjRegistryCollection);
@@ -120,10 +123,14 @@ class CnpjRegistryRepository {
         cnpj: cnpj,
         barId: '', // Será preenchido quando o bar for criado
         reservedByUid: uid,
-        createdAt: DateTime.now(),
+        createdAt: DateTime.now(), // será sobrescrito pelo _now
       );
       
-      await registerCnpj(registry);
+      // Sobrescreve o createdAt com timestamp do servidor
+      final data = registry.toFirestore();
+      data['createdAt'] = _now;
+      
+      await _cnpjRegistryCollection.doc(cnpj).set(data);
     } catch (e) {
       rethrow;
     }
@@ -134,6 +141,7 @@ class CnpjRegistryRepository {
     try {
       await _cnpjRegistryCollection.doc(cnpj).update({
         FirestoreKeys.cnpjRegistryBarId: barId,
+        'updatedAt': _now,
       });
     } catch (e) {
       rethrow;

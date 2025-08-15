@@ -66,12 +66,8 @@ class BarAdapter {
           : BarProfile.empty(),
       status: data['status'] ?? 'active',
       logoUrl: data['logoUrl'],
-      createdAt: data['createdAt'] is DateTime 
-          ? data['createdAt']
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] is DateTime 
-          ? data['updatedAt']
-          : DateTime.now(),
+      createdAt: _timestampToDateTime(data['createdAt']),
+      updatedAt: _timestampToDateTime(data['updatedAt']),
       createdByUid: data['createdByUid'] ?? '',
       primaryOwnerUid: data['primaryOwnerUid'],
     );
@@ -94,5 +90,20 @@ class BarAdapter {
       'createdByUid': bar.createdByUid,
       'primaryOwnerUid': bar.primaryOwnerUid,
     };
+  }
+
+  /// Converte Timestamp para DateTime
+  /// Trata adequadamente valores null que podem ocorrer nos primeiros snapshots
+  /// quando FieldValue.serverTimestamp() ainda não foi processado pelo servidor
+  static DateTime _timestampToDateTime(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      return timestamp.toDate();
+    }
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+    // Retorna data atual se timestamp for null (primeiro snapshot)
+    // ou se for de tipo inesperado
+    return DateTime.now();
   }
 }

@@ -9,6 +9,9 @@ class UserRepository {
   UserRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
   
+  /// Timestamp do servidor
+  FieldValue get _now => FieldValue.serverTimestamp();
+  
   /// Referência para a coleção de usuários
   CollectionReference<Map<String, dynamic>> get _usersCollection =>
       _firestore.collection(FirestoreKeys.usersCollection);
@@ -46,7 +49,12 @@ class UserRepository {
   /// Cria um novo usuário
   Future<void> createUser(UserModel user) async {
     try {
-      await _usersCollection.doc(user.uid).set(user.toFirestore());
+      await _usersCollection.doc(user.uid).set(
+        user.toFirestore()..addAll({
+          'createdAt': _now,
+          'updatedAt': _now,
+        }),
+      );
     } catch (e) {
       rethrow;
     }
@@ -55,7 +63,9 @@ class UserRepository {
   /// Atualiza um usuário existente
   Future<void> updateUser(UserModel user) async {
     try {
-      await _usersCollection.doc(user.uid).update(user.toFirestore());
+      await _usersCollection.doc(user.uid).update(
+        user.toFirestore()..addAll({'updatedAt': _now}),
+      );
     } catch (e) {
       rethrow;
     }
@@ -65,7 +75,8 @@ class UserRepository {
   Future<void> updateLastLogin(String uid) async {
     try {
       await _usersCollection.doc(uid).update({
-        FirestoreKeys.userLastLoginAt: Timestamp.fromDate(DateTime.now()),
+        FirestoreKeys.userLastLoginAt: _now,
+        'updatedAt': _now,
       });
     } catch (e) {
       rethrow;
@@ -75,7 +86,9 @@ class UserRepository {
   /// Atualiza o bar atual do usuário
   Future<void> updateCurrentBar(String uid, String? barId) async {
     try {
-      final data = <String, dynamic>{};
+      final data = <String, dynamic>{
+        'updatedAt': _now,
+      };
       if (barId != null) {
         data[FirestoreKeys.userCurrentBarId] = barId;
       } else {

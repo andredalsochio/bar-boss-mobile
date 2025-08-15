@@ -103,12 +103,20 @@ class EventsViewModel extends ChangeNotifier {
       final bars = await _barRepository.listBarsByMembership(
         currentUser.uid,
       );
+      
+      debugPrint('🔍 DEBUG: Usuário ${currentUser.uid} tem ${bars.length} bares');
+      for (int i = 0; i < bars.length; i++) {
+        debugPrint('  Bar $i: ${bars[i].id} - ${bars[i].name}');
+      }
+      
       if (bars.isEmpty) {
-        _setError(AppStrings.barNotFoundErrorMessage);
+        debugPrint('❌ DEBUG: Nenhum bar encontrado para o usuário ${currentUser.uid}');
+        _setError('Nenhum bar encontrado para este usuário. Cadastre um bar primeiro.');
         return;
       }
       
       final bar = bars.first; // Assume que o usuário tem apenas um bar
+      debugPrint('✅ DEBUG: Usando bar ${bar.id} - ${bar.name}');
 
       _events = await _eventRepository.getEventsByBarId(bar.id);
       _upcomingEvents = await _eventRepository.getUpcomingEventsByBarId(bar.id);
@@ -151,16 +159,20 @@ class EventsViewModel extends ChangeNotifier {
       final bars = await _barRepository.listBarsByMembership(
         currentUser.uid,
       );
+      
+      debugPrint('🔍 DEBUG saveEvent: Usuário ${currentUser.uid} tem ${bars.length} bares');
+      for (int i = 0; i < bars.length; i++) {
+        debugPrint('  Bar $i: ${bars[i].id} - ${bars[i].name}');
+      }
+      
       if (bars.isEmpty) {
-        _setError(AppStrings.barNotFoundErrorMessage);
+        debugPrint('❌ DEBUG saveEvent: Nenhum bar encontrado para o usuário ${currentUser.uid}');
+        _setError('Nenhum bar encontrado para este usuário. Cadastre um bar primeiro.');
         return;
       }
       
       final bar = bars.first; // Assume que o usuário tem apenas um bar
-      if (bar == null) {
-        _setError(AppStrings.barNotFoundErrorMessage);
-        return;
-      }
+      debugPrint('✅ DEBUG saveEvent: Usando bar ${bar.id} - ${bar.name}');
 
       final event = await _eventRepository.getEventById(eventId);
       if (event == null) {
@@ -275,8 +287,9 @@ class EventsViewModel extends ChangeNotifier {
       final bars = await _barRepository.listBarsByMembership(
         currentUser.uid,
       );
+      
       if (bars.isEmpty) {
-        _setError(AppStrings.barNotFoundErrorMessage);
+        _setError('Nenhum bar encontrado para este usuário. Cadastre um bar primeiro.');
         return;
       }
       
@@ -300,8 +313,8 @@ class EventsViewModel extends ChangeNotifier {
           published: false,
           createdByUid: '',
           updatedByUid: '',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          createdAt: DateTime.now(), // será sobrescrito pelo repositório
+          updatedAt: DateTime.now(), // será sobrescrito pelo repositório
         );
 
         await _eventRepository.createEvent(newEvent);
@@ -311,7 +324,7 @@ class EventsViewModel extends ChangeNotifier {
           startAt: _eventDate,
           endAt: _eventDate.add(const Duration(hours: 4)),
           attractions: filteredAttractions,
-          updatedAt: DateTime.now(),
+          updatedAt: DateTime.now(), // será sobrescrito pelo repositório
         );
 
         await _eventRepository.updateEvent(updatedEvent);
@@ -351,8 +364,9 @@ class EventsViewModel extends ChangeNotifier {
       final bars = await _barRepository.listBarsByMembership(
         currentUser.uid,
       );
+      
       if (bars.isEmpty) {
-        _setError(AppStrings.barNotFoundErrorMessage);
+        _setError('Nenhum bar encontrado para este usuário. Cadastre um bar primeiro.');
         return;
       }
       

@@ -9,6 +9,9 @@ import '../adapters/user_profile_adapter.dart';
 class FirebaseUserRepository implements UserRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  /// Timestamp do servidor
+  FieldValue get _now => FieldValue.serverTimestamp();
 
   /// Referência para a coleção de usuários
   CollectionReference<Map<String, dynamic>> get _usersCollection =>
@@ -50,7 +53,21 @@ class FirebaseUserRepository implements UserRepository {
   Future<void> upsert(UserProfile data) async {
     try {
       final firestoreData = UserProfileAdapter.toFirestore(data);
-      await _usersCollection.doc(data.uid).set(
+      
+      // Verifica se o documento já existe para decidir se adiciona createdAt
+      final docRef = _usersCollection.doc(data.uid);
+      final docSnapshot = await docRef.get();
+      
+      if (docSnapshot.exists) {
+        // Documento existe, apenas atualiza com updatedAt
+        firestoreData['updatedAt'] = _now;
+      } else {
+        // Documento novo, adiciona createdAt e updatedAt
+        firestoreData['createdAt'] = _now;
+        firestoreData['updatedAt'] = _now;
+      }
+      
+      await docRef.set(
         firestoreData,
         SetOptions(merge: true),
       );

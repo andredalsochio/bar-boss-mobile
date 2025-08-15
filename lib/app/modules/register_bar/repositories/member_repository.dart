@@ -10,6 +10,9 @@ class MemberRepository {
   MemberRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
   
+  /// Timestamp do servidor
+  FieldValue get _now => FieldValue.serverTimestamp();
+  
   /// Referência para a subcoleção de membros de um bar específico
   CollectionReference<Map<String, dynamic>> _membersCollection(String barId) =>
       _firestore
@@ -88,7 +91,9 @@ class MemberRepository {
   /// Atualiza um membro existente
   Future<void> updateMember(String barId, MemberModel member) async {
     try {
-      await _membersCollection(barId).doc(member.uid).update(member.toFirestore());
+      await _membersCollection(barId).doc(member.uid).update(
+        member.toFirestore()..addAll({'updatedAt': _now}),
+      );
     } catch (e) {
       rethrow;
     }
@@ -99,6 +104,7 @@ class MemberRepository {
     try {
       await _membersCollection(barId).doc(uid).update({
         FirestoreKeys.memberRole: role.value,
+        'updatedAt': _now,
       });
     } catch (e) {
       rethrow;

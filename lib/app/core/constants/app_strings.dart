@@ -58,7 +58,6 @@ class AppStrings {
   
   // Mensagens de erro
   static const String userNotFoundErrorMessage = 'Usuário não encontrado';
-  static const String barNotFoundErrorMessage = 'Bar não encontrado';
   static const String loadEventsErrorMessage = 'Erro ao carregar eventos';
   static const String deleteEventErrorMessage = 'Erro ao excluir evento';
   static const String newEventTooltip = 'Novo evento';

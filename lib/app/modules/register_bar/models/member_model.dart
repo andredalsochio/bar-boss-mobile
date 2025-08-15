@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 
 /// Enum para os tipos de papel/função de um membro no bar
 enum MemberRole {

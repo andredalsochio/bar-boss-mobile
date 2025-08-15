@@ -1,0 +1,69 @@
+# Regras de lint customizadas para Bar Boss
+# Este arquivo contém regras específicas do projeto para garantir
+# o uso correto de FSKeys e padrões de repositório
+
+analyzer:
+  plugins:
+    - custom_lint
+
+custom_lint:
+  rules:
+    # Proibir uso direto de collection() sem FSKeys
+    - avoid_direct_collection_access:
+        severity: error
+        description: "Use FSKeys.* para referenciar coleções do Firestore"
+        patterns:
+          - "collection\\('(?!FSKeys).*'\\)"
+          - "collection\\(\"(?!FSKeys).*\"\\)"
+        exclude:
+          - "test/**"
+          - "**/*_test.dart"
+    
+    # Proibir uso de .add() em repositórios
+    - avoid_add_in_repositories:
+        severity: error
+        description: "Use .doc().set() ou métodos específicos do repositório ao invés de .add()"
+        patterns:
+          - "\\.add\\("
+        include:
+          - "lib/app/data/**/*repository*.dart"
+        exclude:
+          - "test/**"
+          - "**/*_test.dart"
+    
+    # Exigir uso de FSKeys em repositórios
+    - require_fskeys_in_repositories:
+        severity: warning
+        description: "Repositórios devem usar FSKeys para consistência"
+        patterns:
+          - "collection\\('(?!FSKeys).*'\\)"
+        include:
+          - "lib/app/data/**/*repository*.dart"
+        exclude:
+          - "test/**"
+          - "**/*_test.dart"
+
+# Configurações adicionais para análise estática
+linter:
+  rules:
+    # Regras padrão do Flutter
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    - avoid_print
+    - avoid_unnecessary_containers
+    - sized_box_for_whitespace
+    - use_key_in_widget_constructors
+    
+    # Regras específicas para Firestore
+    - avoid_catches_without_on_clauses
+    - avoid_catching_errors
+    - prefer_typing_uninitialized_variables
+    
+    # Regras de segurança
+    - avoid_web_libraries_in_flutter
+    - no_logic_in_create_state
+    
+    # Regras de performance
+    - prefer_const_declarations
+    - unnecessary_const
+    - unnecessary_new

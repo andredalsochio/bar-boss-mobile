@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 
 /// Modelo de dados para usuários no novo sistema multi-bar/multi-usuário
 class UserModel {
@@ -91,7 +91,7 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, email: $email, displayName: $displayName, currentBarId: $currentBarId)';
+    return 'UserModel(uid: $uid, email: ***@***.com, displayName: $displayName, currentBarId: $currentBarId)';
   }
 
   @override

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 import 'package:bar_boss_mobile/app/data/adapters/bar_adapter.dart';
 
 /// Implementação Firebase da interface BarRepositoryDomain

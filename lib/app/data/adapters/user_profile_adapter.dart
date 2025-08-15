@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 
 /// Adapter para converter entre DocumentSnapshot do Firestore e UserProfile de domínio
 class UserProfileAdapter {

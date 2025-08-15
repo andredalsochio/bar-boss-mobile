@@ -1,55 +1,103 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regras para a coleção de usuários
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+  // Funções de validação
+  function isBarMember(barId, uid) {
+    return exists(/databases/$(database)/documents/bars/$(barId)/members/$(uid));
+  }
+
+  function isBarOwner(barId, uid) {
+    return exists(/databases/$(database)/documents/bars/$(barId)/members/$(uid)) &&
+           get(/databases/$(database)/documents/bars/$(barId)/members/$(uid)).data.role == 'OWNER';
+  }
+
+  function isAuthenticated() {
+    return request.auth != null;
+  }
+
+  function isOwner(uid) {
+    return request.auth.uid == uid;
+  }
+
+  function validateUser(data) {
+    return data.keys().hasAll(['uid']) &&
+      data.keys().hasAll(['email', 'displayName', 'createdAt']) &&
+      data.displayName is string && displayName.size() >= 1 &&
+      data.providers is list;
+  }
+
+  function validateBar(data) {
+    return data.keys().hasAll(['uid']) &&
+      data.keys().hasAll(['name', 'cnpj', 'responsibleName', 'contactEmail', 'contactPhone', 'address', 'createdAt', 'createdByUid', 'primaryOwnerUid']) &&
+      data.name is string && name.size() >= 1 &&
+      data.cnpj is string &&
+      data.responsibleName is string && responsibleName.size() >= 1 &&
+      data.contactPhone is string &&
+      data.address is string && address.size() > 0 &&
+      data.address is map &&
+      data.profile is map &&
+      data.status in ['active', 'inactive', 'suspended'] &&
+      data.status in ['ACTIVE', 'INACTIVE', 'PENDING'];
+  }
+
+  function validateMember(data) {
+    return data.keys().hasAll(['uid']) &&
+      data.keys().hasAll(['uid', 'role', 'createdAt']) &&
+      data.role in ['OWNER', 'ADMIN', 'EDITOR'];
+  }
+
+  function validateEvent(data) {
+    return data.keys().hasAll(['uid']) &&
+      data.keys().hasAll(['barId', 'title', 'startAt', 'createdAt', 'createdByUid']) &&
+      data.title is string && title.size() >= 1 &&
+      data.attractions is list &&
+      data.published is bool &&
+      (!('endAt' in data) || data.endAt >= data.startAt) &&
+      data.published is bool;
+  }
+
+  function validateCnpj_registry(data) {
+    return data.keys().hasAll(['uid']) &&
+      data.keys().hasAll(['cnpj', 'barId', 'createdAt']) &&
+      data.cnpj is string;
+  }
+
+  // Coleção users
+  match /users/{uid} {
+    allow read, write: if isAuthenticated() && isOwner(uid) && validateUser(request.resource.data);
+  }
+
+  // Coleção bars
+  match /bars/{barId} {
+    allow read: if isAuthenticated() && isBarMember(barId, request.auth.uid);
+    allow create: if isAuthenticated() && validateBar(request.resource.data);
+    allow update: if isAuthenticated() && isBarMember(barId, request.auth.uid) && validateBar(request.resource.data);
+    allow delete: if isAuthenticated() && isBarOwner(barId, request.auth.uid);
+
+    // Subcoleção members
+    match /members/{memberId} {
+      allow read: if isAuthenticated() && isBarMember(barId, request.auth.uid);
+      allow create: if isAuthenticated() && isBarOwner(barId, request.auth.uid) && validateMember(request.resource.data);
+      allow update: if isAuthenticated() && isBarOwner(barId, request.auth.uid) && validateMember(request.resource.data);
+      allow delete: if isAuthenticated() && isBarOwner(barId, request.auth.uid);
     }
-    
-    // Regras para a coleção de bares
-    match /bars/{barId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && 
-                   request.auth.uid == request.resource.data.createdByUid;
-      allow update: if request.auth != null && 
-                   (request.auth.uid == resource.data.createdByUid || 
-                    request.auth.uid == resource.data.primaryOwnerUid);
-      allow delete: if request.auth != null && 
-                   (request.auth.uid == resource.data.createdByUid || 
-                    request.auth.uid == resource.data.primaryOwnerUid);
-    }
-    
-    // Regras para a coleção de eventos
+
+    // Subcoleção events
     match /events/{eventId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && 
-                   request.auth.uid == resource.data.createdByUid;
-      allow delete: if request.auth != null && 
-                   request.auth.uid == resource.data.createdByUid;
+      allow read: if isAuthenticated() && isBarMember(barId, request.auth.uid);
+      allow create: if isAuthenticated() && isBarMember(barId, request.auth.uid) && validateEvent(request.resource.data);
+      allow update: if isAuthenticated() && isBarMember(barId, request.auth.uid) && validateEvent(request.resource.data);
+      allow delete: if isAuthenticated() && isBarMember(barId, request.auth.uid);
     }
-    
-    // Regras para subcoleções de eventos dentro de bares
-    match /bars/{barId}/events/{eventId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && 
-                   request.auth.uid == resource.data.createdByUid;
-      allow delete: if request.auth != null && 
-                   request.auth.uid == resource.data.createdByUid;
-    }
-    
-    // Regras para subcoleções de membros dentro de bares
-    match /bars/{barId}/members/{memberId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
-      allow update: if request.auth != null && request.auth.uid == resource.data.uid;
-      allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
-    }
-    
-    // Regras para collectionGroup de membros
-    match /{path=**}/members/{memberId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
-    }
+  }
+
+  // Coleção cnpj_registry (apenas escrita pelo app)
+  match /cnpj_registry/{cnpj} {
+    allow read: if false; // Nunca permitir leitura
+    allow write: if isAuthenticated(); // Apenas escrita autenticada
+  }
+
   }
 }

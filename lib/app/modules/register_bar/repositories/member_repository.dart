@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/member_model.dart';
 
 /// Repositório para gerenciar os membros dos bares no Firestore

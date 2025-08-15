@@ -1,4 +1,4 @@
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 
 /// Modelo de endereço do bar
 class BarAddress {
@@ -269,7 +269,7 @@ class BarModel {
 
   @override
   String toString() {
-    return 'BarModel(id: $id, name: $name, cnpj: $cnpj, status: $status)';
+    return 'BarModel(id: $id, name: $name, cnpj: ***.***.***-**, status: $status)';
   }
 
   @override

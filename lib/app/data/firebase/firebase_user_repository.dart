@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 import '../adapters/user_profile_adapter.dart';
 
 /// Implementação Firebase da interface UserRepository

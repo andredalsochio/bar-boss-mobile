@@ -1,4 +1,4 @@
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 
 /// Entidade de domínio para o perfil do usuário
 class UserProfile {

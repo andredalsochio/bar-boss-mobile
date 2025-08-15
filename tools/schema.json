@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bar Boss Firestore Schema",
+  "description": "Schema definition for Bar Boss Firestore collections",
+  "version": "1.0.0",
+  "collections": {
+    "users": {
+      "path": "users/{uid}",
+      "description": "User profile documents",
+      "required": ["email", "displayName", "createdAt"],
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "User display name"
+        },
+        "photoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "User profile photo URL"
+        },
+        "providers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["google.com", "apple.com", "facebook.com", "password"]
+          },
+          "description": "Authentication providers used"
+        },
+        "currentBarId": {
+          "type": "string",
+          "description": "ID of the current active bar"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "Account creation timestamp"
+        },
+        "lastLoginAt": {
+          "type": "timestamp",
+          "description": "Last login timestamp"
+        }
+      }
+    },
+    "bars": {
+      "path": "bars/{barId}",
+      "description": "Bar establishment documents",
+      "required": ["name", "cnpj", "responsibleName", "contactEmail", "contactPhone", "address", "createdAt", "createdByUid", "primaryOwnerUid"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Bar name"
+        },
+        "cnpj": {
+          "type": "string",
+          "pattern": "^\\d{14}$",
+          "description": "CNPJ (14 digits only)"
+        },
+        "responsibleName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of responsible person"
+        },
+        "contactEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email"
+        },
+        "contactPhone": {
+          "type": "string",
+          "pattern": "^\\d{10,11}$",
+          "description": "Contact phone (10-11 digits)"
+        },
+        "address": {
+          "type": "object",
+          "required": ["cep", "street", "number", "state", "city"],
+          "properties": {
+            "cep": {
+              "type": "string",
+              "pattern": "^\\d{8}$",
+              "description": "CEP (8 digits)"
+            },
+            "street": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Street name"
+            },
+            "number": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Street number"
+            },
+            "complement": {
+              "type": "string",
+              "description": "Address complement"
+            },
+            "state": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "description": "State code (2 letters)"
+            },
+            "city": {
+              "type": "string",
+              "minLength": 1,
+              "description": "City name"
+            }
+          }
+        },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "contactsComplete": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether contacts step is complete"
+            },
+            "addressComplete": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether address step is complete"
+            }
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive", "suspended"],
+          "default": "active",
+          "description": "Bar status"
+        },
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Bar logo URL"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "description": "Last update timestamp"
+        },
+        "createdByUid": {
+          "type": "string",
+          "description": "UID of user who created the bar"
+        },
+        "primaryOwnerUid": {
+          "type": "string",
+          "description": "UID of primary owner"
+        }
+      }
+    },
+    "members": {
+      "path": "bars/{barId}/members/{uid}",
+      "description": "Bar member documents",
+      "required": ["uid", "role", "createdAt"],
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "User ID"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["OWNER", "ADMIN", "EDITOR"],
+          "description": "Member role"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "Membership creation timestamp"
+        },
+        "invitedByUid": {
+          "type": "string",
+          "description": "UID of user who invited this member"
+        }
+      }
+    },
+    "events": {
+      "path": "bars/{barId}/events/{eventId}",
+      "description": "Event documents",
+      "required": ["barId", "title", "startAt", "createdAt", "createdByUid"],
+      "properties": {
+        "barId": {
+          "type": "string",
+          "description": "ID of the bar hosting the event"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Event title"
+        },
+        "startAt": {
+          "type": "timestamp",
+          "description": "Event start timestamp"
+        },
+        "endAt": {
+          "type": "timestamp",
+          "description": "Event end timestamp (optional)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Event description"
+        },
+        "attractions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of attractions/performers"
+        },
+        "coverImageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Event cover image URL"
+        },
+        "published": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether event is published"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "description": "Last update timestamp"
+        },
+        "createdByUid": {
+          "type": "string",
+          "description": "UID of user who created the event"
+        },
+        "updatedByUid": {
+          "type": "string",
+          "description": "UID of user who last updated the event"
+        }
+      },
+      "customValidations": {
+        "endAtAfterStartAt": {
+          "description": "endAt must be >= startAt when present",
+          "condition": "endAt >= startAt"
+        }
+      }
+    },
+    "cnpj_registry": {
+      "path": "cnpj_registry/{cnpj}",
+      "description": "CNPJ registry for uniqueness enforcement",
+      "required": ["cnpj", "barId", "createdAt"],
+      "properties": {
+        "cnpj": {
+          "type": "string",
+          "pattern": "^\\d{14}$",
+          "description": "CNPJ (14 digits only)"
+        },
+        "barId": {
+          "type": "string",
+          "description": "Associated bar ID"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "Registration timestamp"
+        }
+      }
+    }
+  },
+  "types": {
+    "timestamp": {
+      "description": "Firestore Timestamp object",
+      "validation": "instanceof Timestamp"
+    }
+  },
+  "security": {
+    "rules": {
+      "users": {
+        "read": "request.auth != null && request.auth.uid == resource.id",
+        "write": "request.auth != null && request.auth.uid == resource.id"
+      },
+      "bars": {
+        "read": "request.auth != null && exists(/databases/$(database)/documents/bars/$(resource.id)/members/$(request.auth.uid))",
+        "write": "request.auth != null && exists(/databases/$(database)/documents/bars/$(resource.id)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/bars/$(resource.id)/members/$(request.auth.uid)).data.role in ['OWNER', 'ADMIN']"
+      },
+      "members": {
+        "read": "request.auth != null && exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid))",
+        "write": "request.auth != null && exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid)).data.role in ['OWNER', 'ADMIN']"
+      },
+      "events": {
+        "read": "request.auth != null && (resource.data.published == true || exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid)))",
+        "write": "request.auth != null && exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid))"
+      },
+      "cnpj_registry": {
+        "read": "false",
+        "write": "request.auth != null"
+      }
+    }
+  }
+}

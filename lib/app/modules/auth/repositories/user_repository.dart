@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 import 'package:bar_boss_mobile/app/modules/auth/models/user_model.dart';
 
 /// Repositório para gerenciar os dados dos usuários no Firestore

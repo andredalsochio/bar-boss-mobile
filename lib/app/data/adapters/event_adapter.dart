@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 
 /// Adaptador para converter entre EventModel e tipos do Firestore
 class EventAdapter {

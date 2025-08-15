@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 
 /// Modelo de dados para registro de CNPJ (/cnpj_registry/{cnpj})
 /// Usado para evitar duplicação de CNPJs entre diferentes bares
@@ -63,7 +63,7 @@ class CnpjRegistryModel {
 
   @override
   String toString() {
-    return 'CnpjRegistryModel(cnpj: $cnpj, barId: $barId, reservedByUid: $reservedByUid)';
+    return 'CnpjRegistryModel(cnpj: ***.***.***-**, barId: $barId, reservedByUid: $reservedByUid)';
   }
 
   @override

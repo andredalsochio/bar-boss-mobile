@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 import 'package:bar_boss_mobile/app/data/adapters/event_adapter.dart';
 
 /// Repositório para gerenciar os dados dos eventos no Firestore

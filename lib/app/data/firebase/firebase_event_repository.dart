@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/event_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
-import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 import 'package:bar_boss_mobile/app/data/adapters/event_adapter.dart';
 
 /// Implementação Firebase da interface EventRepositoryDomain

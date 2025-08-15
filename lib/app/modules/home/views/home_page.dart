@@ -35,7 +35,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadUpcomingEvents() async {
-    await _eventsViewModel.loadUpcomingEvents(context);
+    await _eventsViewModel.loadUpcomingEvents();
   }
 
   @override
@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => _authViewModel.logout(context),
+            onPressed: () => _authViewModel.logout(),
             tooltip: 'Sair',
           ),
         ],
@@ -177,26 +177,9 @@ class _HomePageState extends State<HomePage> {
       event: event,
       onViewDetails: () => context.pushNamed('eventDetails', pathParameters: {'id': event.id}),
       onEdit: () => context.pushNamed('eventEdit', pathParameters: {'id': event.id}),
-      onViewVipList: event.allowVipAccess
-          ? () => _showVipRequestsDialog(event)
-          : null,
+
     );
   }
 
-  Future<void> _showVipRequestsDialog(EventModel event) async {
-    // Implementação futura para exibir solicitações VIP
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppStrings.vipRequestsLabel),
-        content: const Text('Funcionalidade em desenvolvimento'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppStrings.cancelButton),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

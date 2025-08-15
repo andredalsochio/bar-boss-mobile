@@ -44,7 +44,6 @@ class AppColors {
   static const Color transparent = Color(0x00000000);
   
   // Cores de indicadores
-  static const Color vipIndicator = Color(0xFFFFD700); // Dourado para VIP
   static const Color promotionIndicator = Color(0xFF9C27B0); // Roxo para promoções
   
   // Cores de redes sociais

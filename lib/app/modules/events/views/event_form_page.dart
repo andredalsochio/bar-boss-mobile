@@ -97,9 +97,10 @@ class _EventFormPageState extends State<EventFormPage> {
       },
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
+      final contextForTime = context;
       final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
+        context: contextForTime,
         initialTime: TimeOfDay.fromDateTime(_viewModel.eventDate),
         builder: (context, child) {
           return Theme(
@@ -254,9 +255,7 @@ class _EventFormPageState extends State<EventFormPage> {
                     _buildPromotionsSection(context, viewModel),
                     const SizedBox(height: AppSizes.spacingLarge),
 
-                    // Acesso VIP
-                    _buildVipAccessSection(context, viewModel),
-                    const SizedBox(height: AppSizes.spacingLarge),
+
 
                     // Mensagem de erro
                     if (viewModel.state == EventsState.error && viewModel.errorMessage != null)
@@ -484,24 +483,6 @@ class _EventFormPageState extends State<EventFormPage> {
     );
   }
 
-  Widget _buildVipAccessSection(BuildContext context, EventsViewModel viewModel) {
-    return Row(
-      children: [
-        Checkbox(
-          value: viewModel.allowVipAccess,
-          onChanged: (value) => viewModel.setAllowVipAccess(value ?? false),
-          activeColor: AppColors.primary,
-        ),
-        const SizedBox(width: AppSizes.spacingSmall),
-        Text(
-          AppStrings.allowVipAccessLabel,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: AppSizes.fontSizeMedium,
-          ),
-        ),
-      ],
-    );
-  }
+
 }
 // Remover imports não utilizados se necessário, baseado na análise.

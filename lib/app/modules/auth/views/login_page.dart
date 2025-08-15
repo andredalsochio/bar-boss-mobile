@@ -47,7 +47,6 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final authViewModel = context.read<AuthViewModel>();
       await authViewModel.loginWithEmailAndPassword(
-        context,
         _emailController.text.trim(),
         _passwordController.text,
       );
@@ -78,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithGoogle(context);
+      await authViewModel.loginWithGoogle();
 
       if (!mounted) return;
 
@@ -106,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithApple(context);
+      await authViewModel.loginWithApple();
 
       if (!mounted) return;
 
@@ -134,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithFacebook(context);
+      await authViewModel.loginWithFacebook();
 
       if (!mounted) return;
 

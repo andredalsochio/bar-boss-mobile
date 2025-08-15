@@ -10,7 +10,7 @@ class EventCardWidget extends StatelessWidget {
   final EventModel event;
   final VoidCallback? onViewDetails;
   final VoidCallback? onEdit;
-  final VoidCallback? onViewVipList;
+
   final VoidCallback? onTap;
   final bool showActions;
   
@@ -19,16 +19,16 @@ class EventCardWidget extends StatelessWidget {
     required this.event,
     this.onViewDetails,
     this.onEdit,
-    this.onViewVipList,
+
     this.onTap,
     this.showActions = true,
   }) : super(key: key);
   
   @override
   Widget build(BuildContext context) {
-    final isToday = _isToday(event.date);
+    final isToday = _isToday(event.startAt);
     final dateFormat = DateFormat('HH:mm');
-    final formattedTime = dateFormat.format(event.date);
+    final formattedTime = dateFormat.format(event.startAt);
     
     return GestureDetector(
       onTap: onTap,
@@ -59,8 +59,8 @@ class EventCardWidget extends StatelessWidget {
               children: [
                 Text(
                   isToday
-                      ? 'Hoje - ${_formatDateWithWeekday(event.date)}'
-                      : _formatDateWithWeekday(event.date),
+                      ? 'Hoje - ${_formatDateWithWeekday(event.startAt)}'
+                      : _formatDateWithWeekday(event.startAt),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -84,25 +84,19 @@ class EventCardWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Atrações
-                if (event.attractions.isNotEmpty) ..._buildAttractions(),
+                if (event.attractions?.isNotEmpty == true) ..._buildAttractions(),
                 
                 // Indicadores
                 Row(
                   children: [
-                    if (event.promotionDetails?.isNotEmpty == true)
+                    if (event.description?.isNotEmpty == true)
                       _buildIndicator(
                         Icons.local_offer,
                         AppStrings.promotionsAvailable,
                         AppColors.success,
                       ),
-                    if (event.promotionDetails?.isNotEmpty == true && event.allowVipAccess)
-                      const SizedBox(width: AppSizes.spacing8),
-                    if (event.allowVipAccess)
-                      _buildIndicator(
-                        Icons.star,
-                        AppStrings.vipAccessAvailable,
-                        AppColors.warning,
-                      ),
+
+
                   ],
                 ),
                 
@@ -121,11 +115,7 @@ class EventCardWidget extends StatelessWidget {
                         Icons.edit,
                         onEdit,
                       ),
-                      _buildActionButton(
-                        AppStrings.viewVipListButton,
-                        Icons.people,
-                        onViewVipList,
-                      ),
+
                     ],
                   ),
                 ],
@@ -184,7 +174,7 @@ class EventCardWidget extends StatelessWidget {
   
   List<Widget> _buildAttractions() {
     return [
-      ...event.attractions.map((attraction) => Padding(
+      ...event.attractions?.map((attraction) => Padding(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
         child: Text(
           attraction,
@@ -196,7 +186,7 @@ class EventCardWidget extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-      )),
+      )) ?? [],
       const SizedBox(height: AppSizes.spacing8),
     ];
   }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
-import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/event_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
-import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository.dart';
-import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
 
 /// Estados possíveis da operação de eventos
 enum EventsState { initial, loading, success, error }
@@ -12,6 +12,7 @@ enum EventsState { initial, loading, success, error }
 class EventsViewModel extends ChangeNotifier {
   final EventRepository _eventRepository;
   final BarRepository _barRepository;
+  final AuthRepository _authRepository;
 
   EventsState _state = EventsState.initial;
   String? _errorMessage;
@@ -23,7 +24,7 @@ class EventsViewModel extends ChangeNotifier {
   List<String> _attractions = [''];
   List<String> _promotionImages = [];
   String _promotionDetails = '';
-  bool _allowVipAccess = false;
+
 
   // Lista de eventos
   List<EventModel> _events = [];
@@ -36,8 +37,10 @@ class EventsViewModel extends ChangeNotifier {
   EventsViewModel({
     required EventRepository eventRepository,
     required BarRepository barRepository,
+    required AuthRepository authRepository,
   }) : _eventRepository = eventRepository,
-       _barRepository = barRepository;
+       _barRepository = barRepository,
+       _authRepository = authRepository;
 
   /// Estado atual da operação
   EventsState get state => _state;
@@ -63,8 +66,7 @@ class EventsViewModel extends ChangeNotifier {
   /// Detalhes da promoção
   String get promotionDetails => _promotionDetails;
 
-  /// Permite acesso VIP
-  bool get allowVipAccess => _allowVipAccess;
+
 
   /// Lista de todos os eventos
   List<EventModel> get events => _events;
@@ -92,14 +94,14 @@ class EventsViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      final userId = AuthService.currentUserId;
-      if (userId == null) {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
         _setError(AppStrings.userNotLoggedInErrorMessage);
         return;
       }
 
-      final bar = await _barRepository.getBarByEmail(
-        AuthService.currentUserEmail!,
+      final bar = await _barRepository.getBarByContactEmail(
+        currentUser.email!,
       );
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
@@ -124,7 +126,7 @@ class EventsViewModel extends ChangeNotifier {
     _attractions = [''];
     _promotionImages = [];
     _promotionDetails = '';
-    _allowVipAccess = false;
+
 
     _validateDate();
     _validateAttractions();
@@ -138,6 +140,20 @@ class EventsViewModel extends ChangeNotifier {
     _clearError();
 
     try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
+        _setError(AppStrings.userNotLoggedInErrorMessage);
+        return;
+      }
+
+      final bar = await _barRepository.getBarByContactEmail(
+        currentUser.email!,
+      );
+      if (bar == null) {
+        _setError(AppStrings.barNotFoundErrorMessage);
+        return;
+      }
+
       final event = await _eventRepository.getEventById(eventId);
       if (event == null) {
         _setError(AppStrings.eventNotFoundErrorMessage);
@@ -145,11 +161,9 @@ class EventsViewModel extends ChangeNotifier {
       }
 
       _currentEvent = event;
-      _eventDate = event.date;
-      _attractions = List<String>.from(event.attractions);
-      _promotionImages = List<String>.from(event.promotionImages ?? []);
-      _promotionDetails = event.promotionDetails ?? '';
-      _allowVipAccess = event.allowVipAccess;
+      _eventDate = event.startAt;
+      _attractions = List<String>.from(event.attractions ?? []);
+  
 
       _validateDate();
       _validateAttractions();
@@ -217,11 +231,7 @@ class EventsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Define se permite acesso VIP
-  void setAllowVipAccess(bool allow) {
-    _allowVipAccess = allow;
-    notifyListeners();
-  }
+
 
   /// Valida a data do evento
   void _validateDate() {
@@ -248,14 +258,14 @@ class EventsViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      final userId = AuthService.currentUserId;
-      if (userId == null) {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
         _setError(AppStrings.userNotLoggedInErrorMessage);
         return;
       }
 
-      final bar = await _barRepository.getBarByEmail(
-        AuthService.currentUserEmail!,
+      final bar = await _barRepository.getBarByContactEmail(
+        currentUser.email!,
       );
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
@@ -271,13 +281,15 @@ class EventsViewModel extends ChangeNotifier {
         final newEvent = EventModel(
           id: '',
           barId: bar.id,
-          date: _eventDate,
+          title: filteredAttractions.isNotEmpty ? filteredAttractions.first : 'Evento',
+          description: '',
+          startAt: _eventDate,
+          endAt: _eventDate.add(const Duration(hours: 4)),
           attractions: filteredAttractions,
-          promotionImages:
-              _promotionImages.isNotEmpty ? _promotionImages : null,
-          promotionDetails:
-              _promotionDetails.isNotEmpty ? _promotionDetails : null,
-          allowVipAccess: _allowVipAccess,
+          coverImageUrl: '',
+          published: false,
+          createdByUid: '',
+          updatedByUid: '',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -286,13 +298,9 @@ class EventsViewModel extends ChangeNotifier {
       } else {
         // Atualiza o evento existente
         final updatedEvent = _currentEvent!.copyWith(
-          date: _eventDate,
+          startAt: _eventDate,
+          endAt: _eventDate.add(const Duration(hours: 4)),
           attractions: filteredAttractions,
-          promotionImages:
-              _promotionImages.isNotEmpty ? _promotionImages : null,
-          promotionDetails:
-              _promotionDetails.isNotEmpty ? _promotionDetails : null,
-          allowVipAccess: _allowVipAccess,
           updatedAt: DateTime.now(),
         );
 
@@ -312,24 +320,24 @@ class EventsViewModel extends ChangeNotifier {
   }
 
   /// Carrega os próximos eventos
-  Future<void> loadUpcomingEvents(BuildContext context) async {
+  Future<void> loadUpcomingEvents() async {
     _setLoading(true);
     _clearError();
 
     try {
-      final user = AuthService.getCurrentUser(context);
-      if (user == null) {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
         _setError(AppStrings.userNotFoundErrorMessage);
         return;
       }
 
       // Busca o bar do usuário pelo e-mail (compatível com cadastro atual)
-      final email = user.email;
+      final email = currentUser.email;
       if (email == null || email.isEmpty) {
         _setError(AppStrings.userNotFoundErrorMessage);
         return;
       }
-      final bar = await _barRepository.getBarByEmail(email);
+      final bar = await _barRepository.getBarByContactEmail(email);
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;
@@ -339,8 +347,8 @@ class EventsViewModel extends ChangeNotifier {
       final now = DateTime.now();
       final allEvents = await _eventRepository.getEventsByBarId(bar.id);
       _upcomingEvents =
-          allEvents.where((event) => event.date.isAfter(now)).toList()
-            ..sort((a, b) => a.date.compareTo(b.date));
+          allEvents.where((event) => event.startAt.isAfter(now)).toList()
+            ..sort((a, b) => a.startAt.compareTo(b.startAt));
 
       _setState(EventsState.success);
     } catch (e) {

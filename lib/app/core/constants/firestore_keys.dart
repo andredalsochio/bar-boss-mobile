@@ -1,63 +1,108 @@
-/// Classe que contém as chaves utilizadas no Firestore
+/// Classe que contém as chaves utilizadas no Firestore para o modelo multi-bar/multi-usuário
 class FirestoreKeys {
   // Collections
+  static const String usersCollection = 'users';
   static const String barsCollection = 'bars';
-  static const String eventsCollection = 'events';
-  static const String vipRequestsCollection = 'vip_requests';
+  static const String membersSubcollection = 'members';
+  static const String eventsSubcollection = 'events';
+  static const String cnpjRegistryCollection = 'cnpj_registry';
   
-  // Bar document fields
-  static const String barId = 'id';
-  static const String barEmail = 'email';
-  static const String barCnpj = 'cnpj';
+  // User document fields (/users/{uid})
+  static const String userEmail = 'email';
+  static const String userDisplayName = 'displayName';
+  static const String userPhotoUrl = 'photoUrl';
+  static const String userProviders = 'providers';
+  static const String userCurrentBarId = 'currentBarId';
+  static const String userCreatedAt = 'createdAt';
+  static const String userLastLoginAt = 'lastLoginAt';
+  
+  // Bar document fields (/bars/{barId})
   static const String barName = 'name';
-  static const String barResponsibleName = 'responsible_name';
-  static const String barPhone = 'phone';
-  static const String barCep = 'cep';
-  static const String barStreet = 'street';
-  static const String barNumber = 'number';
-  static const String barComplement = 'complement';
-  static const String barState = 'state';
-  static const String barCity = 'city';
-  static const String barUserId = 'user_id';
-  static const String barCreatedAt = 'created_at';
-  static const String barUpdatedAt = 'updated_at';
+  static const String barCnpj = 'cnpj';
+  static const String barResponsibleName = 'responsibleName';
+  static const String barContactEmail = 'contactEmail';
+  static const String barContactPhone = 'contactPhone';
+  static const String barAddress = 'address';
+  static const String barProfile = 'profile';
+  static const String barStatus = 'status';
+  static const String barLogoUrl = 'logoUrl';
+  static const String barCreatedAt = 'createdAt';
+  static const String barUpdatedAt = 'updatedAt';
+  static const String barCreatedByUid = 'createdByUid';
+  static const String barPrimaryOwnerUid = 'primaryOwnerUid';
   
-  // Event document fields
-  static const String eventId = 'id';
-  static const String eventBarId = 'bar_id';
-  static const String eventDate = 'date';
+  // Bar address fields (nested in address map)
+  static const String addressCep = 'cep';
+  static const String addressStreet = 'street';
+  static const String addressNumber = 'number';
+  static const String addressComplement = 'complement';
+  static const String addressState = 'state';
+  static const String addressCity = 'city';
+  
+  // Bar profile fields (nested in profile map)
+  static const String profileContactsComplete = 'contactsComplete';
+  static const String profileAddressComplete = 'addressComplete';
+  
+  // Member document fields (/bars/{barId}/members/{uid})
+  static const String memberUid = 'uid';
+  static const String memberRole = 'role';
+  static const String memberInvitedByUid = 'invitedByUid';
+  static const String memberCreatedAt = 'createdAt';
+  
+  // Event document fields (/bars/{barId}/events/{eventId})
+  static const String eventBarId = 'barId';
+  static const String eventTitle = 'title';
+  static const String eventStartAt = 'startAt';
+  static const String eventEndAt = 'endAt';
+  static const String eventDescription = 'description';
   static const String eventAttractions = 'attractions';
-  static const String eventPromotions = 'promotions';
-  static const String eventPromotionDetails = 'promotion_details';
-  static const String eventPromotionImages = 'promotion_images';
-  static const String eventAllowVipAccess = 'allow_vip_access';
-  static const String eventCreatedAt = 'created_at';
-  static const String eventUpdatedAt = 'updated_at';
+  static const String eventCoverImageUrl = 'coverImageUrl';
+  static const String eventPublished = 'published';
+  static const String eventCreatedAt = 'createdAt';
+  static const String eventUpdatedAt = 'updatedAt';
+  static const String eventCreatedByUid = 'createdByUid';
+  static const String eventUpdatedByUid = 'updatedByUid';
   
-  // VIP request document fields
-  static const String vipRequestId = 'id';
-  static const String vipRequestEventId = 'event_id';
-  static const String vipRequestBarId = 'bar_id';
-  static const String vipRequestUserName = 'user_name';
-  static const String vipRequestUserEmail = 'user_email';
-  static const String vipRequestUserPhone = 'user_phone';
-  static const String vipRequestStatus = 'status'; // pending, approved, rejected
-  static const String vipRequestCreatedAt = 'created_at';
-  static const String vipRequestUpdatedAt = 'updated_at';
+  // CNPJ Registry document fields (/cnpj_registry/{cnpj})
+  static const String cnpjRegistryBarId = 'barId';
+  static const String cnpjRegistryReservedByUid = 'reservedByUid';
+  static const String cnpjRegistryCreatedAt = 'createdAt';
   
   // Generic fields
-  static const String createdAt = 'created_at';
-  static const String updatedAt = 'updated_at';
+  static const String createdAt = 'createdAt';
+  static const String updatedAt = 'updatedAt';
   
-  // Aliases for event fields (for compatibility)
+  // Member roles
+  static const String roleOwner = 'OWNER';
+  static const String roleAdmin = 'ADMIN';
+  static const String roleEditor = 'EDITOR';
+  
+  // Bar status values
+  static const String statusActive = 'active';
+  static const String statusInactive = 'inactive';
+  static const String statusPending = 'pending';
+  
+  // Backward compatibility aliases (deprecated - will be removed)
+  @deprecated
+  static const String barId = 'id';
+  @deprecated
+  static const String barEmail = 'email';
+  @deprecated
+  static const String barPhone = 'phone';
+  @deprecated
+  static const String barCep = 'cep';
+  @deprecated
+  static const String barStreet = 'street';
+  @deprecated
+  static const String barNumber = 'number';
+  @deprecated
+  static const String barComplement = 'complement';
+  @deprecated
+  static const String barState = 'state';
+  @deprecated
+  static const String barCity = 'city';
+  @deprecated
+  static const String eventDate = 'date';
+  @deprecated
   static const String attractions = eventAttractions;
-  static const String promotionImages = eventPromotionImages;
-  static const String promotionDetails = eventPromotionDetails;
-  static const String allowVipAccess = eventAllowVipAccess;
-  
-  // Aliases for VIP request fields (for compatibility)
-  static const String userId = 'user_id';
-  static const String userName = vipRequestUserName;
-  static const String userEmail = vipRequestUserEmail;
-  static const String userPhone = vipRequestUserPhone;
 }

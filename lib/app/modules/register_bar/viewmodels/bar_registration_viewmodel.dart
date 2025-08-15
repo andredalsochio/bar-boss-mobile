@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:search_cep/search_cep.dart';
 
-import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
-import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
-import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
 
 /// Estados possíveis do cadastro de bar
 enum RegistrationState { initial, loading, success, error }
@@ -12,6 +11,7 @@ enum RegistrationState { initial, loading, success, error }
 /// ViewModel para o cadastro de bar
 class BarRegistrationViewModel extends ChangeNotifier {
   final BarRepository _barRepository;
+  final AuthRepository _authRepository;
 
   // Estado atual do cadastro
   RegistrationState _registrationState = RegistrationState.initial;
@@ -55,8 +55,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
   bool _isPasswordValid = false;
   bool _isConfirmPasswordValid = false;
 
-  BarRegistrationViewModel({required BarRepository barRepository})
-    : _barRepository = barRepository;
+  BarRegistrationViewModel({
+    required BarRepository barRepository,
+    required AuthRepository authRepository,
+  }) : _barRepository = barRepository,
+       _authRepository = authRepository;
 
   // Getters para o estado
   RegistrationState get registrationState => _registrationState;
@@ -348,52 +351,49 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      // Verifica se o e-mail já está em uso no Firebase Auth
-      final isEmailInUse = await AuthService.isEmailInUse(_email);
-      if (isEmailInUse) {
-        _setError(AppStrings.emailInUseErrorMessage);
-        return;
-      }
-
-      // Verifica se o CNPJ já está em uso no Firestore
-      final isCnpjInUse = await _barRepository.isCnpjInUse(_cnpj);
-      if (isCnpjInUse) {
-        _setError(AppStrings.cnpjInUseErrorMessage);
-        return;
-      }
-
       // Cria o usuário no Firebase Auth
-      final firstName = _responsibleName.split(' ').first;
-      final lastName =
-          _responsibleName.split(' ').length > 1
-              ? _responsibleName.split(' ').sublist(1).join(' ')
-              : '';
-
-      await AuthService.signUpWithEmailAndPassword(
+      final displayName = _responsibleName;
+      final authResult = await _authRepository.signUpWithEmail(
         _email,
         _password,
-        firstName,
-        lastName,
+        displayName: displayName,
       );
+
+      if (!authResult.isSuccess) {
+        _setError(authResult.errorMessage ?? 'Erro ao criar usuário');
+        return;
+      }
+
+      // Obtém o UID do usuário recém-criado
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
+        throw Exception('Erro ao obter ID do usuário');
+      }
 
       // Cria o bar no Firestore
       final bar = BarModel.empty().copyWith(
-        email: _email,
+        contactEmail: _email,
         cnpj: _cnpj,
         name: _name,
         responsibleName: _responsibleName,
-        phone: _phone,
-        cep: _cep,
-        street: _street,
-        number: _number,
-        complement: _complement,
-        state: _stateUf,
-        city: _city,
+        contactPhone: _phone,
+        address: BarAddress(
+          cep: _cep,
+          street: _street,
+          number: _number,
+          complement: _complement,
+          state: _stateUf,
+          city: _city,
+        ),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        createdByUid: currentUser.uid,
       );
 
-      await _barRepository.createBar(bar);
+      await _barRepository.createBarWithReservation(
+        bar: bar,
+        ownerUid: currentUser.uid,
+      );
 
       _setRegistrationState(RegistrationState.success);
     } catch (e) {

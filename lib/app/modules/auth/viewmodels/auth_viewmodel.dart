@@ -1,22 +1,28 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
-import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
-import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
+import 'package:bar_boss_mobile/app/domain/entities/auth_user.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
 
 /// Estados possíveis da autenticação
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
 /// ViewModel para a tela de login
 class AuthViewModel extends ChangeNotifier {
+  final AuthRepository _authRepository;
   final BarRepository _barRepository;
 
   AuthState _state = AuthState.initial;
   String? _errorMessage;
   bool _isLoading = false;
+  AuthUser? _currentUser;
 
-  AuthViewModel({required BarRepository barRepository})
-    : _barRepository = barRepository {
+  AuthViewModel({
+    required AuthRepository authRepository,
+    required BarRepository barRepository,
+  }) : _authRepository = authRepository,
+       _barRepository = barRepository {
     _checkInitialAuthState();
     _subscribeToAuthChanges();
   }
@@ -30,28 +36,31 @@ class AuthViewModel extends ChangeNotifier {
   /// Indica se está carregando
   bool get isLoading => _isLoading;
 
+  /// Usuário atual
+  AuthUser? get currentUser => _currentUser;
+
   /// Indica se o usuário está autenticado
-  bool isAuthenticated(BuildContext context) =>
-      AuthService.isAuthenticated(context);
+  bool get isAuthenticated => _currentUser != null;
 
   /// Retorna o ID do usuário atual
-  String? getUserId(BuildContext context) =>
-      AuthService.getCurrentUserId(context);
+  String? get userId => _currentUser?.uid;
 
   /// Retorna o e-mail do usuário atual
-  String? getUserEmail(BuildContext context) =>
-      AuthService.getCurrentUserEmail(context);
+  String? get userEmail => _currentUser?.email;
 
   /// Retorna o nome do usuário atual
-  String? getUserName(BuildContext context) =>
-      AuthService.getCurrentUserName(context);
+  String? get userName => _currentUser?.displayName;
 
   /// Verifica o estado inicial da autenticação
   Future<void> _checkInitialAuthState() async {
     _setLoading(true);
     try {
-      // Estado inicial será verificado na UI com context
-      _setState(AuthState.initial);
+      _currentUser = _authRepository.currentUser;
+      if (_currentUser != null) {
+        _setState(AuthState.authenticated);
+      } else {
+        _setState(AuthState.unauthenticated);
+      }
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -59,16 +68,16 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  StreamSubscription<dynamic>? _authSub;
+  StreamSubscription<AuthUser?>? _authSub;
 
   void _subscribeToAuthChanges() {
-    _authSub = AuthService.authStateChanges.listen((user) {
+    _authSub = _authRepository.authStateChanges().listen((user) {
+      _currentUser = user;
       if (user != null) {
-        _state = AuthState.authenticated;
+        _setState(AuthState.authenticated);
       } else {
-        _state = AuthState.unauthenticated;
+        _setState(AuthState.unauthenticated);
       }
-      notifyListeners();
     });
   }
 
@@ -80,15 +89,19 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Faz login com e-mail e senha
   Future<void> loginWithEmailAndPassword(
-    BuildContext context,
     String email,
     String password,
   ) async {
     try {
       _setLoading(true);
       _clearError();
-      await AuthService.signInWithEmailAndPassword(email, password);
-      _setState(AuthState.authenticated);
+      final result = await _authRepository.signInWithEmail(email, password);
+      if (result.isSuccess) {
+        _currentUser = result.user;
+        _setState(AuthState.authenticated);
+      } else {
+        _setError(result.errorMessage ?? 'Erro ao fazer login com e-mail.');
+      }
     } catch (e) {
       _setError('Erro ao fazer login com e-mail. Por favor, tente novamente.');
     } finally {
@@ -97,12 +110,17 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   /// Faz login com Google
-  Future<void> loginWithGoogle(BuildContext context) async {
+  Future<void> loginWithGoogle() async {
     try {
       _setLoading(true);
       _clearError();
-      await AuthService.signInWithGoogle();
-      _setState(AuthState.authenticated);
+      final result = await _authRepository.signInWithGoogle();
+      if (result.isSuccess) {
+        _currentUser = result.user;
+        _setState(AuthState.authenticated);
+      } else {
+        _setError(result.errorMessage ?? 'Erro ao fazer login com Google.');
+      }
     } catch (e) {
       _setError('Erro ao fazer login com Google. Por favor, tente novamente.');
     } finally {
@@ -111,12 +129,13 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   /// Faz logout
-  Future<void> logout(BuildContext context) async {
+  Future<void> logout() async {
     _setLoading(true);
     _clearError();
 
     try {
-      await AuthService.signOut(context);
+      await _authRepository.signOut();
+      _currentUser = null;
       _setState(AuthState.unauthenticated);
     } catch (e) {
       _setError(AppStrings.logoutErrorMessage);
@@ -126,20 +145,9 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  /// Faz logout (método alternativo com contexto)
-  Future<void> signOut(BuildContext context) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      await AuthService.signOut(context);
-      _setState(AuthState.unauthenticated);
-    } catch (e) {
-      _setError(AppStrings.logoutErrorMessage);
-      rethrow;
-    } finally {
-      _setLoading(false);
-    }
+  /// Faz logout (método alternativo)
+  Future<void> signOut() async {
+    await logout();
   }
 
   /// Envia e-mail de redefinição de senha
@@ -148,7 +156,7 @@ class AuthViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      await AuthService.sendPasswordResetEmail(email);
+      await _authRepository.sendPasswordResetEmail(email);
     } catch (e) {
       _setError(AppStrings.resetPasswordErrorMessage);
       rethrow;
@@ -158,14 +166,14 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   /// Verifica se o usuário tem um bar cadastrado
-  Future<bool> hasBarRegistered(BuildContext context) async {
-    final email = getUserEmail(context);
+  Future<bool> hasBarRegistered() async {
+    final email = userEmail;
     if (email?.isNotEmpty != true) {
       return false;
     }
 
     try {
-      final bar = await _barRepository.getBarByEmail(email!);
+      final bar = await _barRepository.getBarByContactEmail(email!);
       return bar != null;
     } catch (e) {
       debugPrint('Erro ao verificar bar: $e');
@@ -199,12 +207,17 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   /// Faz login com Apple
-  Future<void> loginWithApple(BuildContext context) async {
+  Future<void> loginWithApple() async {
     try {
       _setLoading(true);
       _clearError();
-      await AuthService.signInWithApple();
-      _setState(AuthState.authenticated);
+      final result = await _authRepository.signInWithApple();
+      if (result.isSuccess) {
+        _currentUser = result.user;
+        _setState(AuthState.authenticated);
+      } else {
+        _setError(result.errorMessage ?? 'Erro ao fazer login com Apple.');
+      }
     } catch (e) {
       _setError('Erro ao fazer login com Apple. Por favor, tente novamente.');
     } finally {
@@ -213,12 +226,17 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   /// Faz login com Facebook
-  Future<void> loginWithFacebook(BuildContext context) async {
+  Future<void> loginWithFacebook() async {
     try {
       _setLoading(true);
       _clearError();
-      await AuthService.signInWithFacebook();
-      _setState(AuthState.authenticated);
+      final result = await _authRepository.signInWithFacebook();
+      if (result.isSuccess) {
+        _currentUser = result.user;
+        _setState(AuthState.authenticated);
+      } else {
+        _setError(result.errorMessage ?? 'Erro ao fazer login com Facebook.');
+      }
     } catch (e) {
       _setError(
         'Erro ao fazer login com Facebook. Por favor, tente novamente.',

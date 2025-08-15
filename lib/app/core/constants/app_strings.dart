@@ -28,7 +28,7 @@ class AppStrings {
   static const String newEventButton = 'Novo evento';
   static const String viewDetailsButton = 'Ver detalhes';
   static const String editEventButton = 'Editar evento';
-  static const String viewVipListButton = 'Ver lista vip';
+
   
   // Campos de formulário
   static const String emailField = 'E-mail para acesso';
@@ -93,8 +93,6 @@ class AppStrings {
   static const String promotionDetailsLabel = 'Detalhes da promoção';
   static const String promotionDetailsHint = 'Descreva as promoções do evento...';
   static const String promotionImagesPlaceholder = 'Adicione até 3 imagens de promoção';
-  static const String allowVipAccessLabel = 'Permitir acesso VIP';
-  
   // Mensagens de erro
   static const String requiredField = 'Campo obrigatório';
   static const String requiredFieldError = 'Este campo é obrigatório';
@@ -127,14 +125,13 @@ class AppStrings {
   static const String eventDeletedSuccessMessage = 'Evento excluído com sucesso!';
   
   // Outros
-  static const String vipRequestsLabel = 'Solicitações Lista VIP';
   static const String nextEventLabel = 'Próximo evento';
   static const String manageScheduleLabel = 'Gerenciar agenda';
   static const String additionalAttractionLabel = '+ Atração adicional';
   static const String selectDayLabel = 'Selecionar dia';
   static const String charactersCountLabel = '%d/100 caracteres';
   static const String imagesAddedLabel = '%d/3 imagens adicionadas';
-  static const String vipAccessDescription = 'Ao permitir acessos vip, os seus clientes enviarão solicitações que precisam ser aprovadas.';
+
   static const String noEventsMessage = 'Nenhum evento encontrado';
   static const String createFirstEventMessage = 'Crie seu primeiro evento';
   static const String deleteEventConfirmationTitle = 'Excluir evento';
@@ -144,7 +141,7 @@ class AppStrings {
   static const String loadingMessage = 'Carregando...';
   static const String removeAttractionTooltip = 'Remover atração';
   static const String promotionsAvailable = 'Promoções disponíveis';
-  static const String vipAccessAvailable = 'Acesso VIP disponível';
+
   static const String logoutErrorMessage = 'Erro ao fazer logout';
   static const String resetPasswordErrorMessage = 'Erro ao enviar email de redefinição de senha';
   static const String loginErrorMessage = 'Erro ao fazer login';

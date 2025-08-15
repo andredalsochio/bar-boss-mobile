@@ -100,7 +100,7 @@ class _AppWidgetState extends State<AppWidget> {
   }
 
   String? _handleRedirect(BuildContext context, GoRouterState state) {
-    final isLoggedIn = _authViewModel.isAuthenticated(context);
+    final isLoggedIn = _authViewModel.isAuthenticated;
     final isLoggingIn = state.matchedLocation == AppRoutes.login;
     final isRegistering = state.matchedLocation.startsWith('/register');
 

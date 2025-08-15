@@ -7,13 +7,7 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'firebase_options.dart';
 
 import 'package:bar_boss_mobile/app/app_widget.dart';
-import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
-import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
-import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
-import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
-import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository.dart';
-import 'package:bar_boss_mobile/app/modules/events/repositories/vip_request_repository.dart';
-import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
+import 'package:bar_boss_mobile/app/core/di/dependency_injection.dart';
 
 void main() async {
   // Garante que os widgets sejam inicializados
@@ -31,35 +25,7 @@ void main() async {
   // Executa o aplicativo
   runApp(
     MultiProvider(
-      providers: [
-        // Serviços
-        Provider<AuthService>(create: (_) => AuthService()),
-
-        // Repositórios
-        Provider<BarRepository>(create: (_) => BarRepository()),
-        Provider<EventRepository>(create: (_) => EventRepository()),
-        Provider<VipRequestRepository>(create: (_) => VipRequestRepository()),
-
-        // ViewModels
-        ChangeNotifierProvider<AuthViewModel>(
-          create:
-              (context) =>
-                  AuthViewModel(barRepository: context.read<BarRepository>()),
-        ),
-        ChangeNotifierProvider<BarRegistrationViewModel>(
-          create:
-              (context) => BarRegistrationViewModel(
-                barRepository: context.read<BarRepository>(),
-              ),
-        ),
-        ChangeNotifierProvider<EventsViewModel>(
-          create:
-              (context) => EventsViewModel(
-                eventRepository: context.read<EventRepository>(),
-                barRepository: context.read<BarRepository>(),
-              ),
-        ),
-      ],
+      providers: DependencyInjection.providers,
       child: const AppWidget(),
     ),
   );
@@ -86,7 +52,7 @@ Future<void> _setupRemoteConfig() async {
 
   // Define valores padrão
   await remoteConfig.setDefaults({
-    'enable_vip_feature': true,
+
     'max_promotions_per_event': 3,
   });
 

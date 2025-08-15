@@ -4,6 +4,8 @@ import 'package:search_cep/search_cep.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
+import 'package:bar_boss_mobile/app/core/storage/draft_storage.dart';
+import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart' as LegacyBarRepo;
 
 /// Estados possíveis do cadastro de bar
 enum RegistrationState { initial, loading, success, error }
@@ -12,6 +14,8 @@ enum RegistrationState { initial, loading, success, error }
 class BarRegistrationViewModel extends ChangeNotifier {
   final BarRepository _barRepository;
   final AuthRepository _authRepository;
+  final LegacyBarRepo.BarRepository _legacyBarRepository;
+  final DraftStorage _draftStorage = DraftStorage();
 
   // Estado atual do cadastro
   RegistrationState _registrationState = RegistrationState.initial;
@@ -58,8 +62,10 @@ class BarRegistrationViewModel extends ChangeNotifier {
   BarRegistrationViewModel({
     required BarRepository barRepository,
     required AuthRepository authRepository,
+    required LegacyBarRepo.BarRepository legacyBarRepository,
   }) : _barRepository = barRepository,
-       _authRepository = authRepository;
+       _authRepository = authRepository,
+       _legacyBarRepository = legacyBarRepository;
 
   // Getters para o estado
   RegistrationState get registrationState => _registrationState;
@@ -120,30 +126,35 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setEmail(String value) {
     _email = value;
     _validateEmail();
+    _saveDraftStep1();
     notifyListeners();
   }
 
   void setCnpj(String value) {
     _cnpj = value;
     _validateCnpj();
+    _saveDraftStep1();
     notifyListeners();
   }
 
   void setName(String value) {
     _name = value;
     _validateName();
+    _saveDraftStep1();
     notifyListeners();
   }
 
   void setResponsibleName(String value) {
     _responsibleName = value;
     _validateResponsibleName();
+    _saveDraftStep1();
     notifyListeners();
   }
 
   void setPhone(String value) {
     _phone = value;
     _validatePhone();
+    _saveDraftStep1();
     notifyListeners();
   }
 
@@ -151,6 +162,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setCep(String value) {
     _cep = value;
     _validateCep();
+    _saveDraftStep2();
     notifyListeners();
 
     // Se o CEP for válido, busca o endereço
@@ -162,29 +174,34 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setStreet(String value) {
     _street = value;
     _validateStreet();
+    _saveDraftStep2();
     notifyListeners();
   }
 
   void setNumber(String value) {
     _number = value;
     _validateNumber();
+    _saveDraftStep2();
     notifyListeners();
   }
 
   void setComplement(String value) {
     _complement = value;
+    _saveDraftStep2();
     notifyListeners();
   }
 
   void setState(String value) {
     _stateUf = value;
     _validateState();
+    _saveDraftStep2();
     notifyListeners();
   }
 
   void setCity(String value) {
     _city = value;
     _validateCity();
+    _saveDraftStep2();
     notifyListeners();
   }
 
@@ -193,12 +210,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _password = value;
     _validatePassword();
     _validateConfirmPassword(); // Valida novamente a confirmação de senha
+    _saveDraftStep3();
     notifyListeners();
   }
 
   void setConfirmPassword(String value) {
     _confirmPassword = value;
     _validateConfirmPassword();
+    _saveDraftStep3();
     notifyListeners();
   }
 
@@ -395,6 +414,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
         ownerUid: currentUser.uid,
       );
 
+      // Limpa os rascunhos após sucesso
+      await clearDrafts();
+
       _setRegistrationState(RegistrationState.success);
     } catch (e) {
       _setError(e.toString());
@@ -425,6 +447,147 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+
+  // Métodos para salvar rascunhos
+   void _saveDraftStep1() {
+     DraftStorage.saveStep1Draft(
+       email: _email,
+       cnpj: _cnpj,
+       name: _name,
+       responsibleName: _responsibleName,
+       phone: _phone,
+     );
+   }
+
+  /// Salva o Passo 1 e atualiza a completude do perfil
+  Future<void> saveStep1(String barId) async {
+    try {
+      _setLoading(true);
+      _clearError();
+      
+      // Salva o rascunho
+      _saveDraftStep1();
+      
+      // Atualiza a completude do perfil
+      await _legacyBarRepository.updateBarFields(barId, {
+        'profile.contactsComplete': isStep1Valid,
+        'updatedAt': DateTime.now(),
+      });
+    } catch (e) {
+      _setError(e.toString());
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+ 
+   void _saveDraftStep2() {
+     DraftStorage.saveStep2Draft(
+       cep: _cep,
+       street: _street,
+       number: _number,
+       complement: _complement,
+       state: _stateUf,
+       city: _city,
+     );
+   }
+
+  /// Salva o Passo 2 e atualiza a completude do perfil
+  Future<void> saveStep2(String barId) async {
+    try {
+      _setLoading(true);
+      _clearError();
+      
+      // Salva o rascunho
+      _saveDraftStep2();
+      
+      // Atualiza a completude do perfil
+      await _legacyBarRepository.updateBarFields(barId, {
+        'profile.addressComplete': isStep2Valid,
+        'updatedAt': DateTime.now(),
+      });
+    } catch (e) {
+      _setError(e.toString());
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+ 
+   void _saveDraftStep3() {
+     // Senhas não são salvas em rascunho por questões de segurança
+     // O Step3 não possui persistência de rascunho
+   }
+
+  // Métodos para carregar rascunhos
+   Future<void> loadDrafts() async {
+     await _loadDraftStep1();
+     await _loadDraftStep2();
+     // Step3 não possui rascunho (senhas não são persistidas)
+     notifyListeners();
+   }
+ 
+   Future<void> _loadDraftStep1() async {
+     final draft = await DraftStorage.readStep1Draft();
+     if (draft != null) {
+       _email = draft['email'] ?? '';
+       _cnpj = draft['cnpj'] ?? '';
+       _name = draft['name'] ?? '';
+       _responsibleName = draft['responsibleName'] ?? '';
+       _phone = draft['phone'] ?? '';
+ 
+       // Valida os campos carregados
+       _validateEmail();
+       _validateCnpj();
+       _validateName();
+       _validateResponsibleName();
+       _validatePhone();
+     }
+   }
+ 
+   Future<void> _loadDraftStep2() async {
+     final draft = await DraftStorage.readStep2Draft();
+     if (draft != null) {
+       _cep = draft['cep'] ?? '';
+       _street = draft['street'] ?? '';
+       _number = draft['number'] ?? '';
+       _complement = draft['complement'] ?? '';
+       _stateUf = draft['state'] ?? '';
+       _city = draft['city'] ?? '';
+ 
+       // Valida os campos carregados
+       _validateCep();
+       _validateStreet();
+       _validateNumber();
+       _validateState();
+       _validateCity();
+     }
+   }
+ 
+   // Step3 não possui carregamento de rascunho
+   // Senhas não são persistidas por questões de segurança
+ 
+   // Limpa todos os rascunhos
+    Future<void> clearDrafts() async {
+      await DraftStorage.clearAllDrafts();
+    }
+
+    // Atualiza os campos de completude do perfil
+     Future<void> _updateProfileCompleteness(String barId) async {
+       final contactsComplete = isStep1Valid;
+       final addressComplete = isStep2Valid;
+
+       await _legacyBarRepository.updateBarFields(barId, {
+         'profile.contactsComplete': contactsComplete,
+         'profile.addressComplete': addressComplete,
+         'updatedAt': DateTime.now(),
+       });
+     }
+
+    // Método público para atualizar completude após edição de perfil
+    Future<void> updateProfileCompleteness(String barId) async {
+      await _updateProfileCompleteness(barId);
+    }
 
   // Reseta o ViewModel para o estado inicial
   void reset() {

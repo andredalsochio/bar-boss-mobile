@@ -173,8 +173,13 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     try {
-      final bar = await _barRepository.getBarByContactEmail(email!);
-      return bar != null;
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return false;
+      
+      final bars = await _barRepository.listBarsByMembership(
+        currentUser.uid,
+      );
+      return bars.isNotEmpty;
     } catch (e) {
       debugPrint('Erro ao verificar bar: $e');
       return false;

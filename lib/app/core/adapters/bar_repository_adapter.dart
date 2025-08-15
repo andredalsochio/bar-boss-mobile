@@ -74,4 +74,10 @@ class BarRepositoryAdapter implements BarRepository {
     // Retorna null por enquanto - deve ser refatorado para usar membership
     throw UnsupportedError('getBarByContactEmail deprecado. Use membership pattern.');
   }
+
+  @override
+  Future<List<BarModel>> listBarsByMembership(String uid) async {
+    // Converte o Stream para Future pegando o primeiro valor
+    return await _domainRepository.listMyBars(uid).first;
+  }
 }

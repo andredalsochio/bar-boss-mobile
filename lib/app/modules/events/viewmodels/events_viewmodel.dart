@@ -100,13 +100,15 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      final bar = await _barRepository.getBarByContactEmail(
-        currentUser.email!,
+      final bars = await _barRepository.listBarsByMembership(
+        currentUser.uid,
       );
-      if (bar == null) {
+      if (bars.isEmpty) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;
       }
+      
+      final bar = bars.first; // Assume que o usuário tem apenas um bar
 
       _events = await _eventRepository.getEventsByBarId(bar.id);
       _upcomingEvents = await _eventRepository.getUpcomingEventsByBarId(bar.id);
@@ -146,9 +148,15 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      final bar = await _barRepository.getBarByContactEmail(
-        currentUser.email!,
+      final bars = await _barRepository.listBarsByMembership(
+        currentUser.uid,
       );
+      if (bars.isEmpty) {
+        _setError(AppStrings.barNotFoundErrorMessage);
+        return;
+      }
+      
+      final bar = bars.first; // Assume que o usuário tem apenas um bar
       if (bar == null) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;
@@ -264,13 +272,15 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      final bar = await _barRepository.getBarByContactEmail(
-        currentUser.email!,
+      final bars = await _barRepository.listBarsByMembership(
+        currentUser.uid,
       );
-      if (bar == null) {
+      if (bars.isEmpty) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;
       }
+      
+      final bar = bars.first; // Assume que o usuário tem apenas um bar
 
       // Remove atrações vazias
       final filteredAttractions =
@@ -307,10 +317,16 @@ class EventsViewModel extends ChangeNotifier {
         await _eventRepository.updateEvent(updatedEvent);
       }
 
-      // Recarrega os eventos
-      await loadEvents();
-
+      // Define sucesso antes de recarregar eventos
       _setState(EventsState.success);
+      
+      // Recarrega os eventos em background (não afeta o estado de sucesso)
+      try {
+        await loadEvents();
+      } catch (e) {
+        // Log do erro mas não altera o estado de sucesso do salvamento
+        debugPrint('Erro ao recarregar eventos após salvar: $e');
+      }
     } catch (e) {
       _setError(AppStrings.saveEventErrorMessage);
       debugPrint('Erro ao salvar evento: $e');
@@ -331,17 +347,16 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      // Busca o bar do usuário pelo e-mail (compatível com cadastro atual)
-      final email = currentUser.email;
-      if (email == null || email.isEmpty) {
-        _setError(AppStrings.userNotFoundErrorMessage);
-        return;
-      }
-      final bar = await _barRepository.getBarByContactEmail(email);
-      if (bar == null) {
+      // Busca os bares do usuário usando membership
+      final bars = await _barRepository.listBarsByMembership(
+        currentUser.uid,
+      );
+      if (bars.isEmpty) {
         _setError(AppStrings.barNotFoundErrorMessage);
         return;
       }
+      
+      final bar = bars.first; // Assume que o usuário tem apenas um bar
 
       // Carrega eventos futuros
       final now = DateTime.now();

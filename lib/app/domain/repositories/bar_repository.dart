@@ -38,4 +38,7 @@ abstract class BarRepository {
 
   /// Obtém um bar pelo email de contato
   Future<BarModel?> getBarByContactEmail(String email);
+
+  /// Lista os bares em que o usuário é membro
+  Future<List<BarModel>> listBarsByMembership(String uid);
 }

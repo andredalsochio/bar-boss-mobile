@@ -12,7 +12,9 @@ import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/complete_profile_bottom_sheet.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
 
 /// Tela de formulário de evento (criar/editar)
 class EventFormPage extends StatefulWidget {
@@ -98,9 +100,8 @@ class _EventFormPageState extends State<EventFormPage> {
     );
 
     if (picked != null && mounted) {
-      final contextForTime = context;
       final TimeOfDay? pickedTime = await showTimePicker(
-        context: contextForTime,
+        context: context,
         initialTime: TimeOfDay.fromDateTime(_viewModel.eventDate),
         builder: (context, child) {
           return Theme(
@@ -143,6 +144,12 @@ class _EventFormPageState extends State<EventFormPage> {
 
       if (!mounted) return;
 
+      // Verificar se houve erro no ViewModel
+      if (_viewModel.state == EventsState.error) {
+        // O erro já é exibido pelo ErrorMessageWidget no build
+        return;
+      }
+
       Fluttertoast.showToast(
         msg: _isEditing
             ? AppStrings.eventUpdatedSuccessMessage
@@ -153,11 +160,39 @@ class _EventFormPageState extends State<EventFormPage> {
         textColor: AppColors.white,
       );
 
+      // Verificar se o perfil está incompleto após criar evento
+      if (!_isEditing && mounted) {
+        final homeViewModel = context.read<HomeViewModel>();
+        await homeViewModel.loadCurrentBar();
+        
+        if (!homeViewModel.isProfileComplete) {
+          await _showCompleteProfileBottomSheet(homeViewModel);
+        }
+      }
+
       if (!mounted) return;
       context.pop();
     } catch (e) {
       debugPrint('Erro ao salvar evento: $e');
+      
+      if (!mounted) return;
+      
+      Fluttertoast.showToast(
+        msg: AppStrings.saveEventErrorMessage,
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: AppColors.error,
+        textColor: AppColors.white,
+      );
     }
+  }
+
+  Future<void> _showCompleteProfileBottomSheet(HomeViewModel homeViewModel) async {
+    CompleteProfileBottomSheet.show(
+      context,
+      completedSteps: homeViewModel.completedSteps,
+      totalSteps: 2,
+    );
   }
 
   Future<void> _deleteEvent() async {

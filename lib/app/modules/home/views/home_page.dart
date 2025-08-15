@@ -10,9 +10,12 @@ import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/event_card_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/app_drawer.dart';
+import 'package:bar_boss_mobile/app/core/widgets/profile_complete_card_widget.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
+import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
 
 /// Tela inicial do aplicativo
 class HomePage extends StatefulWidget {
@@ -25,13 +28,22 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late final EventsViewModel _eventsViewModel;
   late final AuthViewModel _authViewModel;
+  late final HomeViewModel _homeViewModel;
 
   @override
   void initState() {
     super.initState();
     _eventsViewModel = context.read<EventsViewModel>();
     _authViewModel = context.read<AuthViewModel>();
-    _loadUpcomingEvents();
+    _homeViewModel = context.read<HomeViewModel>();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await Future.wait([
+      _eventsViewModel.loadUpcomingEvents(),
+      _homeViewModel.loadCurrentBar(),
+    ]);
   }
 
   Future<void> _loadUpcomingEvents() async {
@@ -53,8 +65,24 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+      drawer: const AppDrawer(),
       body: Column(
         children: [
+          // Card de completude do perfil
+          Consumer<HomeViewModel>(
+            builder: (context, homeViewModel, _) {
+              if (homeViewModel.shouldShowProfileCompleteCard) {
+                return ProfileCompleteCardWidget(
+                  completedSteps: homeViewModel.completedSteps,
+                  totalSteps: 2,
+                  onDismiss: () => homeViewModel.dismissProfileCompleteCard(),
+                  onComplete: () => context.pushNamed('barProfile'),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          
           // Botões de ação
           Padding(
             padding: const EdgeInsets.all(AppSizes.screenPadding),

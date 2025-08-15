@@ -38,12 +38,8 @@ class _Step1PageState extends State<Step1Page> {
     super.initState();
     _viewModel = context.read<BarRegistrationViewModel>();
 
-    // Inicializa os controladores com os valores do ViewModel
-    _emailController.text = _viewModel.email;
-    _cnpjController.text = _viewModel.cnpj;
-    _nameController.text = _viewModel.name;
-    _responsibleNameController.text = _viewModel.responsibleName;
-    _phoneController.text = _viewModel.phone;
+    // Carrega rascunhos salvos
+    _loadDrafts();
 
     // Adiciona listeners para atualizar o ViewModel quando os valores mudarem
     _emailController.addListener(_updateEmail);
@@ -51,6 +47,18 @@ class _Step1PageState extends State<Step1Page> {
     _nameController.addListener(_updateName);
     _responsibleNameController.addListener(_updateResponsibleName);
     _phoneController.addListener(_updatePhone);
+  }
+
+  /// Carrega rascunhos salvos e atualiza os controladores
+  Future<void> _loadDrafts() async {
+    await _viewModel.loadDrafts();
+    
+    // Atualiza os controladores com os valores carregados
+    _emailController.text = _viewModel.email;
+    _cnpjController.text = _viewModel.cnpj;
+    _nameController.text = _viewModel.name;
+    _responsibleNameController.text = _viewModel.responsibleName;
+    _phoneController.text = _viewModel.phone;
   }
 
   @override

@@ -24,6 +24,7 @@ import 'package:bar_boss_mobile/app/core/adapters/event_repository_adapter.dart'
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
 
 /// Configuração centralizada de injeção de dependências
 class DependencyInjection {
@@ -73,6 +74,7 @@ class DependencyInjection {
       create: (context) => BarRegistrationViewModel(
         barRepository: context.read<BarRepo.BarRepository>(),
         authRepository: context.read<AuthRepository>(),
+        legacyBarRepository: context.read<LegacyBarRepo.BarRepository>(),
       ),
     ),
     ChangeNotifierProvider<EventsViewModel>(
@@ -80,6 +82,12 @@ class DependencyInjection {
         eventRepository: context.read<EventRepo.EventRepository>(),
         barRepository: context.read<BarRepo.BarRepository>(),
         authRepository: context.read<AuthRepository>(),
+      ),
+    ),
+    ChangeNotifierProvider<HomeViewModel>(
+      create: (context) => HomeViewModel(
+        authRepository: context.read<AuthRepository>(),
+        barRepository: context.read<BarRepo.BarRepository>(),
       ),
     ),
   ];

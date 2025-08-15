@@ -4,6 +4,8 @@ import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/auth_user.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
+import 'package:bar_boss_mobile/app/modules/auth/repositories/user_repository.dart';
+import 'package:bar_boss_mobile/app/modules/auth/models/user_model.dart';
 
 /// Estados possíveis da autenticação
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
@@ -12,6 +14,7 @@ enum AuthState { initial, loading, authenticated, unauthenticated, error }
 class AuthViewModel extends ChangeNotifier {
   final AuthRepository _authRepository;
   final BarRepository _barRepository;
+  final UserRepository _userRepository;
 
   AuthState _state = AuthState.initial;
   String? _errorMessage;
@@ -21,8 +24,10 @@ class AuthViewModel extends ChangeNotifier {
   AuthViewModel({
     required AuthRepository authRepository,
     required BarRepository barRepository,
+    required UserRepository userRepository,
   }) : _authRepository = authRepository,
-       _barRepository = barRepository {
+       _barRepository = barRepository,
+       _userRepository = userRepository {
     _checkInitialAuthState();
     _subscribeToAuthChanges();
   }
@@ -71,14 +76,46 @@ class AuthViewModel extends ChangeNotifier {
   StreamSubscription<AuthUser?>? _authSub;
 
   void _subscribeToAuthChanges() {
-    _authSub = _authRepository.authStateChanges().listen((user) {
+    _authSub = _authRepository.authStateChanges().listen((user) async {
       _currentUser = user;
       if (user != null) {
+        // Garantir que o documento do usuário existe no Firestore
+        await _ensureUserDocumentExists(user);
         _setState(AuthState.authenticated);
       } else {
         _setState(AuthState.unauthenticated);
       }
     });
+  }
+
+  /// Garante que o documento do usuário existe no Firestore
+  Future<void> _ensureUserDocumentExists(AuthUser user) async {
+    try {
+      // Verificar se o usuário já existe
+      final existingUser = await _userRepository.getUserById(user.uid);
+      
+      if (existingUser == null) {
+        // Criar novo documento do usuário
+        final now = DateTime.now();
+        final newUser = UserModel(
+          uid: user.uid,
+          email: user.email ?? '',
+          displayName: user.displayName,
+          photoUrl: user.photoUrl,
+          providers: ['google'], // Assumindo login social por padrão
+          currentBarId: null,
+          createdAt: now,
+          lastLoginAt: now,
+        );
+        
+        await _userRepository.createUser(newUser);
+        debugPrint('✅ Documento do usuário criado: ${user.uid}');
+      } else {
+        debugPrint('✅ Documento do usuário já existe: ${user.uid}');
+      }
+    } catch (e) {
+      debugPrint('❌ Erro ao criar documento do usuário: $e');
+    }
   }
 
   @override

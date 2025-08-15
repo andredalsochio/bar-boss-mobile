@@ -111,7 +111,6 @@ class EventsViewModel extends ChangeNotifier {
       
       if (bars.isEmpty) {
         debugPrint('❌ DEBUG: Nenhum bar encontrado para o usuário ${currentUser.uid}');
-        _setError('Nenhum bar encontrado para este usuário. Cadastre um bar primeiro.');
         return;
       }
       
@@ -167,7 +166,6 @@ class EventsViewModel extends ChangeNotifier {
       
       if (bars.isEmpty) {
         debugPrint('❌ DEBUG saveEvent: Nenhum bar encontrado para o usuário ${currentUser.uid}');
-        _setError('Nenhum bar encontrado para este usuário. Cadastre um bar primeiro.');
         return;
       }
       
@@ -289,7 +287,6 @@ class EventsViewModel extends ChangeNotifier {
       );
       
       if (bars.isEmpty) {
-        _setError('Nenhum bar encontrado para este usuário. Cadastre um bar primeiro.');
         return;
       }
       
@@ -366,7 +363,6 @@ class EventsViewModel extends ChangeNotifier {
       );
       
       if (bars.isEmpty) {
-        _setError('Nenhum bar encontrado para este usuário. Cadastre um bar primeiro.');
         return;
       }
       

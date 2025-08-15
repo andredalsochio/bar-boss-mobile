@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
@@ -15,6 +15,9 @@ class HomeViewModel extends ChangeNotifier {
   
   // Estado do card de completude
   bool _isProfileCompleteCardDismissed = false;
+  
+  // Propriedades para controle de fluxo de completude
+  List<BarModel> _userBars = [];
 
   HomeViewModel({
     required AuthRepository authRepository,
@@ -28,11 +31,14 @@ class HomeViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isProfileCompleteCardDismissed => _isProfileCompleteCardDismissed;
   
-  // Verifica se o perfil está completo
-  bool get isProfileComplete => _currentBar?.isProfileComplete ?? false;
+  // Verifica se o usuário tem pelo menos um bar
+  bool get hasBar => _userBars.isNotEmpty;
   
-  // Calcula quantos passos estão completos (X/2)
-  int get completedSteps {
+  // Retorna o ID do bar atual (se houver)
+  String? get currentBarId => _currentBar?.id;
+  
+  // Calcula quantos passos estão completos (0, 1 ou 2)
+  int get profileStepsDone {
     if (_currentBar == null) return 0;
     int steps = 0;
     if (_currentBar!.hasCompleteContacts) steps++;
@@ -40,9 +46,18 @@ class HomeViewModel extends ChangeNotifier {
     return steps;
   }
   
+  // Verifica se pode criar eventos (tem bar E perfil completo)
+  bool get canCreateEvent => hasBar && profileStepsDone == 2;
+  
+  // Verifica se o perfil está completo
+  bool get isProfileComplete => _currentBar?.isProfileComplete ?? false;
+  
+  // Calcula quantos passos estão completos (X/2) - mantido para compatibilidade
+  int get completedSteps => profileStepsDone;
+  
   // Verifica se deve mostrar o card de completude
   bool get shouldShowProfileCompleteCard => 
-      !isProfileComplete && !_isProfileCompleteCardDismissed;
+      profileStepsDone < 2 && !_isProfileCompleteCardDismissed;
 
   /// Carrega os dados do bar atual
   Future<void> loadCurrentBar() async {
@@ -55,20 +70,29 @@ class HomeViewModel extends ChangeNotifier {
         throw Exception('Usuário não autenticado');
       }
 
-      final bars = await _barRepository.getBarsByOwner(currentUser.uid);
-      if (bars.isNotEmpty) {
-        _currentBar = bars.first; // Assume que o usuário tem apenas um bar
-        notifyListeners();
+      // Carrega bares por membership (fonte da verdade)
+      debugPrint('🏠 DEBUG Home: Iniciando carregamento de bares para uid=${currentUser.uid}');
+      
+      _userBars = await _barRepository.listBarsByMembership(currentUser.uid);
+      
+      debugPrint('🏠 DEBUG Home: Encontrados ${_userBars.length} bares');
+      
+      if (_userBars.isNotEmpty) {
+        _currentBar = _userBars.first; // Seleciona o primeiro bar
+        debugPrint('🏠 DEBUG Home: Bar selecionado: id=${_currentBar!.id}, name=${_currentBar!.name}');
+        debugPrint('🏠 DEBUG Home: Profile do bar: contactsComplete=${_currentBar!.profile.contactsComplete}, addressComplete=${_currentBar!.profile.addressComplete}');
       } else {
-        // Se não encontrou por owner, tenta por membership
-        final memberBars = await _barRepository.listBarsByMembership(currentUser.uid);
-        if (memberBars.isNotEmpty) {
-          _currentBar = memberBars.first;
-          notifyListeners();
-        }
+        _currentBar = null;
+        debugPrint('🏠 DEBUG Home: Nenhum bar encontrado - _currentBar definido como null');
       }
+      
+      // Debug logs conforme especificado
+      debugPrint('🏠 DEBUG Home: hasBar=${hasBar}, profileStepsDone=${profileStepsDone}, canCreateEvent=${canCreateEvent}, currentBarId=${currentBarId}');
+      
+      notifyListeners();
     } catch (e) {
       _setError(e.toString());
+      debugPrint('❌ DEBUG Home: Erro ao carregar bar - $e');
     } finally {
       _setLoading(false);
     }
@@ -95,6 +119,8 @@ class HomeViewModel extends ChangeNotifier {
     _errorMessage = message;
     notifyListeners();
   }
+
+
 
   void _clearError() {
     _errorMessage = null;

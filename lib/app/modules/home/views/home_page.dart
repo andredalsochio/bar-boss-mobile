@@ -80,7 +80,7 @@ class _HomePageState extends State<HomePage> {
                   completedSteps: homeViewModel.completedSteps,
                   totalSteps: 2,
                   onDismiss: () => homeViewModel.dismissProfileCompleteCard(),
-                  onComplete: () => context.pushNamed('barProfile'),
+                  onComplete: () => context.go('/register/step1'),
                 );
               }
               return const SizedBox.shrink();
@@ -101,10 +101,24 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(width: AppSizes.spacingMedium),
                 Expanded(
-                  child: ButtonWidget(
-                    text: AppStrings.newEventButton,
-                    onPressed: () => context.pushNamed('eventForm'),
-                    icon: Icons.add_circle,
+                  child: Consumer<HomeViewModel>(
+                    builder: (context, viewModel, _) {
+                      return ButtonWidget(
+                        text: AppStrings.newEventButton,
+                        onPressed: viewModel.canCreateEvent 
+                            ? () {
+                                debugPrint('🎯 DEBUG Home: Navegando para criação de evento (canCreateEvent=true)');
+                                context.pushNamed('eventForm');
+                              }
+                            : () {
+                                debugPrint('🚫 DEBUG Home: Botão "Novo evento" desabilitado (canCreateEvent=false, motivo: ${viewModel.hasBar ? "perfil incompleto (${viewModel.profileStepsDone}/2)" : "nenhum bar cadastrado"})');
+                              },
+                        icon: Icons.add_circle,
+                        backgroundColor: viewModel.canCreateEvent 
+                            ? AppColors.primary 
+                            : Colors.grey,
+                      );
+                    },
                   ),
                 ),
               ],

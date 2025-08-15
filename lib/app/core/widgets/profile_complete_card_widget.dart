@@ -105,7 +105,10 @@ class ProfileCompleteCardWidget extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: onComplete,
+                  onPressed: () {
+                    debugPrint('🎯 DEBUG Home: CTA "Completar agora" pressionado - navegando para /register/step1');
+                    onComplete();
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,

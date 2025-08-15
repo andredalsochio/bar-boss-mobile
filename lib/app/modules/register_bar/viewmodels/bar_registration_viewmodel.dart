@@ -414,6 +414,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
         ownerUid: currentUser.uid,
       );
 
+      // Debug log conforme especificado
+      debugPrint('🎉 DEBUG Cadastro finalizado: Bar criado com sucesso para usuário ${currentUser.uid}');
+
       // Limpa os rascunhos após sucesso
       await clearDrafts();
 
@@ -472,6 +475,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
       await _legacyBarRepository.updateBarFields(barId, {
         'profile.contactsComplete': isStep1Valid,
       });
+      
+      // Debug log conforme especificado
+      debugPrint('📝 DEBUG Passo 1: profile.contactsComplete = $isStep1Valid para barId = $barId');
     } catch (e) {
       _setError(e.toString());
       rethrow;
@@ -504,6 +510,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
       await _legacyBarRepository.updateBarFields(barId, {
         'profile.addressComplete': isStep2Valid,
       });
+      
+      // Debug log conforme especificado
+      debugPrint('📝 DEBUG Passo 2: profile.addressComplete = $isStep2Valid para barId = $barId');
     } catch (e) {
       _setError(e.toString());
       rethrow;

@@ -13,6 +13,7 @@ import 'package:bar_boss_mobile/app/data/firebase/firebase_repositories.dart';
 
 // Legacy services and repositories (for backward compatibility)
 import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
+import 'package:bar_boss_mobile/app/modules/auth/repositories/user_repository.dart' as AuthUserRepo;
 import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart' as LegacyBarRepo;
 import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository.dart' as LegacyEventRepo;
 
@@ -36,6 +37,9 @@ class DependencyInjection {
     ),
     Provider<UserRepository>(
       create: (_) => FirebaseUserRepository(),
+    ),
+    Provider<AuthUserRepo.UserRepository>(
+      create: (_) => AuthUserRepo.UserRepository(),
     ),
     Provider<BarRepositoryDomain>(
       create: (_) => FirebaseBarRepository(),
@@ -68,6 +72,7 @@ class DependencyInjection {
       create: (context) => AuthViewModel(
         authRepository: context.read<AuthRepository>(),
         barRepository: context.read<BarRepo.BarRepository>(),
+        userRepository: context.read<AuthUserRepo.UserRepository>(),
       ),
     ),
     ChangeNotifierProvider<BarRegistrationViewModel>(

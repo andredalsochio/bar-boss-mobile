@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/data/adapters/bar_adapter.dart';
@@ -89,21 +90,41 @@ class BarRepository {
 
   /// Lista os bares em que o usuário é membro (fetch por collectionGroup('members')).
   Future<List<BarModel>> listBarsByMembership(String uid) async {
+    debugPrint('🔍 DEBUG BarRepository: Buscando bares para uid=$uid');
+    
     final membersSnap = await _firestore
         .collectionGroup(FirestoreKeys.membersSubcollection) // "members"
         .where('uid', isEqualTo: uid)
         .get();
 
+    debugPrint('🔍 DEBUG BarRepository: Encontrados ${membersSnap.docs.length} documentos de membro');
+    
     // parent.parent! é o doc do bar
     final barDocRefs = membersSnap.docs
         .map((m) => m.reference.parent.parent!)
         .whereType<DocumentReference<Map<String, dynamic>>>()
         .toList();
 
-    if (barDocRefs.isEmpty) return [];
+    debugPrint('🔍 DEBUG BarRepository: ${barDocRefs.length} referências de bar válidas');
+    
+    if (barDocRefs.isEmpty) {
+      debugPrint('❌ DEBUG BarRepository: Nenhuma referência de bar encontrada para uid=$uid');
+      return [];
+    }
 
     final bars = await Future.wait(barDocRefs.map((ref) => ref.get()));
-    return bars.where((d) => d.exists).map(BarAdapter.fromFirestore).toList();
+    final existingBars = bars.where((d) => d.exists).toList();
+    
+    debugPrint('🔍 DEBUG BarRepository: ${existingBars.length} bares existem no Firestore');
+    
+    final barModels = existingBars.map(BarAdapter.fromFirestore).toList();
+    
+    for (int i = 0; i < barModels.length; i++) {
+      final bar = barModels[i];
+      debugPrint('📊 DEBUG BarRepository: Bar $i: id=${bar.id}, name=${bar.name}, contactsComplete=${bar.profile.contactsComplete}, addressComplete=${bar.profile.addressComplete}');
+    }
+    
+    return barModels;
   }
 
   /// Stream dos bares do usuário (membro).

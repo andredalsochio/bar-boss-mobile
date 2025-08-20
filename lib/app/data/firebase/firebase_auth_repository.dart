@@ -5,7 +5,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/auth_user.dart';
 import 'package:bar_boss_mobile/app/domain/entities/auth_result.dart';
-import 'package:bar_boss_mobile/app/data/adapters/auth_adapter.dart';
 
 /// Implementação Firebase da interface AuthRepository
 class FirebaseAuthRepository implements AuthRepository {
@@ -13,12 +12,12 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Stream<AuthUser?> authStateChanges() {
-    return _auth.authStateChanges().map(AuthAdapter.fromFirebaseUser);
+    return _auth.authStateChanges().map(_fromFirebaseUser);
   }
 
   @override
   AuthUser? get currentUser {
-    return AuthAdapter.fromFirebaseUser(_auth.currentUser);
+    return _fromFirebaseUser(_auth.currentUser);
   }
 
   @override
@@ -28,11 +27,11 @@ class FirebaseAuthRepository implements AuthRepository {
         email: email,
         password: password,
       );
-      return AuthAdapter.fromFirebaseCredential(credential);
+      return _fromFirebaseCredential(credential);
     } on FirebaseAuthException catch (e) {
-      return AuthAdapter.fromFirebaseException(e);
+      return _fromFirebaseException(e);
     } catch (e) {
-      return AuthAdapter.fromGenericException(Exception(e.toString()));
+      return _fromGenericException(Exception(e.toString()));
     }
   }
 
@@ -49,11 +48,11 @@ class FirebaseAuthRepository implements AuthRepository {
         await credential.user!.updateDisplayName(displayName);
       }
       
-      return AuthAdapter.fromFirebaseCredential(credential);
+      return _fromFirebaseCredential(credential);
     } on FirebaseAuthException catch (e) {
-      return AuthAdapter.fromFirebaseException(e);
+      return _fromFirebaseException(e);
     } catch (e) {
-      return AuthAdapter.fromGenericException(Exception(e.toString()));
+      return _fromGenericException(Exception(e.toString()));
     }
   }
 
@@ -72,11 +71,11 @@ class FirebaseAuthRepository implements AuthRepository {
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
-      return AuthAdapter.fromFirebaseCredential(userCredential);
+      return _fromFirebaseCredential(userCredential);
     } on FirebaseAuthException catch (e) {
-      return AuthAdapter.fromFirebaseException(e);
+      return _fromFirebaseException(e);
     } catch (e) {
-      return AuthAdapter.fromGenericException(Exception(e.toString()));
+      return _fromGenericException(Exception(e.toString()));
     }
   }
 
@@ -96,11 +95,11 @@ class FirebaseAuthRepository implements AuthRepository {
       );
 
       final userCredential = await _auth.signInWithCredential(oauthCredential);
-      return AuthAdapter.fromFirebaseCredential(userCredential);
+      return _fromFirebaseCredential(userCredential);
     } on FirebaseAuthException catch (e) {
-      return AuthAdapter.fromFirebaseException(e);
+      return _fromFirebaseException(e);
     } catch (e) {
-      return AuthAdapter.fromGenericException(Exception(e.toString()));
+      return _fromGenericException(Exception(e.toString()));
     }
   }
 
@@ -114,14 +113,14 @@ class FirebaseAuthRepository implements AuthRepository {
              FacebookAuthProvider.credential(result.accessToken!.tokenString);
          
          final userCredential = await _auth.signInWithCredential(facebookAuthCredential);
-         return AuthAdapter.fromFirebaseCredential(userCredential);
+         return _fromFirebaseCredential(userCredential);
        } else {
          return AuthResult.error('Login com Facebook cancelado ou falhou');
        }
     } on FirebaseAuthException catch (e) {
-      return AuthAdapter.fromFirebaseException(e);
+      return _fromFirebaseException(e);
     } catch (e) {
-      return AuthAdapter.fromGenericException(Exception(e.toString()));
+      return _fromGenericException(Exception(e.toString()));
     }
   }
 
@@ -184,5 +183,79 @@ class FirebaseAuthRepository implements AuthRepository {
     } catch (e) {
       throw Exception('Erro ao fazer logout: $e');
     }
+  }
+
+  // Métodos privados de conversão (anteriormente no AuthAdapter)
+  
+  /// Converte User do Firebase para AuthUser de domínio
+  AuthUser? _fromFirebaseUser(User? firebaseUser) {
+    if (firebaseUser == null) return null;
+    
+    return AuthUser(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      displayName: firebaseUser.displayName ?? '',
+      photoUrl: firebaseUser.photoURL,
+      emailVerified: firebaseUser.emailVerified,
+      providerIds: firebaseUser.providerData
+          .map((info) => info.providerId)
+          .toList(),
+    );
+  }
+
+  /// Converte UserCredential do Firebase para AuthResult de domínio
+  AuthResult _fromFirebaseCredential(UserCredential credential) {
+    final user = _fromFirebaseUser(credential.user);
+    
+    if (user == null) {
+      return AuthResult.error('Falha ao obter dados do usuário');
+    }
+    
+    return AuthResult.success(
+      user: user,
+      providerId: credential.credential?.providerId,
+      isNewUser: credential.additionalUserInfo?.isNewUser ?? false,
+    );
+  }
+
+  /// Converte FirebaseAuthException para AuthResult de erro
+  AuthResult _fromFirebaseException(FirebaseAuthException exception) {
+    String errorMessage;
+    
+    switch (exception.code) {
+      case 'user-not-found':
+        errorMessage = 'Usuário não encontrado';
+        break;
+      case 'wrong-password':
+        errorMessage = 'Senha incorreta';
+        break;
+      case 'email-already-in-use':
+        errorMessage = 'Este email já está em uso';
+        break;
+      case 'weak-password':
+        errorMessage = 'A senha é muito fraca';
+        break;
+      case 'invalid-email':
+        errorMessage = 'Email inválido';
+        break;
+      case 'user-disabled':
+        errorMessage = 'Esta conta foi desabilitada';
+        break;
+      case 'too-many-requests':
+        errorMessage = 'Muitas tentativas. Tente novamente mais tarde';
+        break;
+      case 'operation-not-allowed':
+        errorMessage = 'Operação não permitida';
+        break;
+      default:
+        errorMessage = exception.message ?? 'Erro de autenticação';
+    }
+    
+    return AuthResult.error(errorMessage);
+  }
+
+  /// Converte Exception genérica para AuthResult de erro
+  AuthResult _fromGenericException(Exception exception) {
+    return AuthResult.error('Erro inesperado: ${exception.toString()}');
   }
 }

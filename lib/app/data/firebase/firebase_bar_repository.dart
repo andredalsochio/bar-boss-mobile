@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
-import 'package:bar_boss_mobile/app/data/adapters/bar_adapter.dart';
 
 /// Implementação Firebase da interface BarRepositoryDomain
 class FirebaseBarRepository implements BarRepositoryDomain {
@@ -50,7 +49,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       updatedAt: DateTime.now(), // será sobrescrito pelo _now
       createdByUid: ownerUid,
     );
-    final barData = BarAdapter.toFirestore(barWithIds)
+    final barData = _toFirestore(barWithIds)
       ..addAll({
         'createdAt': _now,
         'updatedAt': _now,
@@ -76,7 +75,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
   Future<void> update(BarModel bar) async {
     try {
       await _barsCol.doc(bar.id).update(
-        BarAdapter.toFirestore(bar)..addAll({'updatedAt': _now}),
+        _toFirestore(bar)..addAll({'updatedAt': _now}),
       );
     } catch (e) {
       throw Exception('Erro ao atualizar bar: $e');
@@ -100,7 +99,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       final bars = await Future.wait(refs.map((r) => r.get()));
       return bars
           .where((d) => d.exists)
-          .map(BarAdapter.fromFirestore)
+          .map((doc) => _fromFirestore(doc))
           .toList();
     });
   }
@@ -126,5 +125,67 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     } catch (e) {
       throw Exception('Erro ao adicionar membro: $e');
     }
+  }
+
+  // Métodos privados de conversão (anteriormente no BarAdapter)
+  
+  /// Converte DocumentSnapshot do Firestore para BarModel
+  BarModel _fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
+    
+    return BarModel(
+      id: doc.id,
+      name: data['name'] ?? '',
+      cnpj: data['cnpj'] ?? '',
+      responsibleName: data['responsibleName'] ?? '',
+      contactEmail: data['contactEmail'] ?? '',
+      contactPhone: data['contactPhone'] ?? '',
+      address: data['address'] != null 
+          ? BarAddress.fromMap(data['address'])
+          : BarAddress.empty(),
+      profile: data['profile'] != null 
+          ? BarProfile.fromMap(data['profile'])
+          : BarProfile.empty(),
+      status: data['status'] ?? 'active',
+      logoUrl: data['logoUrl'],
+      createdAt: _timestampToDateTime(data['createdAt']),
+      updatedAt: _timestampToDateTime(data['updatedAt']),
+      createdByUid: data['createdByUid'] ?? '',
+      primaryOwnerUid: data['primaryOwnerUid'],
+    );
+  }
+
+  /// Converte BarModel para Map do Firestore
+  Map<String, dynamic> _toFirestore(BarModel bar) {
+    return {
+      'name': bar.name,
+      'cnpj': bar.cnpj,
+      'responsibleName': bar.responsibleName,
+      'contactEmail': bar.contactEmail,
+      'contactPhone': bar.contactPhone,
+      'address': bar.address.toMap(),
+      'profile': bar.profile.toMap(),
+      'status': bar.status,
+      'logoUrl': bar.logoUrl,
+      'createdAt': bar.createdAt,
+      'updatedAt': bar.updatedAt,
+      'createdByUid': bar.createdByUid,
+      'primaryOwnerUid': bar.primaryOwnerUid,
+    };
+  }
+
+  /// Converte Timestamp para DateTime
+  /// Trata adequadamente valores null que podem ocorrer nos primeiros snapshots
+  /// quando FieldValue.serverTimestamp() ainda não foi processado pelo servidor
+  DateTime _timestampToDateTime(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      return timestamp.toDate();
+    }
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+    // Retorna data atual se timestamp for null (primeiro snapshot)
+    // ou se for de tipo inesperado
+    return DateTime.now();
   }
 }

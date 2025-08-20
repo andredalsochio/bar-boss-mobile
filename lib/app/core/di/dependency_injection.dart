@@ -4,10 +4,6 @@ import 'package:provider/single_child_widget.dart';
 // Domain interfaces
 import 'package:bar_boss_mobile/app/domain/repositories/repositories.dart';
 
-// Legacy interfaces that adapters implement (same names as domain interfaces)
-import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart' as BarRepo;
-import 'package:bar_boss_mobile/app/domain/repositories/event_repository.dart' as EventRepo;
-
 // Firebase implementations
 import 'package:bar_boss_mobile/app/data/firebase/firebase_repositories.dart';
 
@@ -16,10 +12,6 @@ import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
 import 'package:bar_boss_mobile/app/modules/auth/repositories/user_repository.dart' as AuthUserRepo;
 import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart' as LegacyBarRepo;
 import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository.dart' as LegacyEventRepo;
-
-// Adapters to bridge domain repos to legacy-style interfaces used by ViewModels
-import 'package:bar_boss_mobile/app/core/adapters/bar_repository_adapter.dart';
-import 'package:bar_boss_mobile/app/core/adapters/event_repository_adapter.dart';
 
 // ViewModels
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
@@ -38,9 +30,6 @@ class DependencyInjection {
     Provider<UserRepository>(
       create: (_) => FirebaseUserRepository(),
     ),
-    Provider<AuthUserRepo.UserRepository>(
-      create: (_) => AuthUserRepo.UserRepository(),
-    ),
     Provider<BarRepositoryDomain>(
       create: (_) => FirebaseBarRepository(),
     ),
@@ -48,17 +37,12 @@ class DependencyInjection {
       create: (_) => FirebaseEventRepository(),
     ),
     
-    // Adapters que expõem as interfaces esperadas pelos ViewModels
-    Provider<BarRepo.BarRepository>(
-      create: (context) => BarRepositoryAdapter(context.read<BarRepositoryDomain>()),
-    ),
-    Provider<EventRepo.EventRepository>(
-      create: (context) => EventRepositoryAdapter(context.read<EventRepositoryDomain>()),
-    ),
-    
-    // Legacy services e repositories (mantidos para compatibilidade em outras partes do app)
+    // Legacy services e repositories (mantidos para compatibilidade temporária)
     Provider<AuthService>(
       create: (_) => AuthService(),
+    ),
+    Provider<AuthUserRepo.UserRepository>(
+      create: (_) => AuthUserRepo.UserRepository(),
     ),
     Provider<LegacyBarRepo.BarRepository>(
       create: (_) => LegacyBarRepo.BarRepository(),
@@ -67,32 +51,31 @@ class DependencyInjection {
       create: (_) => LegacyEventRepo.EventRepository(),
     ),
     
-    // ViewModels
+    // ViewModels usando interfaces de domínio
     ChangeNotifierProvider<AuthViewModel>(
       create: (context) => AuthViewModel(
         authRepository: context.read<AuthRepository>(),
-        barRepository: context.read<BarRepo.BarRepository>(),
-        userRepository: context.read<AuthUserRepo.UserRepository>(),
+        barRepository: context.read<BarRepositoryDomain>(),
+        userRepository: context.read<UserRepository>(),
       ),
     ),
     ChangeNotifierProvider<BarRegistrationViewModel>(
       create: (context) => BarRegistrationViewModel(
-        barRepository: context.read<BarRepo.BarRepository>(),
+        barRepository: context.read<BarRepositoryDomain>(),
         authRepository: context.read<AuthRepository>(),
-        legacyBarRepository: context.read<LegacyBarRepo.BarRepository>(),
       ),
     ),
     ChangeNotifierProvider<EventsViewModel>(
       create: (context) => EventsViewModel(
-        eventRepository: context.read<EventRepo.EventRepository>(),
-        barRepository: context.read<BarRepo.BarRepository>(),
+        eventRepository: context.read<EventRepositoryDomain>(),
+        barRepository: context.read<BarRepositoryDomain>(),
         authRepository: context.read<AuthRepository>(),
       ),
     ),
     ChangeNotifierProvider<HomeViewModel>(
       create: (context) => HomeViewModel(
         authRepository: context.read<AuthRepository>(),
-        barRepository: context.read<BarRepo.BarRepository>(),
+        barRepository: context.read<BarRepositoryDomain>(),
       ),
     ),
   ];

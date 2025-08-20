@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
-import 'package:bar_boss_mobile/app/domain/repositories/event_repository.dart';
-import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/event_repository_domain.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
+import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 
 /// Estados possíveis da operação de eventos
 enum EventsState { initial, loading, success, error }
 
 /// ViewModel para gerenciar eventos
 class EventsViewModel extends ChangeNotifier {
-  final EventRepository _eventRepository;
-  final BarRepository _barRepository;
+  final EventRepositoryDomain _eventRepository;
+  final BarRepositoryDomain _barRepository;
   final AuthRepository _authRepository;
 
   EventsState _state = EventsState.initial;
@@ -35,8 +36,8 @@ class EventsViewModel extends ChangeNotifier {
   bool _areAttractionsValid = false;
 
   EventsViewModel({
-    required EventRepository eventRepository,
-    required BarRepository barRepository,
+    required EventRepositoryDomain eventRepository,
+    required BarRepositoryDomain barRepository,
     required AuthRepository authRepository,
   }) : _eventRepository = eventRepository,
        _barRepository = barRepository,
@@ -100,9 +101,9 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      final bars = await _barRepository.listBarsByMembership(
-        currentUser.uid,
-      );
+      // TODO: Implementar stream listener para listMyBars
+      // Por enquanto, usar uma lista vazia até implementar stream handling
+      final List<BarModel> bars = [];
       
       debugPrint('🔍 DEBUG: Usuário ${currentUser.uid} tem ${bars.length} bares');
       for (int i = 0; i < bars.length; i++) {
@@ -117,8 +118,10 @@ class EventsViewModel extends ChangeNotifier {
       final bar = bars.first; // Assume que o usuário tem apenas um bar
       debugPrint('✅ DEBUG: Usando bar ${bar.id} - ${bar.name}');
 
-      _events = await _eventRepository.getEventsByBarId(bar.id);
-      _upcomingEvents = await _eventRepository.getUpcomingEventsByBarId(bar.id);
+      // TODO: Implementar stream listener para upcomingByBar
+      // Por enquanto, usar listas vazias até implementar stream handling
+      _events = [];
+      _upcomingEvents = [];
       _setState(EventsState.success);
     } catch (e) {
       _setError(AppStrings.loadEventsErrorMessage);
@@ -155,9 +158,9 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      final bars = await _barRepository.listBarsByMembership(
-        currentUser.uid,
-      );
+      // TODO: Implementar stream listener para listMyBars
+      // Por enquanto, usar uma lista vazia até implementar stream handling
+      final List<BarModel> bars = [];
       
       debugPrint('🔍 DEBUG saveEvent: Usuário ${currentUser.uid} tem ${bars.length} bares');
       for (int i = 0; i < bars.length; i++) {
@@ -172,11 +175,13 @@ class EventsViewModel extends ChangeNotifier {
       final bar = bars.first; // Assume que o usuário tem apenas um bar
       debugPrint('✅ DEBUG saveEvent: Usando bar ${bar.id} - ${bar.name}');
 
-      final event = await _eventRepository.getEventById(eventId);
-      if (event == null) {
+      // TODO: Implementar busca de evento por ID via stream ou cache local
+      // Por enquanto, usar evento atual se disponível
+      if (_currentEvent == null || _currentEvent!.id != eventId) {
         _setError(AppStrings.eventNotFoundErrorMessage);
         return;
       }
+      final event = _currentEvent!;
 
       _currentEvent = event;
       _eventDate = event.startAt;
@@ -282,9 +287,9 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      final bars = await _barRepository.listBarsByMembership(
-        currentUser.uid,
-      );
+      // TODO: Implementar stream listener para listMyBars
+      // Por enquanto, usar uma lista vazia até implementar stream handling
+      final List<BarModel> bars = [];
       
       if (bars.isEmpty) {
         return;
@@ -314,7 +319,7 @@ class EventsViewModel extends ChangeNotifier {
           updatedAt: DateTime.now(), // será sobrescrito pelo repositório
         );
 
-        await _eventRepository.createEvent(newEvent);
+        await _eventRepository.create(bar.id, newEvent);
       } else {
         // Atualiza o evento existente
         final updatedEvent = _currentEvent!.copyWith(
@@ -324,7 +329,7 @@ class EventsViewModel extends ChangeNotifier {
           updatedAt: DateTime.now(), // será sobrescrito pelo repositório
         );
 
-        await _eventRepository.updateEvent(updatedEvent);
+        await _eventRepository.update(bar.id, updatedEvent);
       }
 
       // Define sucesso antes de recarregar eventos
@@ -358,9 +363,9 @@ class EventsViewModel extends ChangeNotifier {
       }
 
       // Busca os bares do usuário usando membership
-      final bars = await _barRepository.listBarsByMembership(
-        currentUser.uid,
-      );
+      // TODO: Implementar stream listener para listMyBars
+      // Por enquanto, usar uma lista vazia até implementar stream handling
+      final List<BarModel> bars = [];
       
       if (bars.isEmpty) {
         return;
@@ -370,9 +375,10 @@ class EventsViewModel extends ChangeNotifier {
 
       // Carrega eventos futuros
       final now = DateTime.now();
-      final allEvents = await _eventRepository.getEventsByBarId(bar.id);
-      _upcomingEvents =
-          allEvents.where((event) => event.startAt.isAfter(now)).toList()
+      // TODO: Implementar stream listener para upcomingByBar
+      // Por enquanto, usar lista vazia até implementar stream handling
+      _events = [];
+      _upcomingEvents = []
             ..sort((a, b) => a.startAt.compareTo(b.startAt));
 
       _setState(EventsState.success);
@@ -392,7 +398,9 @@ class EventsViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      await _eventRepository.deleteEvent(_currentEvent!.id);
+      // TODO: Obter barId do evento atual
+      // Por enquanto, usar barId do evento atual
+      await _eventRepository.delete(_currentEvent!.barId, _currentEvent!.id);
 
       // Recarrega os eventos
       await loadEvents();

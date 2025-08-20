@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
-import 'package:bar_boss_mobile/app/data/adapters/event_adapter.dart';
 
 /// Repositório para gerenciar os dados dos eventos no Firestore
 /// Eventos agora são subcoleções de bares: /bars/{barId}/events/{eventId}
@@ -10,6 +9,12 @@ class EventRepository {
   
   EventRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
+  
+  /// Converte DocumentSnapshot para EventModel
+  EventModel _fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return EventModel.fromMap(data, doc.id);
+  }
   
   /// Referência para a subcoleção de eventos de um bar específico
   CollectionReference<Map<String, dynamic>> _eventsCollection(String barId) =>
@@ -23,7 +28,7 @@ class EventRepository {
     try {
       final docSnapshot = await _eventsCollection(barId).doc(eventId).get();
       if (docSnapshot.exists) {
-        return EventAdapter.fromFirestore(docSnapshot);
+        return _fromFirestore(docSnapshot);
       }
       return null;
     } catch (e) {
@@ -39,7 +44,7 @@ class EventRepository {
           .get();
       
       return querySnapshot.docs
-          .map((doc) => EventAdapter.fromFirestore(doc))
+          .map((doc) => _fromFirestore(doc))
           .toList();
     } catch (e) {
       rethrow;
@@ -60,7 +65,7 @@ class EventRepository {
           .get();
       
       return querySnapshot.docs
-          .map((doc) => EventAdapter.fromFirestore(doc))
+          .map((doc) => _fromFirestore(doc))
           .toList();
     } catch (e) {
       rethrow;
@@ -86,7 +91,7 @@ class EventRepository {
           .get();
       
       return querySnapshot.docs
-          .map((doc) => EventAdapter.fromFirestore(doc))
+          .map((doc) => _fromFirestore(doc))
           .toList();
     } catch (e) {
       rethrow;
@@ -96,7 +101,7 @@ class EventRepository {
   /// Cria um novo evento
   Future<String> createEvent(EventModel event) async {
     try {
-      final docRef = await _eventsCollection(event.barId).add(EventAdapter.toFirestore(event));
+      final docRef = await _eventsCollection(event.barId).add(event.toMap());
       return docRef.id;
     } catch (e) {
       rethrow;
@@ -106,7 +111,7 @@ class EventRepository {
   /// Atualiza um evento existente
   Future<void> updateEvent(EventModel event) async {
     try {
-      await _eventsCollection(event.barId).doc(event.id).update(EventAdapter.toFirestore(event));
+      await _eventsCollection(event.barId).doc(event.id).update(event.toMap());
     } catch (e) {
       rethrow;
     }
@@ -127,7 +132,7 @@ class EventRepository {
         .orderBy(FirestoreKeys.eventStartAt, descending: false)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => EventAdapter.fromFirestore(doc))
+            .map((doc) => _fromFirestore(doc))
             .toList());
   }
   
@@ -140,7 +145,7 @@ class EventRepository {
         .orderBy(FirestoreKeys.eventStartAt, descending: false)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => EventAdapter.fromFirestore(doc))
+            .map((doc) => _fromFirestore(doc))
             .toList());
   }
 
@@ -153,7 +158,7 @@ class EventRepository {
           .get();
       
       return querySnapshot.docs
-          .map((doc) => EventAdapter.fromFirestore(doc))
+          .map((doc) => _fromFirestore(doc))
           .toList();
     } catch (e) {
       rethrow;
@@ -167,7 +172,7 @@ class EventRepository {
         .orderBy(FirestoreKeys.eventStartAt, descending: false)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => EventAdapter.fromFirestore(doc))
+            .map((doc) => _fromFirestore(doc))
             .toList());
   }
 }

@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
-import 'package:bar_boss_mobile/app/data/adapters/bar_adapter.dart';
 
 class BarRepository {
   final FirebaseFirestore _firestore;
@@ -19,6 +18,12 @@ class BarRepository {
   // ---------------------------
   String _normalizeCnpj(String cnpj) => cnpj.replaceAll(RegExp(r'\D'), '');
   FieldValue get _now => FieldValue.serverTimestamp();
+
+  /// Converte DocumentSnapshot para BarModel
+  BarModel _fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return BarModel.fromMap(data, doc.id);
+  }
 
   // ---------------------------
   // CREATE (com reserva + membership OWNER)
@@ -47,7 +52,7 @@ class BarRepository {
     });
 
     // 2) Bar
-    final barData = BarAdapter.toFirestore(bar.copyWith(
+    final barData = bar.copyWith(
       id: barId,
       cnpj: cnpj,
       createdAt: DateTime.now(),
@@ -55,7 +60,7 @@ class BarRepository {
       createdByUid: ownerUid,
       // profile.contactsComplete/addressComplete devem refletir os passos,
       // ajuste conforme sua UI nesse momento.
-    ))
+    ).toMap()
       ..addAll({'createdAt': _now, 'updatedAt': _now, 'createdByUid': ownerUid});
 
     batch.set(barRef, barData);
@@ -82,7 +87,7 @@ class BarRepository {
   Future<BarModel?> getBarById(String id) async {
     try {
       final doc = await _barsCol.doc(id).get();
-      return doc.exists ? BarAdapter.fromFirestore(doc) : null;
+      return doc.exists ? _fromFirestore(doc) : null;
     } catch (e) {
       rethrow;
     }
@@ -117,7 +122,7 @@ class BarRepository {
     
     debugPrint('🔍 DEBUG BarRepository: ${existingBars.length} bares existem no Firestore');
     
-    final barModels = existingBars.map(BarAdapter.fromFirestore).toList();
+    final barModels = existingBars.map((doc) => _fromFirestore(doc)).toList();
     
     for (int i = 0; i < barModels.length; i++) {
       final bar = barModels[i];
@@ -142,7 +147,7 @@ class BarRepository {
           .toList();
       if (refs.isEmpty) return <BarModel>[];
       final bars = await Future.wait(refs.map((r) => r.get()));
-    return bars.where((d) => d.exists).map(BarAdapter.fromFirestore).toList();
+    return bars.where((d) => d.exists).map((doc) => _fromFirestore(doc)).toList();
     });
   }
 
@@ -152,7 +157,7 @@ class BarRepository {
 
   Future<void> updateBar(BarModel bar) async {
     try {
-      await _barsCol.doc(bar.id).update(BarAdapter.toFirestore(bar)..addAll({'updatedAt': _now}));
+      await _barsCol.doc(bar.id).update(bar.toMap()..addAll({'updatedAt': _now}));
     } catch (e) {
       rethrow;
     }
@@ -201,11 +206,11 @@ class BarRepository {
         .where('createdByUid', isEqualTo: uid)
         .orderBy('createdAt', descending: true)
         .get();
-    return snap.docs.map(BarAdapter.fromFirestore).toList();
+    return snap.docs.map((doc) => _fromFirestore(doc)).toList();
   }
 
   Stream<BarModel?> streamBar(String barId) {
-    return _barsCol.doc(barId).snapshots().map((s) => s.exists ? BarAdapter.fromFirestore(s) : null);
+    return _barsCol.doc(barId).snapshots().map((s) => s.exists ? _fromFirestore(s) : null);
   }
 
   Future<void> updateBarStatus(String barId, String status) =>
@@ -225,7 +230,7 @@ class BarRepository {
         .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(end))
         .orderBy('createdAt', descending: true)
         .get();
-    return q.docs.map(BarAdapter.fromFirestore).toList();
+    return q.docs.map((doc) => _fromFirestore(doc)).toList();
   }
 
   // Removi createBar/createBarWithGeneratedId para desencorajar criação sem reserva/membership.

@@ -2,19 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:search_cep/search_cep.dart';
 
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
-import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/storage/draft_storage.dart';
-import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart' as LegacyBarRepo;
 
 /// Estados possíveis do cadastro de bar
 enum RegistrationState { initial, loading, success, error }
 
 /// ViewModel para o cadastro de bar
 class BarRegistrationViewModel extends ChangeNotifier {
-  final BarRepository _barRepository;
+  final BarRepositoryDomain _barRepository;
   final AuthRepository _authRepository;
-  final LegacyBarRepo.BarRepository _legacyBarRepository;
   final DraftStorage _draftStorage = DraftStorage();
 
   // Estado atual do cadastro
@@ -60,12 +58,10 @@ class BarRegistrationViewModel extends ChangeNotifier {
   bool _isConfirmPasswordValid = false;
 
   BarRegistrationViewModel({
-    required BarRepository barRepository,
+    required BarRepositoryDomain barRepository,
     required AuthRepository authRepository,
-    required LegacyBarRepo.BarRepository legacyBarRepository,
   }) : _barRepository = barRepository,
-       _authRepository = authRepository,
-       _legacyBarRepository = legacyBarRepository;
+       _authRepository = authRepository;
 
   // Getters para o estado
   RegistrationState get registrationState => _registrationState;
@@ -389,7 +385,8 @@ class BarRegistrationViewModel extends ChangeNotifier {
         throw Exception('Erro ao obter ID do usuário');
       }
 
-      // Cria o bar no Firestore
+      // Cria o bar no Firestore com perfil completo
+      // Como o usuário passou por todos os passos (1, 2 e 3), marca as flags como true
       final bar = BarModel.empty().copyWith(
         contactEmail: _email,
         cnpj: _cnpj,
@@ -404,18 +401,20 @@ class BarRegistrationViewModel extends ChangeNotifier {
           state: _stateUf,
           city: _city,
         ),
+        profile: BarProfile(
+          contactsComplete: true, // Passo 1 completo
+          addressComplete: true,  // Passo 2 completo
+        ),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         createdByUid: currentUser.uid,
       );
 
-      await _barRepository.createBarWithReservation(
-        bar: bar,
-        ownerUid: currentUser.uid,
-      );
+      await _barRepository.create(bar);
 
       // Debug log conforme especificado
       debugPrint('🎉 DEBUG Cadastro finalizado: Bar criado com sucesso para usuário ${currentUser.uid}');
+      debugPrint('🎉 DEBUG Cadastro finalizado: Profile completo - contactsComplete=true, addressComplete=true');
 
       // Limpa os rascunhos após sucesso
       await clearDrafts();
@@ -472,9 +471,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       _saveDraftStep1();
       
       // Atualiza a completude do perfil
-      await _legacyBarRepository.updateBarFields(barId, {
-        'profile.contactsComplete': isStep1Valid,
-      });
+      await _updateContactsCompleteness(barId);
       
       // Debug log conforme especificado
       debugPrint('📝 DEBUG Passo 1: profile.contactsComplete = $isStep1Valid para barId = $barId');
@@ -507,9 +504,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       _saveDraftStep2();
       
       // Atualiza a completude do perfil
-      await _legacyBarRepository.updateBarFields(barId, {
-        'profile.addressComplete': isStep2Valid,
-      });
+      await _updateAddressCompleteness(barId);
       
       // Debug log conforme especificado
       debugPrint('📝 DEBUG Passo 2: profile.addressComplete = $isStep2Valid para barId = $barId');
@@ -579,16 +574,69 @@ class BarRegistrationViewModel extends ChangeNotifier {
       await DraftStorage.clearAllDrafts();
     }
 
-    // Atualiza os campos de completude do perfil
-     Future<void> _updateProfileCompleteness(String barId) async {
-       final contactsComplete = isStep1Valid;
-       final addressComplete = isStep2Valid;
+    // Atualiza apenas a completude de contatos
+    Future<void> _updateContactsCompleteness(String barId) async {
+      try {
+        // Busca o bar atual para manter outros dados
+        final bars = await _barRepository.listMyBars(_authRepository.currentUser!.uid).first;
+        final currentBar = bars.firstWhere((bar) => bar.id == barId);
+        
+        // Atualiza apenas a flag de contatos
+        final updatedBar = currentBar.copyWith(
+          profile: currentBar.profile.copyWith(
+            contactsComplete: isStep1Valid,
+          ),
+        );
+        
+        await _barRepository.update(updatedBar);
+      } catch (e) {
+        debugPrint('Erro ao atualizar completude de contatos: $e');
+        rethrow;
+      }
+    }
 
-       await _legacyBarRepository.updateBarFields(barId, {
-         'profile.contactsComplete': contactsComplete,
-         'profile.addressComplete': addressComplete,
-       });
-     }
+    // Atualiza apenas a completude de endereço
+    Future<void> _updateAddressCompleteness(String barId) async {
+      try {
+        // Busca o bar atual para manter outros dados
+        final bars = await _barRepository.listMyBars(_authRepository.currentUser!.uid).first;
+        final currentBar = bars.firstWhere((bar) => bar.id == barId);
+        
+        // Atualiza apenas a flag de endereço
+        final updatedBar = currentBar.copyWith(
+          profile: currentBar.profile.copyWith(
+            addressComplete: isStep2Valid,
+          ),
+        );
+        
+        await _barRepository.update(updatedBar);
+      } catch (e) {
+        debugPrint('Erro ao atualizar completude de endereço: $e');
+        rethrow;
+      }
+    }
+
+    // Atualiza os campos de completude do perfil (ambos)
+    Future<void> _updateProfileCompleteness(String barId) async {
+      try {
+        // Busca o bar atual para manter outros dados
+        final bars = await _barRepository.listMyBars(_authRepository.currentUser!.uid).first;
+        final currentBar = bars.firstWhere((bar) => bar.id == barId);
+        
+        // Atualiza ambas as flags
+        final updatedBar = currentBar.copyWith(
+          profile: currentBar.profile.copyWith(
+            contactsComplete: isStep1Valid,
+            addressComplete: isStep2Valid,
+          ),
+        );
+        
+        await _barRepository.update(updatedBar);
+      } catch (e) {
+        debugPrint('Erro ao atualizar completude do perfil: $e');
+        rethrow;
+      }
+    }
 
     // Método público para atualizar completude após edição de perfil
     Future<void> updateProfileCompleteness(String barId) async {

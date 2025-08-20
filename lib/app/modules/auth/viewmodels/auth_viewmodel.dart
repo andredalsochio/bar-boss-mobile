@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/auth_user.dart';
-import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
-import 'package:bar_boss_mobile/app/modules/auth/repositories/user_repository.dart';
-import 'package:bar_boss_mobile/app/modules/auth/models/user_model.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
+import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 
 /// Estados possíveis da autenticação
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
@@ -13,7 +13,7 @@ enum AuthState { initial, loading, authenticated, unauthenticated, error }
 /// ViewModel para a tela de login
 class AuthViewModel extends ChangeNotifier {
   final AuthRepository _authRepository;
-  final BarRepository _barRepository;
+  final BarRepositoryDomain _barRepository;
   final UserRepository _userRepository;
 
   AuthState _state = AuthState.initial;
@@ -23,7 +23,7 @@ class AuthViewModel extends ChangeNotifier {
 
   AuthViewModel({
     required AuthRepository authRepository,
-    required BarRepository barRepository,
+    required BarRepositoryDomain barRepository,
     required UserRepository userRepository,
   }) : _authRepository = authRepository,
        _barRepository = barRepository,
@@ -92,12 +92,12 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> _ensureUserDocumentExists(AuthUser user) async {
     try {
       // Verificar se o usuário já existe
-      final existingUser = await _userRepository.getUserById(user.uid);
+      final existingUser = await _userRepository.getMe();
       
       if (existingUser == null) {
         // Criar novo documento do usuário
         final now = DateTime.now();
-        final newUser = UserModel(
+        final newUser = UserProfile(
           uid: user.uid,
           email: user.email ?? '',
           displayName: user.displayName,
@@ -108,7 +108,7 @@ class AuthViewModel extends ChangeNotifier {
           lastLoginAt: now,
         );
         
-        await _userRepository.createUser(newUser);
+        await _userRepository.upsert(newUser);
         debugPrint('✅ Documento do usuário criado: ${user.uid}');
       } else {
         debugPrint('✅ Documento do usuário já existe: ${user.uid}');
@@ -213,9 +213,7 @@ class AuthViewModel extends ChangeNotifier {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) return false;
       
-      final bars = await _barRepository.listBarsByMembership(
-        currentUser.uid,
-      );
+      final bars = await _barRepository.listMyBars(currentUser.uid).first;
       return bars.isNotEmpty;
     } catch (e) {
       debugPrint('Erro ao verificar bar: $e');

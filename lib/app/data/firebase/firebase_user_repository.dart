@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
-import '../adapters/user_profile_adapter.dart';
 
 /// Implementação Firebase da interface UserRepository
 class FirebaseUserRepository implements UserRepository {
@@ -27,7 +26,7 @@ class FirebaseUserRepository implements UserRepository {
 
       final doc = await _usersCollection.doc(currentUser.uid).get();
       if (doc.exists) {
-        return UserProfileAdapter.fromFirestore(doc);
+        return _fromFirestore(doc);
       }
 
       // Se o documento não existe, cria um perfil básico baseado no Firebase Auth
@@ -52,7 +51,7 @@ class FirebaseUserRepository implements UserRepository {
   @override
   Future<void> upsert(UserProfile data) async {
     try {
-      final firestoreData = UserProfileAdapter.toFirestore(data);
+      final firestoreData = _toFirestore(data);
       
       // Verifica se o documento já existe para decidir se adiciona createdAt
       final docRef = _usersCollection.doc(data.uid);
@@ -74,5 +73,75 @@ class FirebaseUserRepository implements UserRepository {
     } catch (e) {
       throw Exception('Erro ao salvar perfil do usuário: $e');
     }
+  }
+
+  // Métodos privados de conversão (anteriormente no UserProfileAdapter)
+  
+  /// Converte DocumentSnapshot do Firestore para UserProfile
+  UserProfile _fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
+    
+    final createdAt = _timestampToDateTime(data[FirestoreKeys.userCreatedAt]);
+    final lastLoginAt = _timestampToDateTimeNullable(data[FirestoreKeys.userLastLoginAt]);
+    
+    return UserProfile(
+      uid: doc.id,
+      email: data[FirestoreKeys.userEmail] ?? '',
+      displayName: data[FirestoreKeys.userDisplayName],
+      photoUrl: data[FirestoreKeys.userPhotoUrl],
+      providers: List<String>.from(data[FirestoreKeys.userProviders] ?? []),
+      currentBarId: data[FirestoreKeys.userCurrentBarId],
+      createdAt: createdAt,
+      lastLoginAt: lastLoginAt,
+    );
+  }
+
+  /// Converte UserProfile de domínio para Map do Firestore
+  Map<String, dynamic> _toFirestore(UserProfile userProfile) {
+    return {
+      FirestoreKeys.userEmail: userProfile.email,
+      FirestoreKeys.userDisplayName: userProfile.displayName,
+      FirestoreKeys.userPhotoUrl: userProfile.photoUrl,
+      FirestoreKeys.userProviders: userProfile.providers,
+      FirestoreKeys.userCurrentBarId: userProfile.currentBarId,
+      FirestoreKeys.userCreatedAt: Timestamp.fromDate(userProfile.createdAt),
+      FirestoreKeys.userLastLoginAt: userProfile.lastLoginAt != null
+          ? Timestamp.fromDate(userProfile.lastLoginAt!)
+          : null,
+    };
+  }
+
+  /// Converte Timestamp para DateTime
+  /// Trata adequadamente valores null que podem ocorrer nos primeiros snapshots
+  /// quando FieldValue.serverTimestamp() ainda não foi processado pelo servidor
+  DateTime _timestampToDateTime(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      return timestamp.toDate();
+    }
+    if (timestamp is DateTime) {
+      return timestamp;
+    }
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+    // Retorna data atual se timestamp for null (primeiro snapshot)
+    // ou se for de tipo inesperado
+    return DateTime.now();
+  }
+
+  /// Converte Timestamp para DateTime nullable
+  /// Retorna null se o valor for null ou inválido
+  DateTime? _timestampToDateTimeNullable(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      return timestamp.toDate();
+    }
+    if (timestamp is DateTime) {
+      return timestamp;
+    }
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+    // Retorna null se timestamp for null ou de tipo inesperado
+    return null;
   }
 }

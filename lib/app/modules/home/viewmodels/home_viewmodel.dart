@@ -1,12 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
-import 'package:bar_boss_mobile/app/domain/repositories/bar_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 
 /// ViewModel para a tela inicial
 class HomeViewModel extends ChangeNotifier {
   final AuthRepository _authRepository;
-  final BarRepository _barRepository;
+  final BarRepositoryDomain _barRepository;
 
   // Estado do perfil
   BarModel? _currentBar;
@@ -18,12 +19,21 @@ class HomeViewModel extends ChangeNotifier {
   
   // Propriedades para controle de fluxo de completude
   List<BarModel> _userBars = [];
+  
+  // Stream subscription para bares
+  StreamSubscription<List<BarModel>>? _barsSubscription;
 
   HomeViewModel({
     required AuthRepository authRepository,
-    required BarRepository barRepository,
+    required BarRepositoryDomain barRepository,
   }) : _authRepository = authRepository,
        _barRepository = barRepository;
+       
+  @override
+  void dispose() {
+    _barsSubscription?.cancel();
+    super.dispose();
+  }
 
   // Getters
   BarModel? get currentBar => _currentBar;
@@ -73,21 +83,36 @@ class HomeViewModel extends ChangeNotifier {
       // Carrega bares por membership (fonte da verdade)
       debugPrint('🏠 DEBUG Home: Iniciando carregamento de bares para uid=${currentUser.uid}');
       
-      _userBars = await _barRepository.listBarsByMembership(currentUser.uid);
+      // Cancela subscription anterior se existir
+      _barsSubscription?.cancel();
       
-      debugPrint('🏠 DEBUG Home: Encontrados ${_userBars.length} bares');
-      
-      if (_userBars.isNotEmpty) {
-        _currentBar = _userBars.first; // Seleciona o primeiro bar
-        debugPrint('🏠 DEBUG Home: Bar selecionado: id=${_currentBar!.id}, name=${_currentBar!.name}');
-        debugPrint('🏠 DEBUG Home: Profile do bar: contactsComplete=${_currentBar!.profile.contactsComplete}, addressComplete=${_currentBar!.profile.addressComplete}');
-      } else {
-        _currentBar = null;
-        debugPrint('🏠 DEBUG Home: Nenhum bar encontrado - _currentBar definido como null');
-      }
-      
-      // Debug logs conforme especificado
-      debugPrint('🏠 DEBUG Home: hasBar=${hasBar}, profileStepsDone=${profileStepsDone}, canCreateEvent=${canCreateEvent}, currentBarId=${currentBarId}');
+      // Escuta mudanças nos bares do usuário
+      _barsSubscription = _barRepository.listMyBars(currentUser.uid).listen(
+        (bars) {
+          _userBars = bars;
+          debugPrint('🏠 DEBUG Home: Encontrados ${_userBars.length} bares');
+          
+          if (_userBars.isNotEmpty) {
+            _currentBar = _userBars.first; // Seleciona o primeiro bar
+            debugPrint('🏠 DEBUG Home: Bar selecionado: id=${_currentBar!.id}, name=${_currentBar!.name}');
+            debugPrint('🏠 DEBUG Home: Profile do bar: contactsComplete=${_currentBar!.profile.contactsComplete}, addressComplete=${_currentBar!.profile.addressComplete}');
+          } else {
+            _currentBar = null;
+            debugPrint('🏠 DEBUG Home: Nenhum bar encontrado - _currentBar definido como null');
+          }
+          
+          // Debug logs conforme especificado
+          debugPrint('🏠 DEBUG Home: hasBar=${hasBar}, profileStepsDone=${profileStepsDone}, canCreateEvent=${canCreateEvent}, currentBarId=${currentBarId}');
+          
+          _setLoading(false);
+          notifyListeners();
+        },
+        onError: (error) {
+          debugPrint('🏠 ERROR Home: Erro ao carregar bares: $error');
+          _setError('Erro ao carregar dados do bar: $error');
+          _setLoading(false);
+        },
+       );
       
       notifyListeners();
     } catch (e) {

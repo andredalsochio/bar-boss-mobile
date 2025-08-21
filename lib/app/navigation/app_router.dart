@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_routes.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
@@ -11,7 +10,6 @@ import 'package:bar_boss_mobile/app/modules/register_bar/views/step3_page.dart';
 import 'package:bar_boss_mobile/app/modules/home/views/home_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/events_list_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/event_form_page.dart';
-import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
 
 /// Configuração centralizada de navegação com GoRouter
 class AppRouter {

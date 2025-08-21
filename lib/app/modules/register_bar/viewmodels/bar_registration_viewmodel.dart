@@ -13,7 +13,6 @@ enum RegistrationState { initial, loading, success, error }
 class BarRegistrationViewModel extends ChangeNotifier {
   final BarRepositoryDomain _barRepository;
   final AuthRepository _authRepository;
-  final DraftStorage _draftStorage = DraftStorage();
 
   // Estado atual do cadastro
   RegistrationState _registrationState = RegistrationState.initial;

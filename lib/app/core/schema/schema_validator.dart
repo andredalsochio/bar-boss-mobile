@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'schemas.dart';
 import 'firestore_keys.dart';
 
 /// Validador de schemas para debug que verifica se os documentos

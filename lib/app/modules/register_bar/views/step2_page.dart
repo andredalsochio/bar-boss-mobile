@@ -134,20 +134,21 @@ class _Step2PageState extends State<Step2Page> {
       ),
       body: Consumer<BarRegistrationViewModel>(
         builder: (context, viewModel, _) {
-          // Atualiza os controladores quando os valores do ViewModel mudam
-          // devido à busca de CEP
-          if (_streetController.text != viewModel.street) {
-            _streetController.text = viewModel.street;
-          }
-          if (_stateController.text != viewModel.state) {
-            _stateController.text = viewModel.state;
-          }
-          if (_cityController.text != viewModel.city) {
-            _cityController.text = viewModel.city;
-          }
-          if (_complementController.text != viewModel.complement) {
-            _complementController.text = viewModel.complement;
-          }
+          // Atualiza os controladores após o build para evitar setState during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_streetController.text != viewModel.street) {
+              _streetController.text = viewModel.street;
+            }
+            if (_stateController.text != viewModel.state) {
+              _stateController.text = viewModel.state;
+            }
+            if (_cityController.text != viewModel.city) {
+              _cityController.text = viewModel.city;
+            }
+            if (_complementController.text != viewModel.complement) {
+              _complementController.text = viewModel.complement;
+            }
+          });
 
           return LoadingOverlay(
             isLoading: viewModel.isLoading,

@@ -46,12 +46,41 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadData() async {
     await Future.wait([
       _eventsViewModel.loadUpcomingEvents(),
+      _homeViewModel.loadUserProfile(), // Carrega UserProfile primeiro
       _homeViewModel.loadCurrentBar(),
     ]);
   }
 
   Future<void> _loadUpcomingEvents() async {
     await _eventsViewModel.loadUpcomingEvents();
+  }
+
+  void _showNoBarModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Bar não cadastrado'),
+          content: const Text(
+            'Para criar eventos, você precisa ter um bar cadastrado. '
+            'Deseja completar o cadastro do seu bar agora?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/register/step1');
+              },
+              child: const Text('Cadastrar Bar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -105,18 +134,17 @@ class _HomePageState extends State<HomePage> {
                     builder: (context, viewModel, _) {
                       return ButtonWidget(
                         text: AppStrings.newEventButton,
-                        onPressed: viewModel.canCreateEvent 
+                        onPressed: viewModel.hasBar 
                             ? () {
-                                debugPrint('🎯 DEBUG Home: Navegando para criação de evento (canCreateEvent=true)');
+                                debugPrint('🎯 DEBUG Home: Navegando para criação de evento (hasBar=true)');
                                 context.pushNamed('eventForm');
                               }
                             : () {
-                                debugPrint('🚫 DEBUG Home: Botão "Novo evento" desabilitado (canCreateEvent=false, motivo: ${viewModel.hasBar ? "perfil incompleto (${viewModel.profileStepsDone}/2)" : "nenhum bar cadastrado"})');
+                                debugPrint('🚫 DEBUG Home: Usuário sem bar - exibindo modal');
+                                _showNoBarModal(context);
                               },
                         icon: Icons.add_circle,
-                        backgroundColor: viewModel.canCreateEvent 
-                            ? AppColors.primary 
-                            : Colors.grey,
+                        backgroundColor: AppColors.primary, // Sempre habilitado
                       );
                     },
                   ),

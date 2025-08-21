@@ -1,4 +1,4 @@
-import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
 
 /// Entidade de domínio para o perfil do usuário
 class UserProfile {
@@ -10,6 +10,10 @@ class UserProfile {
   final String? currentBarId;
   final DateTime createdAt;
   final DateTime? lastLoginAt;
+  /// Flag para indicar se o usuário completou o cadastro completo via "Não tem um bar?"
+  /// true = usuário completou Passo 1 + Passo 2 + Criar Senha
+  /// false = usuário fez login social e pode precisar completar perfil
+  final bool completedFullRegistration;
 
   UserProfile({
     required this.uid,
@@ -20,6 +24,7 @@ class UserProfile {
     this.currentBarId,
     required this.createdAt,
     this.lastLoginAt,
+    this.completedFullRegistration = false,
   });
 
   /// Cria um UserProfile vazio
@@ -29,6 +34,7 @@ class UserProfile {
       email: email,
       providers: [],
       createdAt: DateTime.now(),
+      completedFullRegistration: false,
     );
   }
 
@@ -47,6 +53,7 @@ class UserProfile {
       lastLoginAt: data[FirestoreKeys.userLastLoginAt] is DateTime
           ? data[FirestoreKeys.userLastLoginAt]
           : null,
+      completedFullRegistration: data[FirestoreKeys.userCompletedFullRegistration] ?? false,
     );
   }
 
@@ -60,6 +67,7 @@ class UserProfile {
       FirestoreKeys.userCurrentBarId: currentBarId,
       FirestoreKeys.userCreatedAt: createdAt,
       FirestoreKeys.userLastLoginAt: lastLoginAt,
+      FirestoreKeys.userCompletedFullRegistration: completedFullRegistration,
     };
   }
 
@@ -73,6 +81,7 @@ class UserProfile {
     String? currentBarId,
     DateTime? createdAt,
     DateTime? lastLoginAt,
+    bool? completedFullRegistration,
   }) {
     return UserProfile(
       uid: uid ?? this.uid,
@@ -83,6 +92,7 @@ class UserProfile {
       currentBarId: currentBarId ?? this.currentBarId,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      completedFullRegistration: completedFullRegistration ?? this.completedFullRegistration,
     );
   }
 

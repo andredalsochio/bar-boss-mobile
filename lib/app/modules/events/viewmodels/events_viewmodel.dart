@@ -31,6 +31,10 @@ class EventsViewModel extends ChangeNotifier {
   List<EventModel> _events = [];
   List<EventModel> _upcomingEvents = [];
 
+  // Streams
+  Stream<List<EventModel>>? _eventsStream;
+  Stream<List<BarModel>>? _barsStream;
+
   // Validação dos campos
   bool _isDateValid = false;
   bool _areAttractionsValid = false;
@@ -75,6 +79,12 @@ class EventsViewModel extends ChangeNotifier {
   /// Lista de eventos futuros
   List<EventModel> get upcomingEvents => _upcomingEvents;
 
+  /// Stream de eventos
+  Stream<List<EventModel>>? get eventsStream => _eventsStream;
+
+  /// Stream de bares
+  Stream<List<BarModel>>? get barsStream => _barsStream;
+
   /// Validação da data
   bool get isDateValid => _isDateValid;
 
@@ -101,27 +111,38 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      // TODO: Implementar stream listener para listMyBars
-      // Por enquanto, usar uma lista vazia até implementar stream handling
-      final List<BarModel> bars = [];
+      // Configura stream de bares do usuário
+      _barsStream = _barRepository.listMyBars(currentUser.uid);
       
-      debugPrint('🔍 DEBUG: Usuário ${currentUser.uid} tem ${bars.length} bares');
-      for (int i = 0; i < bars.length; i++) {
-        debugPrint('  Bar $i: ${bars[i].id} - ${bars[i].name}');
+      // Escuta o primeiro bar disponível para configurar stream de eventos
+      final barsSnapshot = await _barsStream!.first;
+      
+      debugPrint('🔍 DEBUG: Usuário ${currentUser.uid} tem ${barsSnapshot.length} bares');
+      for (int i = 0; i < barsSnapshot.length; i++) {
+        debugPrint('  Bar $i: ${barsSnapshot[i].id} - ${barsSnapshot[i].name}');
       }
       
-      if (bars.isEmpty) {
+      if (barsSnapshot.isEmpty) {
         debugPrint('❌ DEBUG: Nenhum bar encontrado para o usuário ${currentUser.uid}');
+        _events = [];
+        _upcomingEvents = [];
+        _setState(EventsState.success);
         return;
       }
       
-      final bar = bars.first; // Assume que o usuário tem apenas um bar
+      final bar = barsSnapshot.first; // Assume que o usuário tem apenas um bar
       debugPrint('✅ DEBUG: Usando bar ${bar.id} - ${bar.name}');
 
-      // TODO: Implementar stream listener para upcomingByBar
-      // Por enquanto, usar listas vazias até implementar stream handling
-      _events = [];
-      _upcomingEvents = [];
+      // Configura stream de eventos do bar
+      _eventsStream = _eventRepository.upcomingByBar(bar.id);
+      
+      // Carrega eventos iniciais
+      final eventsSnapshot = await _eventsStream!.first;
+      _events = eventsSnapshot;
+      _upcomingEvents = eventsSnapshot.where((event) => 
+        event.startAt.isAfter(DateTime.now())
+      ).toList();
+      
       _setState(EventsState.success);
     } catch (e) {
       _setError(AppStrings.loadEventsErrorMessage);
@@ -158,35 +179,34 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      // TODO: Implementar stream listener para listMyBars
-      // Por enquanto, usar uma lista vazia até implementar stream handling
-      final List<BarModel> bars = [];
+      // Busca bares do usuário
+      final barsSnapshot = await _barRepository.listMyBars(currentUser.uid).first;
       
-      debugPrint('🔍 DEBUG saveEvent: Usuário ${currentUser.uid} tem ${bars.length} bares');
-      for (int i = 0; i < bars.length; i++) {
-        debugPrint('  Bar $i: ${bars[i].id} - ${bars[i].name}');
+      debugPrint('🔍 DEBUG loadEvent: Usuário ${currentUser.uid} tem ${barsSnapshot.length} bares');
+      for (int i = 0; i < barsSnapshot.length; i++) {
+        debugPrint('  Bar $i: ${barsSnapshot[i].id} - ${barsSnapshot[i].name}');
       }
       
-      if (bars.isEmpty) {
-        debugPrint('❌ DEBUG saveEvent: Nenhum bar encontrado para o usuário ${currentUser.uid}');
+      if (barsSnapshot.isEmpty) {
+        debugPrint('❌ DEBUG loadEvent: Nenhum bar encontrado para o usuário ${currentUser.uid}');
+        _setError(AppStrings.userNotFoundErrorMessage);
         return;
       }
       
-      final bar = bars.first; // Assume que o usuário tem apenas um bar
-      debugPrint('✅ DEBUG saveEvent: Usando bar ${bar.id} - ${bar.name}');
+      final bar = barsSnapshot.first; // Assume que o usuário tem apenas um bar
+      debugPrint('✅ DEBUG loadEvent: Usando bar ${bar.id} - ${bar.name}');
 
-      // TODO: Implementar busca de evento por ID via stream ou cache local
-      // Por enquanto, usar evento atual se disponível
-      if (_currentEvent == null || _currentEvent!.id != eventId) {
-        _setError(AppStrings.eventNotFoundErrorMessage);
-        return;
-      }
-      final event = _currentEvent!;
+      // Busca o evento específico no stream de eventos
+      final eventsSnapshot = await _eventRepository.upcomingByBar(bar.id).first;
+      final event = eventsSnapshot.firstWhere(
+        (e) => e.id == eventId,
+        orElse: () => throw Exception('Evento não encontrado'),
+      );
 
       _currentEvent = event;
       _eventDate = event.startAt;
       _attractions = List<String>.from(event.attractions ?? []);
-  
+      _promotionDetails = event.description ?? '';
 
       _validateDate();
       _validateAttractions();
@@ -287,15 +307,15 @@ class EventsViewModel extends ChangeNotifier {
         return;
       }
 
-      // TODO: Implementar stream listener para listMyBars
-      // Por enquanto, usar uma lista vazia até implementar stream handling
-      final List<BarModel> bars = [];
+      // Busca bares do usuário
+      final barsSnapshot = await _barRepository.listMyBars(currentUser.uid).first;
       
-      if (bars.isEmpty) {
+      if (barsSnapshot.isEmpty) {
+        _setError(AppStrings.userNotFoundErrorMessage);
         return;
       }
       
-      final bar = bars.first; // Assume que o usuário tem apenas um bar
+      final bar = barsSnapshot.first; // Assume que o usuário tem apenas um bar
 
       // Remove atrações vazias
       final filteredAttractions =
@@ -363,22 +383,21 @@ class EventsViewModel extends ChangeNotifier {
       }
 
       // Busca os bares do usuário usando membership
-      // TODO: Implementar stream listener para listMyBars
-      // Por enquanto, usar uma lista vazia até implementar stream handling
-      final List<BarModel> bars = [];
+      final barsSnapshot = await _barRepository.listMyBars(currentUser.uid).first;
       
-      if (bars.isEmpty) {
+      if (barsSnapshot.isEmpty) {
+        _events = [];
+        _upcomingEvents = [];
+        _setState(EventsState.success);
         return;
       }
       
-      final bar = bars.first; // Assume que o usuário tem apenas um bar
+      final bar = barsSnapshot.first; // Assume que o usuário tem apenas um bar
 
-      // Carrega eventos futuros
-      final now = DateTime.now();
-      // TODO: Implementar stream listener para upcomingByBar
-      // Por enquanto, usar lista vazia até implementar stream handling
-      _events = [];
-      _upcomingEvents = []
+      // Carrega eventos futuros usando stream
+      final eventsSnapshot = await _eventRepository.upcomingByBar(bar.id).first;
+      _events = eventsSnapshot;
+      _upcomingEvents = eventsSnapshot
             ..sort((a, b) => a.startAt.compareTo(b.startAt));
 
       _setState(EventsState.success);
@@ -398,8 +417,7 @@ class EventsViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      // TODO: Obter barId do evento atual
-      // Por enquanto, usar barId do evento atual
+      // Usa o barId do evento atual
       await _eventRepository.delete(_currentEvent!.barId, _currentEvent!.id);
 
       // Recarrega os eventos

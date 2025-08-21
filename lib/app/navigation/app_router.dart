@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_routes.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
@@ -52,16 +53,19 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.eventsList,
           name: 'eventsList',
+          redirect: _handleBarRegistrationGuard,
           builder: (context, state) => const EventsListPage(),
         ),
         GoRoute(
           path: AppRoutes.eventForm,
           name: 'eventForm',
+          redirect: _handleBarRegistrationGuard,
           builder: (context, state) => const EventFormPage(),
         ),
         GoRoute(
           path: AppRoutes.eventEdit,
           name: 'eventEdit',
+          redirect: _handleBarRegistrationGuard,
           builder: (context, state) {
             final eventId = state.pathParameters['id'] ?? '';
             return EventFormPage(eventId: eventId);
@@ -70,6 +74,7 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.eventDetails,
           name: 'eventDetails',
+          redirect: _handleBarRegistrationGuard,
           builder: (context, state) {
             final eventId = state.pathParameters['id'] ?? '';
             return EventFormPage(eventId: eventId, readOnly: true);
@@ -133,5 +138,27 @@ class AppRouter {
     // que exibirá o banner "Complete seu cadastro (X/2)" quando necessário
     
     return null; // Não redireciona
+  }
+
+  /// Guard para verificar se o usuário tem bar cadastrado
+  /// Bloqueia acesso a telas de eventos se não tiver bar
+  static Future<String?> _handleBarRegistrationGuard(
+    BuildContext context,
+    GoRouterState state,
+  ) async {
+    try {
+      final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+      final hasBar = await authViewModel.hasBarRegistered();
+      
+      if (!hasBar) {
+        // Redireciona para cadastro de bar se não tiver
+        return '/register-bar/step1';
+      }
+      
+      return null; // Permite navegação
+    } catch (e) {
+      debugPrint('Erro no guard de bar: $e');
+      return '/login'; // Redireciona para login em caso de erro
+    }
   }
 }

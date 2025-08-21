@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
-import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/constants/firestore_keys.dart';
 
 /// Implementação Firebase da interface UserRepository
 class FirebaseUserRepository implements UserRepository {
@@ -21,14 +22,19 @@ class FirebaseUserRepository implements UserRepository {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
+        debugPrint('🔍 [DEBUG] UserRepository.getMe: Usuário não autenticado');
         return null;
       }
 
+      debugPrint('🔍 [DEBUG] UserRepository.getMe: Buscando perfil para uid=${currentUser.uid}');
       final doc = await _usersCollection.doc(currentUser.uid).get();
       if (doc.exists) {
-        return _fromFirestore(doc);
+        final profile = _fromFirestore(doc);
+        debugPrint('🔍 [DEBUG] UserRepository.getMe: Perfil encontrado - completedFullRegistration=${profile.completedFullRegistration}');
+        return profile;
       }
 
+      debugPrint('🔍 [DEBUG] UserRepository.getMe: Perfil não existe, criando perfil básico');
       // Se o documento não existe, cria um perfil básico baseado no Firebase Auth
       final profile = UserProfile(
         uid: currentUser.uid,
@@ -38,12 +44,15 @@ class FirebaseUserRepository implements UserRepository {
         providers: currentUser.providerData.map((p) => p.providerId).toList(),
         createdAt: currentUser.metadata.creationTime ?? DateTime.now(),
         lastLoginAt: currentUser.metadata.lastSignInTime,
+        completedFullRegistration: false, // Perfil básico sempre false
       );
 
+      debugPrint('🔍 [DEBUG] UserRepository.getMe: Salvando perfil básico com completedFullRegistration=false');
       // Salva o perfil no Firestore
       await upsert(profile);
       return profile;
     } catch (e) {
+      debugPrint('❌ [DEBUG] UserRepository.getMe: Erro - $e');
       throw Exception('Erro ao buscar perfil do usuário: $e');
     }
   }
@@ -51,6 +60,7 @@ class FirebaseUserRepository implements UserRepository {
   @override
   Future<void> upsert(UserProfile data) async {
     try {
+      debugPrint('🔍 [DEBUG] UserRepository.upsert: Salvando perfil uid=${data.uid}, completedFullRegistration=${data.completedFullRegistration}');
       final firestoreData = _toFirestore(data);
       
       // Verifica se o documento já existe para decidir se adiciona createdAt
@@ -59,18 +69,23 @@ class FirebaseUserRepository implements UserRepository {
       
       if (docSnapshot.exists) {
         // Documento existe, apenas atualiza com updatedAt
+        debugPrint('🔍 [DEBUG] UserRepository.upsert: Documento existe, atualizando');
         firestoreData['updatedAt'] = _now;
       } else {
         // Documento novo, adiciona createdAt e updatedAt
+        debugPrint('🔍 [DEBUG] UserRepository.upsert: Documento novo, criando');
         firestoreData['createdAt'] = _now;
         firestoreData['updatedAt'] = _now;
       }
       
+      debugPrint('🔍 [DEBUG] UserRepository.upsert: Dados Firestore: $firestoreData');
       await docRef.set(
         firestoreData,
         SetOptions(merge: true),
       );
+      debugPrint('✅ [DEBUG] UserRepository.upsert: Perfil salvo com sucesso');
     } catch (e) {
+      debugPrint('❌ [DEBUG] UserRepository.upsert: Erro - $e');
       throw Exception('Erro ao salvar perfil do usuário: $e');
     }
   }
@@ -93,6 +108,7 @@ class FirebaseUserRepository implements UserRepository {
       currentBarId: data[FirestoreKeys.userCurrentBarId],
       createdAt: createdAt,
       lastLoginAt: lastLoginAt,
+      completedFullRegistration: data[FirestoreKeys.userCompletedFullRegistration] ?? false,
     );
   }
 
@@ -108,6 +124,7 @@ class FirebaseUserRepository implements UserRepository {
       FirestoreKeys.userLastLoginAt: userProfile.lastLoginAt != null
           ? Timestamp.fromDate(userProfile.lastLoginAt!)
           : null,
+      FirestoreKeys.userCompletedFullRegistration: userProfile.completedFullRegistration,
     };
   }
 

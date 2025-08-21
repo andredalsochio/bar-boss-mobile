@@ -11,6 +11,7 @@ import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
 
 /// Tela de cadastro de bar - Passo 1 (Informações de contato)
@@ -100,8 +101,11 @@ class _Step1PageState extends State<Step1Page> {
     _viewModel.setPhone(_phoneController.text);
   }
 
-  void _goToNextStep() {
-    if (_viewModel.isStep1Valid) {
+  Future<void> _goToNextStep() async {
+    if (!_viewModel.isStep1Valid) return;
+
+    final isValid = await _viewModel.validateStep1AndCheckEmail();
+    if (isValid && mounted) {
       context.pushNamed('registerStep2');
     }
   }
@@ -171,6 +175,13 @@ class _Step1PageState extends State<Step1Page> {
                     validator: (value) => Validators.phone(value),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
+                  if (viewModel.registrationState == RegistrationState.error && viewModel.errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSizes.spacingMedium),
+                      child: ErrorMessageWidget(
+                        message: viewModel.errorMessage!,
+                      ),
+                    ),
                   ButtonWidget(
                     text: AppStrings.continueButton,
                     onPressed: viewModel.isStep1Valid ? _goToNextStep : null,

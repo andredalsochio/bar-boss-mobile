@@ -15,6 +15,7 @@ class FirestoreKeys {
   static const String userCurrentBarId = 'currentBarId';
   static const String userCreatedAt = 'createdAt';
   static const String userLastLoginAt = 'lastLoginAt';
+  static const String userCompletedFullRegistration = 'completedFullRegistration';
   
   // Bar document fields (/bars/{barId})
   static const String barName = 'name';

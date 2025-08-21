@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/auth_user.dart';
 import 'package:bar_boss_mobile/app/domain/entities/auth_result.dart';
@@ -182,6 +183,21 @@ class FirebaseAuthRepository implements AuthRepository {
       await _auth.signOut();
     } catch (e) {
       throw Exception('Erro ao fazer logout: $e');
+    }
+  }
+
+  @override
+  Future<bool> isEmailInUse(String email) async {
+    try {
+      debugPrint('🔍 [DEBUG] Firebase: fetchSignInMethodsForEmail para $email');
+      final methods = await _auth.fetchSignInMethodsForEmail(email);
+      debugPrint('🔍 [DEBUG] Firebase: métodos encontrados: $methods');
+      final isInUse = methods.isNotEmpty;
+      debugPrint('🔍 [DEBUG] Firebase: email em uso = $isInUse');
+      return isInUse;
+    } catch (e) {
+      debugPrint('❌ [DEBUG] Firebase: erro ao verificar email: $e');
+      throw Exception('Erro ao verificar email: $e');
     }
   }
 

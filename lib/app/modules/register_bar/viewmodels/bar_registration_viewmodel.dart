@@ -3,6 +3,8 @@ import 'package:search_cep/search_cep.dart';
 
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
+import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/storage/draft_storage.dart';
 
@@ -13,6 +15,7 @@ enum RegistrationState { initial, loading, success, error }
 class BarRegistrationViewModel extends ChangeNotifier {
   final BarRepositoryDomain _barRepository;
   final AuthRepository _authRepository;
+  final UserRepository _userRepository;
 
   // Estado atual do cadastro
   RegistrationState _registrationState = RegistrationState.initial;
@@ -59,8 +62,10 @@ class BarRegistrationViewModel extends ChangeNotifier {
   BarRegistrationViewModel({
     required BarRepositoryDomain barRepository,
     required AuthRepository authRepository,
+    required UserRepository userRepository,
   }) : _barRepository = barRepository,
-       _authRepository = authRepository;
+       _authRepository = authRepository,
+       _userRepository = userRepository;
 
   // Getters para o estado
   RegistrationState get registrationState => _registrationState;
@@ -221,6 +226,43 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _isEmailValid =
         _email.isNotEmpty &&
         RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_email);
+  }
+
+  /// Valida o Passo 1 e verifica se o e-mail já está em uso
+  /// Retorna true se tudo estiver válido e o e-mail não estiver em uso
+  Future<bool> validateStep1AndCheckEmail() async {
+    debugPrint('🔍 [DEBUG] validateStep1AndCheckEmail chamado para email: $_email');
+    
+    if (!isStep1Valid) {
+      debugPrint('❌ [DEBUG] Step 1 inválido');
+      _setError('Preencha todos os campos obrigatórios');
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      debugPrint('🔍 [DEBUG] Verificando se email $_email já está em uso...');
+      // Verifica se o email já está em uso
+      final emailInUse = await _authRepository.isEmailInUse(_email);
+      debugPrint('🔍 [DEBUG] Email em uso: $emailInUse');
+      
+      if (emailInUse) {
+        debugPrint('❌ [DEBUG] Email já está cadastrado, bloqueando avanço');
+        _setError('Este email já está cadastrado');
+        return false;
+      }
+
+      debugPrint('✅ [DEBUG] Email disponível, permitindo avanço');
+      return true;
+    } catch (e) {
+      debugPrint('❌ [DEBUG] Erro ao verificar email: $e');
+      _setError('Erro ao verificar e-mail: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   void _validateCnpj() {
@@ -411,9 +453,26 @@ class BarRegistrationViewModel extends ChangeNotifier {
 
       await _barRepository.create(bar);
 
+      // Cria o UserProfile com completedFullRegistration = true
+      // Como o usuário passou por todos os passos (1, 2 e 3), marca a flag como true
+      final userProfile = UserProfile(
+        uid: currentUser.uid,
+        email: _email,
+        displayName: _responsibleName,
+        photoUrl: null,
+        providers: ['email'], // Cadastro via email/senha
+        currentBarId: null, // Será atualizado pelo repositório do bar
+        createdAt: DateTime.now(),
+        lastLoginAt: DateTime.now(),
+        completedFullRegistration: true, // Usuário completou cadastro completo
+      );
+
+      await _userRepository.upsert(userProfile);
+
       // Debug log conforme especificado
       debugPrint('🎉 DEBUG Cadastro finalizado: Bar criado com sucesso para usuário ${currentUser.uid}');
       debugPrint('🎉 DEBUG Cadastro finalizado: Profile completo - contactsComplete=true, addressComplete=true');
+      debugPrint('🎉 DEBUG Cadastro finalizado: UserProfile criado com completedFullRegistration=true');
 
       // Limpa os rascunhos após sucesso
       await clearDrafts();

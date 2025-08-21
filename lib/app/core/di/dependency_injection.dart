@@ -63,6 +63,7 @@ class DependencyInjection {
       create: (context) => BarRegistrationViewModel(
         barRepository: context.read<BarRepositoryDomain>(),
         authRepository: context.read<AuthRepository>(),
+        userRepository: context.read<UserRepository>(),
       ),
     ),
     ChangeNotifierProvider<EventsViewModel>(
@@ -76,6 +77,8 @@ class DependencyInjection {
       create: (context) => HomeViewModel(
         authRepository: context.read<AuthRepository>(),
         barRepository: context.read<BarRepositoryDomain>(),
+        userRepository: context.read<UserRepository>(),
+        eventRepository: context.read<EventRepositoryDomain>(),
       ),
     ),
   ];

@@ -449,11 +449,13 @@ class BarRegistrationViewModel extends ChangeNotifier {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         createdByUid: currentUser.uid,
+        primaryOwnerUid: currentUser.uid, // Campo obrigatório para as regras do Firestore
       );
 
-      await _barRepository.create(bar);
+      // Cria o bar e obtém o ID gerado
+      final barId = await _barRepository.create(bar);
 
-      // Cria o UserProfile com completedFullRegistration = true
+      // Cria o UserProfile com completedFullRegistration = true e currentBarId
       // Como o usuário passou por todos os passos (1, 2 e 3), marca a flag como true
       final userProfile = UserProfile(
         uid: currentUser.uid,
@@ -461,7 +463,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
         displayName: _responsibleName,
         photoUrl: null,
         providers: ['email'], // Cadastro via email/senha
-        currentBarId: null, // Será atualizado pelo repositório do bar
+        currentBarId: barId, // Define o bar recém-criado como atual
         createdAt: DateTime.now(),
         lastLoginAt: DateTime.now(),
         completedFullRegistration: true, // Usuário completou cadastro completo

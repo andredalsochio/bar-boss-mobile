@@ -1,111 +1,120 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-  // Funções de validação
-  function isBarMember(barId, uid) {
-    return exists(/databases/$(database)/documents/bars/$(barId)/members/$(uid));
-  }
+    // Helpers
+    function isAuth() { return request.auth != null; }
+    function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
 
-  function isBarOwner(barId, uid) {
-    return exists(/databases/$(database)/documents/bars/$(barId)/members/$(uid)) &&
-           get(/databases/$(database)/documents/bars/$(barId)/members/$(uid)).data.role == 'OWNER';
-  }
+    function isBarMember(barId, uid) {
+      return exists(/databases/$(database)/documents/bars/$(barId)/members/$(uid));
+    }
+    function isBarOwner(barId, uid) {
+      return isBarMember(barId, uid) &&
+             get(/databases/$(database)/documents/bars/$(barId)/members/$(uid)).data.role == 'OWNER';
+    }
 
-  function isAuthenticated() {
-    return request.auth != null;
-  }
+    // address: complement é opcional
+    function validAddress(address) {
+      return address is map
+        && address.keys().hasAll(['cep','street','number','state','city'])
+        && address.cep is string && address.cep.size() > 0
+        && address.street is string && address.street.size() > 0
+        && address.number is string && address.number.size() > 0
+        && address.state is string && address.state.size() > 0
+        && address.city is string && address.city.size() > 0;
+        // complement opcional
+    }
 
-  function isOwner(uid) {
-    return request.auth.uid == uid;
-  }
+    // Validação mínima de bar no create/update
+    function validBarCreate(data) {
+      return data.keys().hasAll([
+        'name','cnpj','responsibleName','contactEmail','contactPhone',
+        'address','createdAt','createdByUid','primaryOwnerUid'
+      ])
+      && data.name is string && data.name.size() > 0
+      && data.cnpj is string && data.cnpj.size() > 0
+      && data.responsibleName is string && data.responsibleName.size() > 0
+      && data.contactEmail is string && data.contactEmail.size() > 0
+      && data.contactPhone is string && data.contactPhone.size() > 0
+      && validAddress(data.address)
+      && data.createdByUid == request.auth.uid
+      && data.primaryOwnerUid == request.auth.uid;
+    }
 
-  function validateUser(data) {
-    return data.keys().hasAll(['email', 'displayName', 'createdAt']) &&
-      data.displayName is string && data.displayName.size() >= 1 &&
-      data.providers is list;
-  }
+    function validMember(data) {
+      return data.keys().hasAll(['uid','role','createdAt'])
+        && data.uid is string && data.uid.size() > 0
+        && data.role in ['OWNER','ADMIN','EDITOR'];
+    }
 
-  function validateBar(data) {
-    return data.keys().hasAll(['name', 'cnpj', 'responsibleName', 'contactEmail', 'contactPhone', 'address', 'createdAt', 'createdByUid', 'primaryOwnerUid']) &&
-      data.name is string && data.name.size() >= 1 &&
-      data.cnpj is string && data.cnpj.size() >= 14 &&
-      data.responsibleName is string && data.responsibleName.size() >= 1 &&
-      data.contactEmail is string && data.contactEmail.size() >= 1 &&
-      data.contactPhone is string && data.contactPhone.size() >= 1 &&
-      data.address is map && validateAddress(data.address) &&
-      data.createdByUid == request.auth.uid &&
-      data.primaryOwnerUid == request.auth.uid;
-  }
+    function validEvent(data) {
+      return data.keys().hasAll(['title','startAt','published','createdAt','createdByUid'])
+        && data.title is string && data.title.size() > 0
+        && data.published is bool
+        && (!('endAt' in data) || data.endAt >= data.startAt)
+        && data.createdByUid == request.auth.uid;
+    }
 
-  // Função para validar endereço - complemento é opcional
-  function validateAddress(address) {
-    return address.keys().hasAll(['cep', 'street', 'number', 'city', 'state']) &&
-      address.cep is string && address.cep.size() >= 8 &&
-      address.street is string && address.street.size() >= 1 &&
-      address.number is string && address.number.size() >= 1 &&
-      address.city is string && address.city.size() >= 1 &&
-      address.state is string && address.state.size() >= 2 &&
-      // complement é opcional - não precisa estar presente
-      (!('complement' in address) || address.complement is string);
-  }
+    // users
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      // delete opcionalmente restrito ao próprio usuário
+      allow delete: if isOwner(uid);
+    }
 
-  function validateMember(data) {
-    return data.keys().hasAll(['uid', 'role', 'createdAt']) &&
-      data.role in ['OWNER', 'ADMIN', 'EDITOR'];
-  }
+    // bars
+    match /bars/{barId} {
+      // Leitura: somente membros do bar
+      allow read: if isAuth() && isBarMember(barId, request.auth.uid);
 
-  function validateEvent(data) {
-    return data.keys().hasAll(['barId', 'title', 'startAt', 'createdAt', 'createdByUid']) &&
-      data.title is string && data.title.size() >= 1 &&
-      data.attractions is list &&
-      data.published is bool &&
-      (!('endAt' in data) || data.endAt >= data.startAt) &&
-      data.createdByUid == request.auth.uid;
-  }
+      // Criação: usuário autenticado criando seu próprio bar
+      allow create: if isAuth() && validBarCreate(request.resource.data);
 
-  function validateCnpj_registry(data) {
-    return data.keys().hasAll(['cnpj', 'barId', 'createdAt']) &&
-      data.cnpj is string;
-  }
+      // Update: somente membros (opcional: restrinja certos campos ao OWNER)
+      allow update: if isAuth() && isBarMember(barId, request.auth.uid) && validBarCreate(request.resource.data);
 
-  // Coleção users
-  match /users/{uid} {
-    allow read, write: if isAuthenticated() && isOwner(uid);
-    allow create: if isAuthenticated() && isOwner(uid) && validateUser(request.resource.data);
-    allow update: if isAuthenticated() && isOwner(uid) && validateUser(request.resource.data);
-  }
+      // Delete: somente OWNER
+      allow delete: if isAuth() && isBarOwner(barId, request.auth.uid);
 
-  // Coleção bars
-  match /bars/{barId} {
-    allow read: if isAuthenticated() && (isBarMember(barId, request.auth.uid) || resource.data.createdByUid == request.auth.uid);
-    allow create: if isAuthenticated() && validateBar(request.resource.data);
-    allow update: if isAuthenticated() && (isBarMember(barId, request.auth.uid) || resource.data.createdByUid == request.auth.uid) && validateBar(request.resource.data);
-    allow delete: if isAuthenticated() && (isBarOwner(barId, request.auth.uid) || resource.data.createdByUid == request.auth.uid);
-
-    // Subcoleção members
+      // bars/{barId}/members/{memberId}
     match /members/{memberId} {
-      allow read: if isAuthenticated() && isBarMember(barId, request.auth.uid);
-      allow create: if isAuthenticated() && isBarOwner(barId, request.auth.uid) && validateMember(request.resource.data);
-      allow update: if isAuthenticated() && isBarOwner(barId, request.auth.uid) && validateMember(request.resource.data);
-      allow delete: if isAuthenticated() && isBarOwner(barId, request.auth.uid);
+      // Ler membro: o próprio membro autenticado pode ler (e isso habilita collectionGroup query por uid)
+      allow read: if isAuth() && request.auth.uid == resource.data.uid;
+
+        // Criar:
+        // - No primeiro cadastro, permitir que o próprio usuário crie seu doc de membro com role OWNER
+        // - Em outros casos, apenas OWNER pode incluir novos membros
+        allow create: if isAuth() && (
+          (request.resource.data.uid == request.auth.uid && request.resource.data.role == 'OWNER' && validMember(request.resource.data))
+          || (isBarOwner(barId, request.auth.uid) && validMember(request.resource.data))
+        );
+
+        // Atualizar/Excluir: apenas OWNER do bar
+        allow update: if isAuth() && isBarOwner(barId, request.auth.uid) && validMember(request.resource.data);
+        allow delete: if isAuth() && isBarOwner(barId, request.auth.uid);
+      }
+
+      // bars/{barId}/events/{eventId}
+      match /events/{eventId} {
+        allow read: if isAuth() && isBarMember(barId, request.auth.uid);
+        allow create: if isAuth() && isBarMember(barId, request.auth.uid) && validEvent(request.resource.data);
+        allow update: if isAuth() && isBarMember(barId, request.auth.uid) && validEvent(request.resource.data);
+        allow delete: if isAuth() && isBarMember(barId, request.auth.uid);
+      }
     }
 
-    // Subcoleção events
-    match /events/{eventId} {
-      allow read: if isAuthenticated() && isBarMember(barId, request.auth.uid);
-      allow create: if isAuthenticated() && isBarMember(barId, request.auth.uid) && validateEvent(request.resource.data);
-      allow update: if isAuthenticated() && isBarMember(barId, request.auth.uid) && validateEvent(request.resource.data);
-      allow delete: if isAuthenticated() && isBarMember(barId, request.auth.uid);
+    // cnpj_registry — sem leitura pública; escrita pelo app autenticado (transação/batch)
+    match /cnpj_registry/{cnpj} {
+      allow read: if false;
+      allow write: if isAuth();
     }
-  }
 
-  // Coleção cnpj_registry (apenas escrita pelo app)
-  match /cnpj_registry/{cnpj} {
-    allow read: if false; // Nunca permitir leitura
-    allow write: if isAuthenticated(); // Apenas escrita autenticada
-  }
-
+    // Collection group query para members
+    match /{path=**}/members/{memberId} {
+      allow read: if isAuth() && resource.data.uid == request.auth.uid;
+    }
   }
 }

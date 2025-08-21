@@ -87,11 +87,17 @@ class HomeViewModel extends ChangeNotifier {
   // Calcula quantos passos estão completos (X/2) - mantido para compatibilidade
   int get completedSteps => profileStepsDone;
   
-  /// Função centralizada para verificar se o perfil do usuário está completo
+/// Função centralizada para verificar se o perfil do usuário está completo
   /// Verifica todos os campos obrigatórios dos Passos 1, 2 e 3
   /// Campos obrigatórios: cnpj, nome do bar, responsibleName, contactEmail, contactPhone, address (exceto complement), senha
   /// Campo opcional: complement
   bool isUserProfileComplete() {
+    // Primeira verificação: se completedFullRegistration == true, perfil está completo
+    if (_currentUserProfile?.completedFullRegistration == true) {
+      debugPrint('🔍 isUserProfileComplete: true - completedFullRegistration=true');
+      return true;
+    }
+    
     // Se não tem bar, perfil não está completo
     if (_currentBar == null) {
       debugPrint('🔍 isUserProfileComplete: false - sem bar cadastrado');
@@ -99,6 +105,12 @@ class HomeViewModel extends ChangeNotifier {
     }
     
     final bar = _currentBar!;
+    
+    // Verifica se tem currentBarId (necessário para perfil completo)
+    if (_currentUserProfile?.currentBarId == null) {
+      debugPrint('🔍 isUserProfileComplete: false - sem currentBarId');
+      return false;
+    }
     
     // Verifica campos obrigatórios do Passo 1 (contatos)
     final hasValidContacts = bar.cnpj.isNotEmpty &&
@@ -121,9 +133,11 @@ class HomeViewModel extends ChangeNotifier {
     final isComplete = hasValidContacts && hasValidAddress && hasValidAuth;
     
     debugPrint('🔍 isUserProfileComplete: $isComplete');
+    debugPrint('🔍   - completedFullRegistration: ${_currentUserProfile?.completedFullRegistration}');
     debugPrint('🔍   - hasValidContacts: $hasValidContacts');
     debugPrint('🔍   - hasValidAddress: $hasValidAddress');
     debugPrint('🔍   - hasValidAuth: $hasValidAuth');
+    debugPrint('🔍   - currentBarId: ${_currentUserProfile?.currentBarId}');
     
     return isComplete;
   }

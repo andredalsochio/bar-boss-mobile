@@ -638,6 +638,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
      );
    }
 
+  /// Salva o rascunho do Passo 1 (método público)
+  void saveDraftStep1() {
+    _saveDraftStep1();
+  }
+
   /// Salva o Passo 1 e atualiza a completude do perfil
   Future<void> saveStep1(String barId) async {
     try {
@@ -671,6 +676,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
      );
    }
 
+  /// Salva o rascunho do Passo 2 (método público)
+  void saveDraftStep2() {
+    _saveDraftStep2();
+  }
+
   /// Salva o Passo 2 e atualiza a completude do perfil
   Future<void> saveStep2(String barId) async {
     try {
@@ -703,7 +713,25 @@ class BarRegistrationViewModel extends ChangeNotifier {
      await _loadDraftStep1();
      await _loadDraftStep2();
      // Step3 não possui rascunho (senhas não são persistidas)
+     
+     // Se o email ainda estiver vazio após carregar rascunhos,
+     // preenche com o email do usuário autenticado (login social)
+     await _initializeEmailFromCurrentUser();
+     
      notifyListeners();
+   }
+   
+   /// Inicializa o email com dados do usuário autenticado se estiver vazio
+   Future<void> _initializeEmailFromCurrentUser() async {
+     if (_email.isEmpty) {
+       final currentUser = _authRepository.currentUser;
+       if (currentUser != null && currentUser.email != null && currentUser.email!.isNotEmpty) {
+         debugPrint('🔄 [BarRegistrationViewModel] Preenchendo email automaticamente: ${currentUser.email}');
+         _email = currentUser.email!;
+         _validateEmail();
+         // Não salva no rascunho ainda, apenas preenche o campo
+       }
+     }
    }
  
    Future<void> _loadDraftStep1() async {

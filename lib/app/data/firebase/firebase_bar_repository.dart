@@ -57,12 +57,14 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       createdAt: DateTime.now(), // será sobrescrito pelo _now
       updatedAt: DateTime.now(), // será sobrescrito pelo _now
       createdByUid: ownerUid,
+      primaryOwnerUid: ownerUid, // Campo obrigatório para validação do Firestore
     );
     final barData = _toFirestore(barWithIds)
       ..addAll({
         'createdAt': _now,
         'updatedAt': _now,
         'createdByUid': ownerUid,
+        'primaryOwnerUid': ownerUid, // Campo obrigatório para validação do Firestore
       });
 
     batch.set(barRef, barData);

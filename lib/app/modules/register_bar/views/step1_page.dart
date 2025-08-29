@@ -128,7 +128,10 @@ class _Step1PageState extends State<Step1Page> {
     debugPrint('🔍 [STEP1_PAGE] Widget ainda montado: $mounted');
     
     if (isValid && mounted) {
-      debugPrint('✅ [STEP1_PAGE] Navegando para Step2');
+      debugPrint('💾 [STEP1_PAGE] Salvando dados do Passo 1...');
+      // Salva os dados do Passo 1 como rascunho
+      _viewModel.saveDraftStep1();
+      debugPrint('✅ [STEP1_PAGE] Dados salvos, navegando para Step2');
       context.pushNamed('registerStep2');
     } else {
       debugPrint('❌ [STEP1_PAGE] Validação falhou ou widget desmontado');

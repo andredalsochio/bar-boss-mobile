@@ -128,6 +128,10 @@ class _Step2PageState extends State<Step2Page> {
     if (!_viewModel.isStep2Valid) return;
 
     try {
+      debugPrint('💾 [STEP2_PAGE] Salvando dados do Passo 2...');
+      // Salva os dados do Passo 2 como rascunho
+      _viewModel.saveDraftStep2();
+      
       // Cria o bar e salva os dados
       await _viewModel.createBarFromSocialLogin();
       
@@ -138,11 +142,13 @@ class _Step2PageState extends State<Step2Page> {
         gravity: ToastGravity.BOTTOM,
       );
       
+      debugPrint('✅ [STEP2_PAGE] Cadastro completo, navegando para Home');
       // Navega para a Home
       if (mounted) {
         context.go('/home');
       }
     } catch (e) {
+      debugPrint('❌ [STEP2_PAGE] Erro ao salvar cadastro: $e');
       // Mostra mensagem de erro
       Fluttertoast.showToast(
         msg: 'Erro ao salvar cadastro: $e',

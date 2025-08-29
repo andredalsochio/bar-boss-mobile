@@ -70,11 +70,11 @@ service cloud.firestore {
       allow read: if isAuth() && (isMember(barId, me()) ||
                                   resource.data.createdByUid == me());
 
-      // Criar bar
+      // Criar bar - permitir se o usuário é o criador
       allow create: if isAuth() && validBar(request.resource.data);
 
-      // Atualizar bar
-      allow update: if isAuth() && canManageBar(barId) &&
+      // Atualizar bar - somente membros com permissão
+      allow update: if isAuth() && isMember(barId, me()) && canManageBar(barId) &&
                     validBar(request.resource.data);
 
       // Deletar bar
@@ -84,7 +84,9 @@ service cloud.firestore {
       // MEMBERS
       match /members/{memberUid} {
         allow read: if isAuth() && isMember(barId, me());
-        allow create, update, delete: if isAuth() && isOwnerRole(barId);
+        // Permitir criação se é o próprio usuário (criação inicial) ou se é owner
+        allow create: if isAuth() && (memberUid == me() || isOwnerRole(barId));
+        allow update, delete: if isAuth() && isOwnerRole(barId);
       }
 
       // EVENTS

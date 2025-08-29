@@ -60,23 +60,38 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<AuthResult> signInWithGoogle() async {
+    debugPrint('🟢 [FirebaseAuthRepository] Iniciando signInWithGoogle...');
     try {
+      debugPrint('🟢 [FirebaseAuthRepository] Chamando GoogleSignIn().signIn()...');
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      
       if (googleUser == null) {
+        debugPrint('❌ [FirebaseAuthRepository] GoogleSignIn cancelado pelo usuário');
         return AuthResult.error('Login com Google cancelado');
       }
-
+      
+      debugPrint('✅ [FirebaseAuthRepository] GoogleSignIn bem-sucedido: ${googleUser.email}');
+      debugPrint('🟢 [FirebaseAuthRepository] Obtendo authentication tokens...');
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      debugPrint('🟢 [FirebaseAuthRepository] Criando credential do Firebase...');
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-
+      
+      debugPrint('🟢 [FirebaseAuthRepository] Fazendo signInWithCredential...');
       final userCredential = await _auth.signInWithCredential(credential);
-      return _fromFirebaseCredential(userCredential);
+      
+      debugPrint('✅ [FirebaseAuthRepository] Firebase signIn bem-sucedido!');
+      final result = _fromFirebaseCredential(userCredential);
+      debugPrint('✅ [FirebaseAuthRepository] AuthResult criado: isSuccess=${result.isSuccess}');
+      return result;
     } on FirebaseAuthException catch (e) {
+      debugPrint('❌ [FirebaseAuthRepository] FirebaseAuthException: ${e.code} - ${e.message}');
       return _fromFirebaseException(e);
     } catch (e) {
+      debugPrint('❌ [FirebaseAuthRepository] Exceção genérica: $e');
       return _fromGenericException(Exception(e.toString()));
     }
   }

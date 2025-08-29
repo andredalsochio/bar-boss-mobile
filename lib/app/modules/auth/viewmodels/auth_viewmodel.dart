@@ -76,13 +76,18 @@ class AuthViewModel extends ChangeNotifier {
   StreamSubscription<AuthUser?>? _authSub;
 
   void _subscribeToAuthChanges() {
+    debugPrint('🟠 [AuthViewModel] Iniciando subscription para authStateChanges...');
     _authSub = _authRepository.authStateChanges().listen((user) async {
+      debugPrint('🟠 [AuthViewModel] authStateChanges triggered: user=${user?.email ?? "null"}');
       _currentUser = user;
       if (user != null) {
+        debugPrint('🟠 [AuthViewModel] Usuário autenticado, garantindo documento no Firestore...');
         // Garantir que o documento do usuário existe no Firestore
         await _ensureUserDocumentExists(user);
+        debugPrint('🟠 [AuthViewModel] Definindo estado como authenticated...');
         _setState(AuthState.authenticated);
       } else {
+        debugPrint('🟠 [AuthViewModel] Usuário não autenticado, definindo estado como unauthenticated...');
         _setState(AuthState.unauthenticated);
       }
     });
@@ -90,11 +95,14 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Garante que o documento do usuário existe no Firestore
   Future<void> _ensureUserDocumentExists(AuthUser user) async {
+    debugPrint('🟡 [AuthViewModel] _ensureUserDocumentExists iniciado para: ${user.email}');
     try {
+      debugPrint('🟡 [AuthViewModel] Verificando se usuário já existe no Firestore...');
       // Verificar se o usuário já existe
       final existingUser = await _userRepository.getMe();
       
       if (existingUser == null) {
+        debugPrint('🟡 [AuthViewModel] Usuário não existe, criando novo documento...');
         // Criar novo documento do usuário
         final now = DateTime.now();
         final newUser = UserProfile(
@@ -109,18 +117,20 @@ class AuthViewModel extends ChangeNotifier {
           completedFullRegistration: false,
         );
         
+        debugPrint('🟡 [AuthViewModel] Salvando novo usuário no Firestore...');
         await _userRepository.upsert(newUser);
-        debugPrint('✅ Documento do usuário criado: ${user.uid}');
+        debugPrint('✅ [AuthViewModel] Documento do usuário criado: ${user.uid}');
       } else {
+        debugPrint('🟡 [AuthViewModel] Usuário existe, atualizando lastLoginAt...');
         // Atualizar lastLoginAt para usuários existentes
         final updatedUser = existingUser.copyWith(
           lastLoginAt: DateTime.now(),
         );
         await _userRepository.upsert(updatedUser);
-        debugPrint('✅ Documento do usuário atualizado: ${user.uid}');
+        debugPrint('✅ [AuthViewModel] Documento do usuário atualizado: ${user.uid}');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao criar/atualizar documento do usuário: $e');
+      debugPrint('❌ [AuthViewModel] Erro ao criar/atualizar documento do usuário: $e');
     }
   }
 
@@ -154,20 +164,30 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Faz login com Google
   Future<void> loginWithGoogle() async {
+    debugPrint('🔵 [AuthViewModel] Iniciando login com Google...');
     try {
       _setLoading(true);
       _clearError();
+      debugPrint('🔵 [AuthViewModel] Chamando _authRepository.signInWithGoogle()...');
       final result = await _authRepository.signInWithGoogle();
+      debugPrint('🔵 [AuthViewModel] Resultado recebido: isSuccess=${result.isSuccess}');
+      
       if (result.isSuccess) {
+        debugPrint('✅ [AuthViewModel] Login com Google bem-sucedido!');
+        debugPrint('🔵 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
+        debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
+        debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
         _setError(result.errorMessage ?? 'Erro ao fazer login com Google.');
       }
     } catch (e) {
+      debugPrint('❌ [AuthViewModel] Exceção durante login com Google: $e');
       _setError('Erro ao fazer login com Google. Por favor, tente novamente.');
     } finally {
       _setLoading(false);
+      debugPrint('🔵 [AuthViewModel] Login com Google finalizado (loading=false)');
     }
   }
 

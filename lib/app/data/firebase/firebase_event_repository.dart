@@ -26,6 +26,20 @@ class FirebaseEventRepository implements EventRepositoryDomain {
     return _eventsCollection(barId)
         .where(FirestoreKeys.eventStartAt,
             isGreaterThanOrEqualTo: Timestamp.fromDate(now))
+        .orderBy(FirestoreKeys.eventStartAt, descending: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => _fromFirestore(doc))
+            .where((event) => _validateEventDates(event)) // valida endAt >= startAt
+            .toList());
+  }
+
+  /// Stream de eventos publicados futuros de um bar (para exibição pública)
+  Stream<List<EventModel>> upcomingPublishedByBar(String barId) {
+    final now = DateTime.now();
+    return _eventsCollection(barId)
+        .where(FirestoreKeys.eventStartAt,
+            isGreaterThanOrEqualTo: Timestamp.fromDate(now))
         .where(FirestoreKeys.eventPublished, isEqualTo: true) // considera apenas eventos publicados
         .orderBy(FirestoreKeys.eventStartAt, descending: false)
         .snapshots()

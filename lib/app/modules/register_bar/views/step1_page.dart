@@ -102,11 +102,39 @@ class _Step1PageState extends State<Step1Page> {
   }
 
   Future<void> _goToNextStep() async {
-    if (!_viewModel.isStep1Valid) return;
+    debugPrint('🔘 [STEP1_PAGE] Botão Continuar pressionado');
+    debugPrint('🔘 [STEP1_PAGE] Email: "${_viewModel.email}"');
+    debugPrint('🔘 [STEP1_PAGE] CNPJ: "${_viewModel.cnpj}"');
+    debugPrint('🔘 [STEP1_PAGE] Nome do bar: "${_viewModel.name}"');
+    debugPrint('🔘 [STEP1_PAGE] Nome responsável: "${_viewModel.responsibleName}"');
+    debugPrint('🔘 [STEP1_PAGE] Telefone: "${_viewModel.phone}"');
+    debugPrint('🔘 [STEP1_PAGE] isStep1Valid: ${_viewModel.isStep1Valid}');
+    
+    if (!_viewModel.isStep1Valid) {
+      debugPrint('❌ [STEP1_PAGE] Step1 inválido, não prosseguindo');
+      debugPrint('❌ [STEP1_PAGE] Validações individuais:');
+      debugPrint('❌ [STEP1_PAGE] - Email válido: ${_viewModel.isEmailValid}');
+      debugPrint('❌ [STEP1_PAGE] - CNPJ válido: ${_viewModel.isCnpjValid}');
+      debugPrint('❌ [STEP1_PAGE] - Nome válido: ${_viewModel.isNameValid}');
+      debugPrint('❌ [STEP1_PAGE] - Nome responsável válido: ${_viewModel.isResponsibleNameValid}');
+      debugPrint('❌ [STEP1_PAGE] - Telefone válido: ${_viewModel.isPhoneValid}');
+      return;
+    }
 
+    debugPrint('✅ [STEP1_PAGE] Step1 válido, iniciando validação assíncrona...');
     final isValid = await _viewModel.validateStep1AndCheckEmail();
+    
+    debugPrint('🔍 [STEP1_PAGE] Resultado da validação assíncrona: $isValid');
+    debugPrint('🔍 [STEP1_PAGE] Widget ainda montado: $mounted');
+    
     if (isValid && mounted) {
+      debugPrint('✅ [STEP1_PAGE] Navegando para Step2');
       context.pushNamed('registerStep2');
+    } else {
+      debugPrint('❌ [STEP1_PAGE] Validação falhou ou widget desmontado');
+      if (!isValid) {
+        debugPrint('❌ [STEP1_PAGE] Erro na validação: ${_viewModel.errorMessage}');
+      }
     }
   }
 

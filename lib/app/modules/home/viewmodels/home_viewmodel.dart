@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
@@ -7,6 +8,7 @@ import 'package:bar_boss_mobile/app/domain/repositories/event_repository_domain.
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
+import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 
 /// ViewModel para a tela inicial
 class HomeViewModel extends ChangeNotifier {
@@ -14,6 +16,7 @@ class HomeViewModel extends ChangeNotifier {
   final BarRepositoryDomain _barRepository;
   final UserRepository _userRepository;
   final EventRepositoryDomain _eventRepository;
+  final AuthViewModel _authViewModel;
 
   // Estado do perfil
   BarModel? _currentBar;
@@ -40,10 +43,12 @@ class HomeViewModel extends ChangeNotifier {
     required BarRepositoryDomain barRepository,
     required UserRepository userRepository,
     required EventRepositoryDomain eventRepository,
+    required AuthViewModel authViewModel,
   }) : _authRepository = authRepository,
        _barRepository = barRepository,
        _userRepository = userRepository,
-       _eventRepository = eventRepository;
+       _eventRepository = eventRepository,
+       _authViewModel = authViewModel;
        
   @override
   void dispose() {
@@ -146,17 +151,18 @@ class HomeViewModel extends ChangeNotifier {
   bool get shouldShowProfileCompleteCard {
     final dismissed = _isProfileCompleteCardDismissed;
     final completedReg = _currentUserProfile?.completedFullRegistration;
+    final isFromSocial = _authViewModel.isFromSocialProvider;
     
     // Usa a função centralizada para verificar se o perfil está completo
     final isComplete = isUserProfileComplete();
     
-    debugPrint('🏠 DEBUG Banner: isComplete=$isComplete, dismissed=$dismissed, completedFullRegistration=$completedReg');
+    debugPrint('🏠 DEBUG Banner: isComplete=$isComplete, dismissed=$dismissed, completedFullRegistration=$completedReg, isFromSocial=$isFromSocial');
     
-    // Lógica atualizada:
+    // Lógica do banner conforme especificação:
     // - Se completedFullRegistration == true (cadastro via "Não tem um bar?"), nunca mostrar banner
-    // - Se perfil está completo (todos os campos obrigatórios preenchidos), não mostrar banner
-    // - Se perfil incompleto E não foi dispensado E não é cadastro completo, mostrar banner
-    final shouldShow = !isComplete && !dismissed && (completedReg != true);
+    // - Se login via email/senha (não social), nunca mostrar banner
+    // - Se login social E perfil incompleto E não foi dispensado, mostrar banner
+    final shouldShow = isFromSocial && !isComplete && !dismissed && (completedReg != true);
     debugPrint('🏠 DEBUG Banner: shouldShowProfileCompleteCard=$shouldShow');
     
     return shouldShow;

@@ -1,4 +1,7 @@
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 /// Classe que contém os validadores utilizados nos formulários
 class Validators {
@@ -98,7 +101,7 @@ class Validators {
     return null;
   }
   
-  /// Validador de telefone
+  /// Validador de telefone com DDD
   static String? phone(String? value) {
     if (value == null || value.isEmpty) {
       return AppStrings.requiredField;
@@ -109,6 +112,12 @@ class Validators {
     
     // Verifica se o telefone tem entre 10 e 11 dígitos (com DDD)
     if (numericValue.length < 10 || numericValue.length > 11) {
+      return AppStrings.invalidPhone;
+    }
+    
+    // Verifica se o DDD é válido (11-99)
+    final ddd = int.tryParse(numericValue.substring(0, 2));
+    if (ddd == null || ddd < 11 || ddd > 99) {
       return AppStrings.invalidPhone;
     }
     
@@ -141,5 +150,111 @@ class Validators {
       
       return null;
     };
+  }
+  
+  /// Validador de título de evento
+  static String? eventTitle(String? value) {
+    if (value == null || value.isEmpty) {
+      return AppStrings.requiredField;
+    }
+    
+    if (value.trim().isEmpty) {
+      return AppStrings.requiredField;
+    }
+    
+    return null;
+  }
+  
+  /// Validador de data de evento (deve ser presente ou futura)
+  static String? eventDate(DateTime? value) {
+    if (value == null) {
+      return AppStrings.requiredField;
+    }
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final eventDay = DateTime(value.year, value.month, value.day);
+    
+    if (eventDay.isBefore(today)) {
+      return AppStrings.invalidDateErrorMessage;
+    }
+    
+    return null;
+  }
+  
+  /// Validador de data de fim de evento (deve ser >= data de início)
+  static String? eventEndDate(DateTime? startDate, DateTime? endDate) {
+    if (endDate == null) {
+      return null; // Data de fim é opcional
+    }
+    
+    if (startDate == null) {
+      return null; // Não pode validar sem data de início
+    }
+    
+    if (endDate.isBefore(startDate)) {
+      return 'Data de fim deve ser posterior à data de início';
+    }
+    
+    return null;
+  }
+  
+  /// Validação assíncrona de email (formato + unicidade via Firebase Auth)
+  static Future<String?> emailWithUniqueness(String? value) async {
+    // Primeiro valida o formato
+    final formatError = email(value);
+    if (formatError != null) {
+      return formatError;
+    }
+    
+    try {
+      // Verifica se o email já está em uso
+      final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(value!);
+      if (methods.isNotEmpty) {
+        return AppStrings.emailInUseErrorMessage;
+      }
+      
+      return null;
+    } catch (e) {
+      // Em caso de erro na verificação, permite continuar
+      return null;
+    }
+  }
+  
+  /// Validação assíncrona de CNPJ (formato + unicidade via Firestore)
+  static Future<String?> cnpjWithUniqueness(String? value) async {
+    // Primeiro valida o formato
+    final formatError = cnpj(value);
+    if (formatError != null) {
+      return formatError;
+    }
+    
+    try {
+      // Verifica se o usuário está autenticado
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        // Se não estiver autenticado, apenas valida o formato
+        return null;
+      }
+      
+      // Remove caracteres não numéricos para consulta
+      final numericValue = value!.replaceAll(RegExp(r'\D'), '');
+      
+      // Verifica se o CNPJ já está cadastrado
+      final doc = await FirebaseFirestore.instance
+          .collection('cnpj_registry')
+          .doc(numericValue)
+          .get();
+      
+      if (doc.exists) {
+        return AppStrings.cnpjInUseErrorMessage;
+      }
+      
+      return null;
+    } catch (e) {
+      // Em caso de erro na verificação, permite continuar
+      debugPrint('❌ [DEBUG] Erro na verificação de CNPJ: $e');
+      return null;
+    }
   }
 }

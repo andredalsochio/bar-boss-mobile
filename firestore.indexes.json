@@ -4,8 +4,22 @@
       "collectionGroup": "events",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
+        { "fieldPath": "startAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
         { "fieldPath": "published", "order": "ASCENDING" },
         { "fieldPath": "startAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "members",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" }
       ]
     }
   ],

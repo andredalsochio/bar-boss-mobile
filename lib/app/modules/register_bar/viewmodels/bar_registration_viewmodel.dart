@@ -228,39 +228,64 @@ class BarRegistrationViewModel extends ChangeNotifier {
         RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_email);
   }
 
-  /// Valida o Passo 1 e verifica se o e-mail já está em uso
-  /// Retorna true se tudo estiver válido e o e-mail não estiver em uso
+  /// Valida o Passo 1 com verificações assíncronas de email e CNPJ
+  /// Retorna true se tudo estiver válido e não houver duplicatas
   Future<bool> validateStep1AndCheckEmail() async {
-    debugPrint('🔍 [DEBUG] validateStep1AndCheckEmail chamado para email: $_email');
+    debugPrint('🔍 [VIEWMODEL] validateStep1AndCheckEmail INICIADO');
+    debugPrint('🔍 [VIEWMODEL] Email a verificar: "$_email"');
+    debugPrint('🔍 [VIEWMODEL] CNPJ a verificar: "$_cnpj"');
+    debugPrint('🔍 [VIEWMODEL] isStep1Valid: $isStep1Valid');
     
     if (!isStep1Valid) {
-      debugPrint('❌ [DEBUG] Step 1 inválido');
+      debugPrint('❌ [VIEWMODEL] Step 1 inválido - campos obrigatórios não preenchidos');
+      debugPrint('❌ [VIEWMODEL] Validações individuais:');
+      debugPrint('❌ [VIEWMODEL] - Email válido: $isEmailValid');
+      debugPrint('❌ [VIEWMODEL] - CNPJ válido: $isCnpjValid');
+      debugPrint('❌ [VIEWMODEL] - Nome válido: $isNameValid');
+      debugPrint('❌ [VIEWMODEL] - Nome responsável válido: $isResponsibleNameValid');
+      debugPrint('❌ [VIEWMODEL] - Telefone válido: $isPhoneValid');
       _setError('Preencha todos os campos obrigatórios');
       return false;
     }
 
+    debugPrint('✅ [VIEWMODEL] Campos válidos, iniciando verificações assíncronas...');
     _setLoading(true);
     _clearError();
 
     try {
-      debugPrint('🔍 [DEBUG] Verificando se email $_email já está em uso...');
-      // Verifica se o email já está em uso
+      // Validação assíncrona de email usando fetchSignInMethodsForEmail
+      debugPrint('🔍 [VIEWMODEL] ETAPA 1: Verificando se email "$_email" já está em uso...');
       final emailInUse = await _authRepository.isEmailInUse(_email);
-      debugPrint('🔍 [DEBUG] Email em uso: $emailInUse');
+      debugPrint('🔍 [VIEWMODEL] ETAPA 1: Resultado - Email em uso: $emailInUse');
       
       if (emailInUse) {
-        debugPrint('❌ [DEBUG] Email já está cadastrado, bloqueando avanço');
+        debugPrint('❌ [VIEWMODEL] ETAPA 1: Email já está cadastrado, BLOQUEANDO avanço');
         _setError('Este email já está cadastrado');
         return false;
       }
+      debugPrint('✅ [VIEWMODEL] ETAPA 1: Email disponível, prosseguindo...');
 
-      debugPrint('✅ [DEBUG] Email disponível, permitindo avanço');
+      // Validação assíncrona de CNPJ via /cnpj_registry
+      debugPrint('🔍 [VIEWMODEL] ETAPA 2: Verificando unicidade do CNPJ "$_cnpj"...');
+      final cnpjInUse = await _barRepository.isCnpjInUse(_cnpj);
+      debugPrint('🔍 [VIEWMODEL] ETAPA 2: Resultado - CNPJ em uso: $cnpjInUse');
+      
+      if (cnpjInUse) {
+        debugPrint('❌ [VIEWMODEL] ETAPA 2: CNPJ já está cadastrado, BLOQUEANDO avanço');
+        _setError('Este CNPJ já está cadastrado');
+        return false;
+      }
+      debugPrint('✅ [VIEWMODEL] ETAPA 2: CNPJ disponível, prosseguindo...');
+
+      debugPrint('✅ [VIEWMODEL] SUCESSO: Email e CNPJ disponíveis, PERMITINDO avanço');
       return true;
     } catch (e) {
-      debugPrint('❌ [DEBUG] Erro ao verificar email: $e');
-      _setError('Erro ao verificar e-mail: $e');
+      debugPrint('❌ [VIEWMODEL] ERRO CRÍTICO ao verificar email/CNPJ: $e');
+      debugPrint('❌ [VIEWMODEL] Stack trace: ${StackTrace.current}');
+      _setError('Erro ao verificar dados: $e');
       return false;
     } finally {
+      debugPrint('🔍 [VIEWMODEL] validateStep1AndCheckEmail FINALIZADO');
       _setLoading(false);
     }
   }
@@ -331,7 +356,21 @@ class BarRegistrationViewModel extends ChangeNotifier {
     final numericValue = _phone.replaceAll(RegExp(r'\D'), '');
 
     // Verifica se o telefone tem entre 10 e 11 dígitos (com DDD)
-    _isPhoneValid = numericValue.length >= 10 && numericValue.length <= 11;
+    if (numericValue.length < 10 || numericValue.length > 11) {
+      _isPhoneValid = false;
+      return;
+    }
+
+    // Valida DDD (11-99)
+    if (numericValue.length >= 2) {
+      final ddd = int.tryParse(numericValue.substring(0, 2));
+      if (ddd == null || ddd < 11 || ddd > 99) {
+        _isPhoneValid = false;
+        return;
+      }
+    }
+
+    _isPhoneValid = true;
   }
 
   // Métodos de validação do Passo 2
@@ -399,6 +438,81 @@ class BarRegistrationViewModel extends ChangeNotifier {
     }
   }
 
+  // Cria bar para usuários de login social (apenas Passo 1 e 2)
+  Future<void> createBarFromSocialLogin() async {
+    if (!isStep1Valid || !isStep2Valid) {
+      throw Exception('Dados incompletos para criar bar');
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      // Obtém o usuário atual (já autenticado via social)
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
+        throw Exception('Usuário não autenticado');
+      }
+
+      // Cria o bar no Firestore com perfil completo
+      // Como o usuário completou Passo 1 e 2, marca as flags como true
+      final bar = BarModel.empty().copyWith(
+        contactEmail: _email,
+        cnpj: _cnpj,
+        name: _name,
+        responsibleName: _responsibleName,
+        contactPhone: _phone,
+        address: BarAddress(
+          cep: _cep,
+          street: _street,
+          number: _number,
+          complement: _complement,
+          state: _stateUf,
+          city: _city,
+        ),
+        profile: BarProfile(
+          contactsComplete: true, // Passo 1 completo
+          addressComplete: true,  // Passo 2 completo
+        ),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        createdByUid: currentUser.uid,
+        primaryOwnerUid: currentUser.uid,
+      );
+
+      // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
+      final barId = await _barRepository.createBarWithReservation(
+        bar: bar,
+        ownerUid: currentUser.uid,
+      );
+
+      // Atualiza o UserProfile com currentBarId
+      // Mantém completedFullRegistration = false pois veio de login social
+      final existingProfile = await _userRepository.getMe();
+      if (existingProfile != null) {
+        final updatedProfile = existingProfile.copyWith(
+          currentBarId: barId,
+        );
+        await _userRepository.upsert(updatedProfile);
+      }
+
+      // Debug log conforme especificado
+      debugPrint('🎉 DEBUG Login Social: Bar criado com sucesso para usuário ${currentUser.uid}');
+      debugPrint('🎉 DEBUG Login Social: Profile completo - contactsComplete=true, addressComplete=true');
+      debugPrint('🎉 DEBUG Login Social: UserProfile atualizado com currentBarId=$barId');
+
+      // Limpa os rascunhos após sucesso
+      await clearDrafts();
+
+      _setRegistrationState(RegistrationState.success);
+    } catch (e) {
+      _setError(e.toString());
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Registra o bar e o usuário
   Future<void> registerBarAndUser() async {
     if (!isStep3Valid) return;
@@ -452,8 +566,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
         primaryOwnerUid: currentUser.uid, // Campo obrigatório para as regras do Firestore
       );
 
-      // Cria o bar e obtém o ID gerado
-      final barId = await _barRepository.create(bar);
+      // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
+      final barId = await _barRepository.createBarWithReservation(
+        bar: bar,
+        ownerUid: currentUser.uid,
+      );
 
       // Cria o UserProfile com completedFullRegistration = true e currentBarId
       // Como o usuário passou por todos os passos (1, 2 e 3), marca a flag como true

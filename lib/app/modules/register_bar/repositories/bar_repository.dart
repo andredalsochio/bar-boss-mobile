@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 
-class BarRepository {
+class BarRepository implements BarRepositoryDomain {
   final FirebaseFirestore _firestore;
   BarRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
@@ -28,6 +29,14 @@ class BarRepository {
   // ---------------------------
   // CREATE (com reserva + membership OWNER)
   // ---------------------------
+  
+  @override
+  @Deprecated('Use createBarWithReservation para operações atômicas')
+  Future<String> create(BarModel bar) async {
+    throw UnimplementedError('Use createBarWithReservation() para operações atômicas.');
+  }
+
+  @override
   /// Cria a reserva em `/cnpj_registry/{cnpj}`, cria o bar em `/bars/{barId}`
   /// e adiciona o membro OWNER em `/bars/{barId}/members/{uid}` – tudo no MESMO batch.
   Future<String> createBarWithReservation({
@@ -195,9 +204,31 @@ class BarRepository {
     throw UnimplementedError('Use membership para descobrir bares do usuário.');
   }
 
+  @override
   @Deprecated('Evite: a unicidade de CNPJ deve ser garantida pela reserva em /cnpj_registry.')
   Future<bool> isCnpjInUse(String cnpj) async {
     throw UnimplementedError('A verificação agora é por tentativa de reserva no batch.');
+  }
+
+  @override
+  Future<void> update(BarModel bar) async {
+    await updateBar(bar);
+  }
+
+  @override
+  Stream<List<BarModel>> listMyBars(String uid) {
+    return streamBarsByMembership(uid);
+  }
+
+  @override
+  Future<void> addMember(String barId, String uid, String role) async {
+    final memberRef = _barsCol.doc(barId).collection(FirestoreKeys.membersSubcollection).doc(uid);
+    await memberRef.set({
+      'uid': uid,
+      'role': role,
+      'createdAt': _now,
+      'barId': barId,
+    });
   }
 
   // Mantidos por compatibilidade, mas prefira versões "byMembership"

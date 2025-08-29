@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
@@ -12,6 +13,7 @@ import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 
 /// Tela de cadastro de bar - Passo 2 (Endereço)
 class Step2Page extends StatefulWidget {
@@ -39,11 +41,13 @@ class _Step2PageState extends State<Step2Page> {
   ];
 
   late final BarRegistrationViewModel _viewModel;
+  late final AuthViewModel _authViewModel;
 
   @override
   void initState() {
     super.initState();
     _viewModel = context.read<BarRegistrationViewModel>();
+    _authViewModel = context.read<AuthViewModel>();
 
     // Carrega rascunhos salvos
     _loadDrafts();
@@ -116,6 +120,35 @@ class _Step2PageState extends State<Step2Page> {
   void _goToNextStep() {
     if (_viewModel.isStep2Valid) {
       context.pushNamed('registerStep3');
+    }
+  }
+
+  /// Salva o Passo 2 para usuários de login social
+  Future<void> _saveSocialLoginStep2() async {
+    if (!_viewModel.isStep2Valid) return;
+
+    try {
+      // Cria o bar e salva os dados
+      await _viewModel.createBarFromSocialLogin();
+      
+      // Mostra mensagem de sucesso
+      Fluttertoast.showToast(
+        msg: 'Cadastro salvo com sucesso!',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
+      
+      // Navega para a Home
+      if (mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      // Mostra mensagem de erro
+      Fluttertoast.showToast(
+        msg: 'Erro ao salvar cadastro: $e',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+      );
     }
   }
 
@@ -266,8 +299,14 @@ class _Step2PageState extends State<Step2Page> {
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
                   ButtonWidget(
-                    text: AppStrings.continueButton,
-                    onPressed: viewModel.isStep2Valid ? _goToNextStep : null,
+                    text: _authViewModel.isFromSocialProvider 
+                        ? 'Salvar' 
+                        : AppStrings.continueButton,
+                    onPressed: viewModel.isStep2Valid 
+                        ? (_authViewModel.isFromSocialProvider 
+                            ? _saveSocialLoginStep2 
+                            : _goToNextStep) 
+                        : null,
                     isLoading: viewModel.isLoading,
                   ),
                 ],

@@ -79,6 +79,7 @@ class DependencyInjection {
         barRepository: context.read<BarRepositoryDomain>(),
         userRepository: context.read<UserRepository>(),
         eventRepository: context.read<EventRepositoryDomain>(),
+        authViewModel: context.read<AuthViewModel>(),
       ),
     ),
   ];

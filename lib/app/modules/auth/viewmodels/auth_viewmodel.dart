@@ -102,19 +102,25 @@ class AuthViewModel extends ChangeNotifier {
           email: user.email ?? '',
           displayName: user.displayName,
           photoUrl: user.photoUrl,
-          providers: ['google'], // Assumindo login social por padrão
+          providers: user.providerIds, // Usar providers reais do usuário
           currentBarId: null,
           createdAt: now,
           lastLoginAt: now,
+          completedFullRegistration: false,
         );
         
         await _userRepository.upsert(newUser);
         debugPrint('✅ Documento do usuário criado: ${user.uid}');
       } else {
-        debugPrint('✅ Documento do usuário já existe: ${user.uid}');
+        // Atualizar lastLoginAt para usuários existentes
+        final updatedUser = existingUser.copyWith(
+          lastLoginAt: DateTime.now(),
+        );
+        await _userRepository.upsert(updatedUser);
+        debugPrint('✅ Documento do usuário atualizado: ${user.uid}');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao criar documento do usuário: $e');
+      debugPrint('❌ Erro ao criar/atualizar documento do usuário: $e');
     }
   }
 
@@ -204,19 +210,76 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Verifica se o usuário tem um bar cadastrado
   Future<bool> hasBarRegistered() async {
-    final email = userEmail;
-    if (email?.isNotEmpty != true) {
-      return false;
-    }
-
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) return false;
       
+      final userProfile = await _userRepository.getMe();
+      if (userProfile?.currentBarId != null) {
+        return true;
+      }
+      
+      // Fallback: verificar se tem bars cadastrados
       final bars = await _barRepository.listMyBars(currentUser.uid).first;
       return bars.isNotEmpty;
     } catch (e) {
       debugPrint('Erro ao verificar bar: $e');
+      return false;
+    }
+  }
+  
+  /// Verifica se o usuário logou via provedor social
+  bool get isFromSocialProvider {
+    if (_currentUser == null) return false;
+    
+    final socialProviders = ['google.com', 'apple.com', 'facebook.com'];
+    return _currentUser!.providerIds.any((provider) => 
+        socialProviders.contains(provider));
+  }
+  
+  /// Obtém o perfil do usuário atual
+  Future<UserProfile?> getCurrentUserProfile() async {
+    try {
+      return await _userRepository.getMe();
+    } catch (e) {
+      debugPrint('Erro ao obter perfil do usuário: $e');
+      return null;
+    }
+  }
+  
+  /// Verifica se deve mostrar o banner de completar cadastro
+  Future<bool> shouldShowProfileCompleteCard() async {
+    if (!isFromSocialProvider) return false;
+    
+    try {
+      final profile = await getCurrentUserProfile();
+      if (profile == null) return true;
+      
+      // Para login social, mostrar banner se não completou o registro completo
+      return !profile.completedFullRegistration;
+    } catch (e) {
+      debugPrint('Erro ao verificar completude do perfil: $e');
+      return false;
+    }
+  }
+  
+  /// Verifica se o usuário pode criar eventos
+  Future<bool> canCreateEvent() async {
+    try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return false;
+      
+      // Verifica se tem currentBarId
+      final userProfile = await _userRepository.getMe();
+      if (userProfile?.currentBarId != null) {
+        return true;
+      }
+      
+      // Verifica se é membro de algum bar
+      final bars = await _barRepository.listMyBars(currentUser.uid).first;
+      return bars.isNotEmpty;
+    } catch (e) {
+      debugPrint('Erro ao verificar permissão para criar evento: $e');
       return false;
     }
   }

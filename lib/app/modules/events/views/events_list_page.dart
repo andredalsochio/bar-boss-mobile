@@ -11,6 +11,7 @@ import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/event_card_widget.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
 
 /// Tela de listagem de eventos
 class EventsListPage extends StatefulWidget {
@@ -22,6 +23,7 @@ class EventsListPage extends StatefulWidget {
 
 class _EventsListPageState extends State<EventsListPage> {
   late final EventsViewModel _viewModel;
+  late final HomeViewModel _homeViewModel;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -29,6 +31,7 @@ class _EventsListPageState extends State<EventsListPage> {
   void initState() {
     super.initState();
     _viewModel = context.read<EventsViewModel>();
+    _homeViewModel = context.read<HomeViewModel>();
     
     // Carrega os eventos após o build inicial para evitar setState durante build
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -68,7 +71,41 @@ class _EventsListPageState extends State<EventsListPage> {
   }
 
   void _goToNewEvent() {
-    context.pushNamed('eventForm');
+    if (_homeViewModel.hasBar) {
+      debugPrint('🎯 DEBUG EventsList: Navegando para criação de evento (hasBar=true)');
+      context.pushNamed('eventForm');
+    } else {
+      debugPrint('🚫 DEBUG EventsList: Usuário sem bar - exibindo modal');
+      _showNoBarModal();
+    }
+  }
+
+  void _showNoBarModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Bar não cadastrado'),
+          content: const Text(
+            'Para criar eventos, você precisa ter um bar cadastrado. '
+            'Deseja completar o cadastro do seu bar agora?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/register/step1');
+              },
+              child: const Text('Cadastrar Bar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

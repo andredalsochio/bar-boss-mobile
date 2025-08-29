@@ -23,14 +23,23 @@ class FirebaseBarRepository implements BarRepositoryDomain {
   FieldValue get _now => FieldValue.serverTimestamp();
 
   @override
+  @Deprecated('Use createBarWithReservation para operações atômicas')
   Future<String> create(BarModel bar) async {
-    final cnpj = _normalizeCnpj(bar.cnpj);
-    final barId = _barsCol.doc().id;
-    final ownerUid = bar.createdByUid;
+    throw UnimplementedError('Use createBarWithReservation() para operações atômicas.');
+  }
+
+  @override
+  Future<String> createBarWithReservation({
+    required BarModel bar,
+    required String ownerUid,
+    String? forcedBarId,
+  }) async {
+    final normalizedCnpj = _normalizeCnpj(bar.cnpj);
+    final barId = forcedBarId ?? _barsCol.doc().id;
 
     final batch = _firestore.batch();
 
-    final cnpjRef = _cnpjRegCol.doc(cnpj);
+    final cnpjRef = _cnpjRegCol.doc(normalizedCnpj);
     final barRef = _barsCol.doc(barId);
     final memberRef = barRef.collection(FirestoreKeys.membersSubcollection).doc(ownerUid);
 
@@ -44,7 +53,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     // 2) Cria o bar
     final barWithIds = bar.copyWith(
       id: barId,
-      cnpj: cnpj,
+      cnpj: normalizedCnpj,
       createdAt: DateTime.now(), // será sobrescrito pelo _now
       updatedAt: DateTime.now(), // será sobrescrito pelo _now
       createdByUid: ownerUid,
@@ -124,6 +133,28 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       });
     } catch (e) {
       throw Exception('Erro ao adicionar membro: $e');
+    }
+  }
+
+  @override
+  Future<bool> isCnpjInUse(String cnpj) async {
+    try {
+      final normalizedCnpj = _normalizeCnpj(cnpj);
+      print('🔍 [DEBUG] Verificando CNPJ: original="$cnpj", normalizado="$normalizedCnpj"');
+      print('🔍 [DEBUG] Consultando documento: ${FirestoreKeys.cnpjRegistryCollection}/$normalizedCnpj');
+      
+      final doc = await _cnpjRegCol.doc(normalizedCnpj).get();
+      print('🔍 [DEBUG] Documento existe: ${doc.exists}');
+      
+      if (doc.exists) {
+        final data = doc.data();
+        print('🔍 [DEBUG] Dados do documento: $data');
+      }
+      
+      return doc.exists;
+    } catch (e) {
+      print('❌ [DEBUG] Erro ao verificar CNPJ: $e');
+      throw Exception('Erro ao verificar CNPJ: $e');
     }
   }
 

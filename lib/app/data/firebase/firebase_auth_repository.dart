@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -186,18 +187,59 @@ class FirebaseAuthRepository implements AuthRepository {
     }
   }
 
+  /// Verifica se um email já está em uso no Firebase Auth
   @override
   Future<bool> isEmailInUse(String email) async {
+    debugPrint('🔍 [AUTH_REPO] isEmailInUse INICIADO para: "$email"');
+    
     try {
-      debugPrint('🔍 [DEBUG] Firebase: fetchSignInMethodsForEmail para $email');
-      final methods = await _auth.fetchSignInMethodsForEmail(email);
-      debugPrint('🔍 [DEBUG] Firebase: métodos encontrados: $methods');
-      final isInUse = methods.isNotEmpty;
-      debugPrint('🔍 [DEBUG] Firebase: email em uso = $isInUse');
-      return isInUse;
+      // MÉTODO 1: Usa fetchSignInMethodsForEmail
+      debugPrint('🔍 [AUTH_REPO] MÉTODO 1: Tentando fetchSignInMethodsForEmail...');
+      final signInMethods = await _auth.fetchSignInMethodsForEmail(email);
+      debugPrint('🔍 [AUTH_REPO] MÉTODO 1: signInMethods = $signInMethods');
+      
+      if (signInMethods.isNotEmpty) {
+        debugPrint('✅ [AUTH_REPO] MÉTODO 1: Email EM USO (métodos encontrados)');
+        return true;
+      }
+      
+      debugPrint('🔍 [AUTH_REPO] MÉTODO 1: Nenhum método encontrado, tentando MÉTODO 2...');
+      
+      // MÉTODO 2: Tenta login com senha inválida
+       debugPrint('🔍 [AUTH_REPO] MÉTODO 2: Tentando signIn com senha inválida...');
+       try {
+         await _auth.signInWithEmailAndPassword(
+           email: email,
+           password: 'senha_invalida_para_teste_123456789',
+         );
+         debugPrint('⚠️ [AUTH_REPO] MÉTODO 2: Login funcionou (inesperado) - email existe');
+         return true;
+       } catch (signInError) {
+         final errorStr = signInError.toString();
+         debugPrint('🔍 [AUTH_REPO] MÉTODO 2: Erro capturado: $errorStr');
+         
+         if (errorStr.contains('wrong-password')) {
+           debugPrint('✅ [AUTH_REPO] MÉTODO 2: Email EM USO (wrong-password)');
+           return true;
+         } else if (errorStr.contains('user-not-found')) {
+           debugPrint('✅ [AUTH_REPO] MÉTODO 2: Email DISPONÍVEL (user-not-found)');
+           return false;
+         } else if (errorStr.contains('invalid-credential')) {
+           // CORREÇÃO: invalid-credential quando MÉTODO 1 retorna lista vazia = email NÃO existe
+           debugPrint('✅ [AUTH_REPO] MÉTODO 2: Email DISPONÍVEL (invalid-credential + sem métodos)');
+           return false;
+         } else {
+           debugPrint('⚠️ [AUTH_REPO] MÉTODO 2: Erro desconhecido, assumindo DISPONÍVEL');
+           return false;
+         }
+       }
+      
     } catch (e) {
-      debugPrint('❌ [DEBUG] Firebase: erro ao verificar email: $e');
-      throw Exception('Erro ao verificar email: $e');
+      debugPrint('❌ [AUTH_REPO] ERRO CRÍTICO: $e');
+      
+      // Para erros críticos, assume que o email está em uso por segurança
+      debugPrint('⚠️ [AUTH_REPO] Assumindo email EM USO por segurança devido a erro crítico');
+      return true;
     }
   }
 

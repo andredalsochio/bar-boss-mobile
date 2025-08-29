@@ -218,10 +218,22 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(height: AppSizes.spacingLarge),
-                        ButtonWidget(
-                          text: AppStrings.createFirstEventMessage,
-                          onPressed: () => context.pushNamed('eventForm'),
-                          icon: Icons.add_circle,
+                        Consumer<HomeViewModel>(
+                          builder: (context, homeViewModel, _) {
+                            return ButtonWidget(
+                              text: AppStrings.createFirstEventMessage,
+                              onPressed: homeViewModel.hasBar 
+                                  ? () {
+                                      debugPrint('🎯 DEBUG Home: Navegando para criação de evento (hasBar=true)');
+                                      context.pushNamed('eventForm');
+                                    }
+                                  : () {
+                                      debugPrint('🚫 DEBUG Home: Usuário sem bar - exibindo modal');
+                                      _showNoBarModal(context);
+                                    },
+                              icon: Icons.add_circle,
+                            );
+                          },
                         ),
                       ],
                     ),

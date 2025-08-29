@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/event_repository_domain.dart';
@@ -21,10 +23,11 @@ class EventsViewModel extends ChangeNotifier {
 
   // Dados do evento atual
   EventModel? _currentEvent;
-  DateTime _eventDate = DateTime.now();
+  DateTime? _eventDate;
   List<String> _attractions = [''];
-  List<String> _promotionImages = [];
+  List<File> _promotionImages = [];
   String _promotionDetails = '';
+  final ImagePicker _imagePicker = ImagePicker();
 
 
   // Lista de eventos
@@ -60,13 +63,13 @@ class EventsViewModel extends ChangeNotifier {
   EventModel? get currentEvent => _currentEvent;
 
   /// Data do evento
-  DateTime get eventDate => _eventDate;
+  DateTime? get eventDate => _eventDate;
 
   /// Lista de atrações
   List<String> get attractions => _attractions;
 
   /// Lista de imagens de promoção
-  List<String> get promotionImages => _promotionImages;
+  List<File> get promotionImages => _promotionImages;
 
   /// Detalhes da promoção
   String get promotionDetails => _promotionDetails;
@@ -155,7 +158,7 @@ class EventsViewModel extends ChangeNotifier {
   /// Inicializa um novo evento
   void initNewEvent() {
     _currentEvent = null;
-    _eventDate = DateTime.now();
+    _eventDate = null;
     _attractions = [''];
     _promotionImages = [];
     _promotionDetails = '';
@@ -252,11 +255,45 @@ class EventsViewModel extends ChangeNotifier {
     }
   }
 
-  /// Adiciona uma imagem de promoção
-  void addPromotionImage(String imagePath) {
-    if (_promotionImages.length < 3) {
-      _promotionImages.add(imagePath);
-      notifyListeners();
+  /// Adiciona uma imagem de promoção da galeria
+  Future<void> addPromotionImageFromGallery() async {
+    if (_promotionImages.length >= 3) return;
+    
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        _promotionImages.add(File(image.path));
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Erro ao selecionar imagem da galeria: $e');
+    }
+  }
+  
+  /// Adiciona uma imagem de promoção da câmera
+  Future<void> addPromotionImageFromCamera() async {
+    if (_promotionImages.length >= 3) return;
+    
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        _promotionImages.add(File(image.path));
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Erro ao capturar imagem da câmera: $e');
     }
   }
 
@@ -278,8 +315,8 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Valida a data do evento
   void _validateDate() {
-    // A data deve ser no futuro
-    _isDateValid = _eventDate.isAfter(DateTime.now());
+    // A data deve ser no futuro e não pode ser null
+    _isDateValid = _eventDate != null && _eventDate!.isAfter(DateTime.now());
   }
 
   /// Valida as atrações
@@ -323,17 +360,18 @@ class EventsViewModel extends ChangeNotifier {
 
       if (_currentEvent == null) {
         // Cria um novo evento
+        final eventStartDate = _eventDate ?? DateTime.now();
         final newEvent = EventModel(
           id: '',
           barId: bar.id,
-          title: filteredAttractions.isNotEmpty ? filteredAttractions.first : 'Evento',
-          description: '',
-          startAt: _eventDate,
-          endAt: _eventDate.add(const Duration(hours: 4)),
+          title: 'Evento', // Título padrão, pode ser editado posteriormente
+          description: _promotionDetails.isNotEmpty ? _promotionDetails : '',
+          startAt: eventStartDate,
+          endAt: eventStartDate.add(const Duration(hours: 4)),
           attractions: filteredAttractions,
           coverImageUrl: '',
           published: false,
-          createdByUid: '',
+          createdByUid: currentUser.uid,
           updatedByUid: '',
           createdAt: DateTime.now(), // será sobrescrito pelo repositório
           updatedAt: DateTime.now(), // será sobrescrito pelo repositório
@@ -342,10 +380,13 @@ class EventsViewModel extends ChangeNotifier {
         await _eventRepository.create(bar.id, newEvent);
       } else {
         // Atualiza o evento existente
+        final eventStartDate = _eventDate ?? _currentEvent!.startAt;
         final updatedEvent = _currentEvent!.copyWith(
-          startAt: _eventDate,
-          endAt: _eventDate.add(const Duration(hours: 4)),
+          startAt: eventStartDate,
+          endAt: eventStartDate.add(const Duration(hours: 4)),
           attractions: filteredAttractions,
+          description: _promotionDetails.isNotEmpty ? _promotionDetails : _currentEvent!.description,
+          updatedByUid: currentUser.uid,
           updatedAt: DateTime.now(), // será sobrescrito pelo repositório
         );
 

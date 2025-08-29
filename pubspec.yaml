@@ -83,6 +83,10 @@ dependencies:
   font_awesome_flutter: ^10.7.0
   intl: ^0.20.2
   
+  # Upload de imagens
+  image_picker: ^1.0.7
+  permission_handler: ^11.3.0
+  
   # Serialização e schemas tipados
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1

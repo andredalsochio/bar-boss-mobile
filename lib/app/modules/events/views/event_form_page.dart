@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:io';
 
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
@@ -78,9 +79,11 @@ class _EventFormPageState extends State<EventFormPage> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final DateTime initialDate = _viewModel.eventDate ?? DateTime.now();
+    
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _viewModel.eventDate,
+      initialDate: initialDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
@@ -105,7 +108,7 @@ class _EventFormPageState extends State<EventFormPage> {
     if (picked != null && mounted) {
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(_viewModel.eventDate),
+        initialTime: TimeOfDay.fromDateTime(initialDate),
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
@@ -282,7 +285,7 @@ class _EventFormPageState extends State<EventFormPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Data do evento
-                    _buildDatePicker(context, viewModel),
+                    _buildDateSection(context, viewModel),
                     const SizedBox(height: AppSizes.spacingLarge),
 
                     // Atrações
@@ -292,17 +295,6 @@ class _EventFormPageState extends State<EventFormPage> {
                     // Promoções
                     _buildPromotionsSection(context, viewModel),
                     const SizedBox(height: AppSizes.spacingLarge),
-
-
-
-                    // Mensagem de erro
-                    if (viewModel.state == EventsState.error && viewModel.errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSizes.spacingMedium),
-                        child: ErrorMessageWidget(
-                          message: viewModel.errorMessage!,
-                        ),
-                      ),
 
                     // Botão de salvar
                     ButtonWidget(
@@ -322,9 +314,11 @@ class _EventFormPageState extends State<EventFormPage> {
     );
   }
 
-  Widget _buildDatePicker(BuildContext context, EventsViewModel viewModel) {
+  Widget _buildDateSection(BuildContext context, EventsViewModel viewModel) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    final formattedDate = dateFormat.format(viewModel.eventDate);
+    final formattedDate = viewModel.eventDate != null 
+        ? dateFormat.format(viewModel.eventDate!) 
+        : 'Selecione a data do evento';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,8 +353,10 @@ class _EventFormPageState extends State<EventFormPage> {
               children: [
                 Text(
                   formattedDate,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: viewModel.eventDate != null 
+                        ? AppColors.textPrimary 
+                        : AppColors.textSecondary,
                     fontSize: AppSizes.fontSizeMedium,
                   ),
                 ),
@@ -487,27 +483,8 @@ class _EventFormPageState extends State<EventFormPage> {
           ),
         ),
         const SizedBox(height: AppSizes.spacingSmall),
-        // Imagens de promoção (placeholder)
-        Container(
-          height: 100,
-          decoration: BoxDecoration(
-            color: AppColors.inputBackground,
-            borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-            border: Border.all(
-              color: AppColors.border,
-              width: AppSizes.borderWidth,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              AppStrings.promotionImagesPlaceholder,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: AppSizes.fontSizeMedium,
-              ),
-            ),
-          ),
-        ),
+        // Seção de imagens
+        _buildImageSection(viewModel),
         const SizedBox(height: AppSizes.spacingMedium),
         // Detalhes da promoção
         FormInputFieldWidget(
@@ -517,6 +494,126 @@ class _EventFormPageState extends State<EventFormPage> {
           maxLines: 3,
           onChanged: viewModel.setPromotionDetails,
         ),
+      ],
+    );
+  }
+
+  Widget _buildImageSection(EventsViewModel viewModel) {
+    return Column(
+      children: [
+        // Grid de imagens selecionadas
+        if (viewModel.promotionImages.isNotEmpty)
+          Container(
+            height: 120,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: viewModel.promotionImages.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          viewModel.promotionImages[index],
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => viewModel.removePromotionImage(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: AppColors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        
+        const SizedBox(height: 12),
+        
+        // Botões para adicionar imagens
+        if (viewModel.promotionImages.length < 3)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => viewModel.addPromotionImageFromGallery(),
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Galeria'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => viewModel.addPromotionImageFromCamera(),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Câmera'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        
+        // Placeholder quando não há imagens
+        if (viewModel.promotionImages.isEmpty)
+          Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.inputBackground,
+              borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+              border: Border.all(
+                color: AppColors.border,
+                width: AppSizes.borderWidth,
+              ),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.add_photo_alternate,
+                    size: 32,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    AppStrings.promotionImagesPlaceholder,
+                    style: const TextStyle(
+                      fontSize: AppSizes.fontSizeSmall,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }

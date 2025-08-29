@@ -145,7 +145,7 @@ class _Step2PageState extends State<Step2Page> {
       debugPrint('✅ [STEP2_PAGE] Cadastro completo, navegando para Home');
       // Navega para a Home
       if (mounted) {
-        context.go('/home');
+        context.goNamed('home');
       }
     } catch (e) {
       debugPrint('❌ [STEP2_PAGE] Erro ao salvar cadastro: $e');

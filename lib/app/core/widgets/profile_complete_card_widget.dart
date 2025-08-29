@@ -17,6 +17,17 @@ class ProfileCompleteCardWidget extends StatelessWidget {
     required this.onComplete,
   });
 
+  /// Retorna o título do banner baseado nos passos completos
+  String _getBannerTitle(int completedSteps, int totalSteps) {
+    if (completedSteps == 0) {
+      return 'Complete seu cadastro 1/2';
+    } else if (completedSteps == 1) {
+      return 'Complete seu cadastro 2/2';
+    } else {
+      return 'Complete seu cadastro ($completedSteps/$totalSteps)';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -50,7 +61,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Complete seu cadastro ($completedSteps/$totalSteps)',
+                          _getBannerTitle(completedSteps, totalSteps),
                           style: const TextStyle(
                             fontSize: AppSizes.fontSizeLarge,
                             fontWeight: FontWeight.bold,

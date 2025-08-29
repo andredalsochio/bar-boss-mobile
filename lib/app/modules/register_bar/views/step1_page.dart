@@ -13,6 +13,8 @@ import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 
 /// Tela de cadastro de bar - Passo 1 (Informações de contato)
 class Step1Page extends StatefulWidget {
@@ -129,8 +131,39 @@ class _Step1PageState extends State<Step1Page> {
     
     if (isValid && mounted) {
       debugPrint('💾 [STEP1_PAGE] Salvando dados do Passo 1...');
-      // Salva os dados do Passo 1 como rascunho
-      _viewModel.saveDraftStep1();
+      
+      try {
+        // Verifica se o usuário já tem um bar cadastrado (login social)
+        // através do AuthRepository e UserRepository
+        final authRepository = context.read<AuthRepository>();
+        final userRepository = context.read<UserRepository>();
+        final currentUser = authRepository.currentUser;
+        
+        if (currentUser != null) {
+           final userProfile = await userRepository.getMe();
+           final hasExistingBar = userProfile?.currentBarId != null && userProfile!.currentBarId!.isNotEmpty;
+           
+           debugPrint('🔍 [STEP1_PAGE] Usuário tem bar existente: $hasExistingBar (currentBarId: ${userProfile?.currentBarId})');
+           
+           // Se sim, salva no Firestore para atualizar o banner
+           // Se não, salva apenas como rascunho
+           if (hasExistingBar) {
+             debugPrint('🏢 [STEP1_PAGE] Usuário tem bar existente, salvando no Firestore...');
+             await _viewModel.saveStep1(userProfile!.currentBarId!);
+           } else {
+             debugPrint('📝 [STEP1_PAGE] Usuário sem bar, salvando como rascunho...');
+             _viewModel.saveDraftStep1();
+           }
+         } else {
+           debugPrint('📝 [STEP1_PAGE] Usuário não autenticado, salvando como rascunho...');
+           _viewModel.saveDraftStep1();
+         }
+      } catch (e) {
+        debugPrint('⚠️ [STEP1_PAGE] Erro ao verificar bar existente: $e');
+        // Em caso de erro, salva apenas como rascunho
+        _viewModel.saveDraftStep1();
+      }
+      
       debugPrint('✅ [STEP1_PAGE] Dados salvos, navegando para Step2');
       context.pushNamed('registerStep2');
     } else {

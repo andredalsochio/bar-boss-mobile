@@ -77,10 +77,27 @@ class HomeViewModel extends ChangeNotifier {
   // Calcula quantos passos estão completos (0, 1 ou 2)
   int get profileStepsDone {
     if (_currentBar == null) return 0;
-    int steps = 0;
-    if (_currentBar!.hasCompleteContacts) steps++;
-    if (_currentBar!.hasCompleteAddress) steps++;
-    return steps;
+    
+    // Verifica se os campos obrigatórios do Passo 1 estão preenchidos
+    final hasStep1Complete = _currentBar!.cnpj.isNotEmpty &&
+        _currentBar!.name.isNotEmpty &&
+        _currentBar!.responsibleName.isNotEmpty &&
+        _currentBar!.contactPhone.isNotEmpty;
+    
+    // Verifica se todos os campos do Passo 1 estão preenchidos
+    final allStep1Fields = hasStep1Complete;
+    
+    // Se todos os campos do Passo 1 estão preenchidos, retorna 1
+    // Se também tem endereço completo, retorna 2
+    if (allStep1Fields) {
+      if (_currentBar!.hasCompleteAddress) {
+        return 2; // Passo 1 + Passo 2 completos
+      } else {
+        return 1; // Apenas Passo 1 completo
+      }
+    }
+    
+    return 0; // Nenhum passo completo
   }
   
   // Verifica se pode criar eventos (tem bar - perfil não bloqueia mais)

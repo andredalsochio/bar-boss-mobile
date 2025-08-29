@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 
@@ -60,7 +61,14 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     if (showBackButton) {
       return IconButton(
         icon: const Icon(Icons.arrow_back),
-        onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
+        onPressed: onBackPressed ?? () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            // Se não há nada para fazer pop, navegar para home
+            context.go('/');
+          }
+        },
       );
     }
     

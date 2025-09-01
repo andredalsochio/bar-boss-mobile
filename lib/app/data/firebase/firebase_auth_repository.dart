@@ -50,6 +50,11 @@ class FirebaseAuthRepository implements AuthRepository {
         await credential.user!.updateDisplayName(displayName);
       }
       
+      // TODO: Implementar verificação de email obrigatória
+      // Conforme PROJECT_RULES.md, a verificação de email deve ser obrigatória
+      // Adicionar: await credential.user!.sendEmailVerification();
+      // E implementar lógica para verificar se o email foi confirmado antes de permitir acesso completo
+      
       return _fromFirebaseCredential(credential);
     } on FirebaseAuthException catch (e) {
       return _fromFirebaseException(e);

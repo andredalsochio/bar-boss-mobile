@@ -8,7 +8,7 @@ import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
+
 import 'package:bar_boss_mobile/app/core/widgets/event_card_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_drawer.dart';
 import 'package:bar_boss_mobile/app/core/widgets/profile_complete_card_widget.dart';
@@ -107,7 +107,7 @@ class _HomePageState extends State<HomePage> {
               if (homeViewModel.shouldShowProfileCompleteCard) {
                 return ProfileCompleteCardWidget(
                   completedSteps: homeViewModel.completedSteps,
-                  totalSteps: 2,
+                  totalSteps: homeViewModel.totalSteps,
                   onDismiss: () => homeViewModel.dismissProfileCompleteCard(),
                   onComplete: () => context.go('/register/step1'),
                 );
@@ -192,12 +192,7 @@ class _HomePageState extends State<HomePage> {
                   return const LoadingWidget();
                 }
 
-                if (viewModel.state == EventsState.error) {
-                  return ErrorMessageWidget(
-                    message: viewModel.errorMessage ?? 'Erro ao carregar eventos',
-                    onRetry: _loadUpcomingEvents,
-                  );
-                }
+
 
                 if (viewModel.upcomingEvents.isEmpty) {
                   return Center(

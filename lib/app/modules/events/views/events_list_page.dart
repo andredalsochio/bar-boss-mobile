@@ -7,7 +7,7 @@ import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
+
 import 'package:bar_boss_mobile/app/core/widgets/event_card_widget.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
@@ -25,7 +25,6 @@ class _EventsListPageState extends State<EventsListPage> {
   late final EventsViewModel _viewModel;
   late final HomeViewModel _homeViewModel;
   bool _isLoading = true;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -42,18 +41,10 @@ class _EventsListPageState extends State<EventsListPage> {
   Future<void> _loadEvents() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
       await _viewModel.loadEvents();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = AppStrings.loadEventsErrorMessage;
-        });
-      }
-      debugPrint('Erro ao carregar eventos: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -129,12 +120,7 @@ class _EventsListPageState extends State<EventsListPage> {
             return const LoadingWidget();
           }
 
-          if (_errorMessage != null) {
-            return ErrorMessageWidget(
-              message: _errorMessage!,
-              onRetry: _loadEvents,
-            );
-          }
+
 
           final events = viewModel.events;
 

@@ -79,6 +79,7 @@ class _EventFormPageState extends State<EventFormPage> {
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime initialDate = _viewModel.eventDate ?? DateTime.now();
+    final BuildContext currentContext = context;
     
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -108,9 +109,9 @@ class _EventFormPageState extends State<EventFormPage> {
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(initialDate),
-        builder: (context, child) {
+        builder: (builderContext, child) {
           return Theme(
-            data: Theme.of(context).copyWith(
+            data: Theme.of(currentContext).copyWith(
               colorScheme: const ColorScheme.light(
                 primary: AppColors.primary,
                 onPrimary: AppColors.white,
@@ -176,7 +177,9 @@ class _EventFormPageState extends State<EventFormPage> {
       }
 
       if (!mounted) return;
-      context.pop();
+      if (mounted) {
+        context.pop();
+      }
     } catch (e) {
       debugPrint('Erro ao salvar evento: $e');
       
@@ -240,7 +243,9 @@ class _EventFormPageState extends State<EventFormPage> {
       );
 
       if (!mounted) return;
-      context.pop();
+      if (mounted) {
+        context.pop();
+      }
     } catch (e) {
       debugPrint('Erro ao excluir evento: $e');
     }

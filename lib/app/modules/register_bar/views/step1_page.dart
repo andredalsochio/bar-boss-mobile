@@ -165,7 +165,9 @@ class _Step1PageState extends State<Step1Page> {
       }
       
       debugPrint('✅ [STEP1_PAGE] Dados salvos, navegando para Step2');
-      context.pushNamed('registerStep2');
+      if (mounted) {
+        context.pushNamed('registerStep2');
+      }
     } else {
       debugPrint('❌ [STEP1_PAGE] Validação falhou ou widget desmontado');
       if (!isValid) {

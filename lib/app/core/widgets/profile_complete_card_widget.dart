@@ -42,7 +42,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
           gradient: LinearGradient(
             colors: [
               AppColors.primary.withOpacity(0.1),
-              AppColors.secondary.withOpacity(0.1),
+            AppColors.secondary.withOpacity(0.1),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -62,29 +62,29 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                       children: [
                         Text(
                           _getBannerTitle(completedSteps, totalSteps),
-                          style: const TextStyle(
-                            fontSize: AppSizes.fontSizeLarge,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: TextStyle(
+                             fontSize: AppSizes.fontSizeLarge,
+                             fontWeight: FontWeight.bold,
+                             color: AppColors.textPrimary,
+                           ),
                         ),
                         const SizedBox(height: AppSizes.spacingSmall),
                         Text(
                           'Finalize seu perfil para aproveitar todos os recursos do app',
-                          style: const TextStyle(
-                            fontSize: AppSizes.fontSizeMedium,
-                            color: AppColors.textSecondary,
-                          ),
+                          style: TextStyle(
+                             fontSize: AppSizes.fontSizeMedium,
+                             color: AppColors.textSecondary,
+                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
                     onPressed: onDismiss,
-                    icon: const Icon(
-                      Icons.close,
-                      color: AppColors.textSecondary,
-                    ),
+                    icon: Icon(
+                       Icons.close,
+                       color: AppColors.textSecondary,
+                     ),
                     tooltip: 'Dispensar',
                   ),
                 ],

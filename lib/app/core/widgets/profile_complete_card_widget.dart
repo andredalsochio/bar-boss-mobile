@@ -81,7 +81,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: onDismiss,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close,
                       color: AppColors.textSecondary(context),
                     ),

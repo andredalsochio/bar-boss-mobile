@@ -8,7 +8,7 @@ import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
+
 import 'package:bar_boss_mobile/app/core/widgets/event_card_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_drawer.dart';
 import 'package:bar_boss_mobile/app/core/widgets/profile_complete_card_widget.dart';
@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: AppStrings.homeTitle,
         showBackButton: false,
@@ -107,7 +107,7 @@ class _HomePageState extends State<HomePage> {
               if (homeViewModel.shouldShowProfileCompleteCard) {
                 return ProfileCompleteCardWidget(
                   completedSteps: homeViewModel.completedSteps,
-                  totalSteps: 2,
+                  totalSteps: homeViewModel.totalSteps,
                   onDismiss: () => homeViewModel.dismissProfileCompleteCard(),
                   onComplete: () => context.go('/register/step1'),
                 );
@@ -144,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                                 _showNoBarModal(context);
                               },
                         icon: Icons.add_circle,
-                        backgroundColor: AppColors.primary, // Sempre habilitado
+                        backgroundColor: AppColors.primary(context), // Sempre habilitado
                       );
                     },
                   ),
@@ -164,19 +164,19 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Text(
                   AppStrings.nextEventLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppSizes.fontSizeLarge,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimary(context),
                   ),
                 ),
                 TextButton(
                   onPressed: () => context.pushNamed('eventsList'),
                   child: Text(
                     AppStrings.manageScheduleLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: AppSizes.fontSizeSmall,
-                      color: AppColors.primary,
+                      color: AppColors.primary(context),
                     ),
                   ),
                 ),
@@ -192,29 +192,24 @@ class _HomePageState extends State<HomePage> {
                   return const LoadingWidget();
                 }
 
-                if (viewModel.state == EventsState.error) {
-                  return ErrorMessageWidget(
-                    message: viewModel.errorMessage ?? 'Erro ao carregar eventos',
-                    onRetry: _loadUpcomingEvents,
-                  );
-                }
+
 
                 if (viewModel.upcomingEvents.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.event_busy,
                           size: AppSizes.iconSizeLarge,
-                          color: AppColors.textSecondary,
+                          color: AppColors.textSecondary(context),
                         ),
                         const SizedBox(height: AppSizes.spacingMedium),
                         Text(
                           AppStrings.noEventsMessage,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: AppSizes.fontSizeMedium,
-                            color: AppColors.textSecondary,
+                            color: AppColors.textSecondary(context),
                           ),
                         ),
                         const SizedBox(height: AppSizes.spacingLarge),

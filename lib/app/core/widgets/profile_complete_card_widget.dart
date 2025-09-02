@@ -20,9 +20,9 @@ class ProfileCompleteCardWidget extends StatelessWidget {
   /// Retorna o título do banner baseado nos passos completos
   String _getBannerTitle(int completedSteps, int totalSteps) {
     if (completedSteps == 0) {
-      return 'Complete seu cadastro 1/2';
+      return 'Complete seu cadastro (1/2)';
     } else if (completedSteps == 1) {
-      return 'Complete seu cadastro 2/2';
+      return 'Complete seu cadastro (2/2)';
     } else {
       return 'Complete seu cadastro ($completedSteps/$totalSteps)';
     }
@@ -41,8 +41,8 @@ class ProfileCompleteCardWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
             colors: [
-              AppColors.primary.withOpacity(0.1),
-            AppColors.secondary.withOpacity(0.1),
+              AppColors.primary(context).withValues(alpha: 0.1),
+              AppColors.secondary(context).withValues(alpha: 0.1),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -63,28 +63,28 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                         Text(
                           _getBannerTitle(completedSteps, totalSteps),
                           style: TextStyle(
-                             fontSize: AppSizes.fontSizeLarge,
-                             fontWeight: FontWeight.bold,
-                             color: AppColors.textPrimary,
-                           ),
+                            fontSize: AppSizes.fontSizeLarge,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary(context),
+                          ),
                         ),
                         const SizedBox(height: AppSizes.spacingSmall),
                         Text(
                           'Finalize seu perfil para aproveitar todos os recursos do app',
                           style: TextStyle(
-                             fontSize: AppSizes.fontSizeMedium,
-                             color: AppColors.textSecondary,
-                           ),
+                            fontSize: AppSizes.fontSizeMedium,
+                            color: AppColors.textSecondary(context),
+                          ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
                     onPressed: onDismiss,
-                    icon: Icon(
-                       Icons.close,
-                       color: AppColors.textSecondary,
-                     ),
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppColors.textSecondary(context),
+                    ),
                     tooltip: 'Dispensar',
                   ),
                 ],
@@ -96,7 +96,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                 height: 8,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
-                  color: AppColors.border,
+                  color: AppColors.border(context),
                 ),
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
@@ -104,7 +104,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
-                      color: AppColors.primary,
+                      color: AppColors.primary(context),
                     ),
                   ),
                 ),
@@ -121,7 +121,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                     onComplete();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primary(context),
                     foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(
                       vertical: AppSizes.spacingMedium,

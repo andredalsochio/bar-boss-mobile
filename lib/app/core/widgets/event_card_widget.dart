@@ -48,7 +48,7 @@ class EventCardWidget extends StatelessWidget {
               vertical: AppSizes.spacing8,
             ),
             decoration: BoxDecoration(
-              color: isToday ? AppColors.primary : AppColors.textPrimary,
+              color: isToday ? AppColors.primary(context) : AppColors.textPrimary(context),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(AppSizes.borderRadius4),
                 topRight: Radius.circular(AppSizes.borderRadius4),
@@ -84,7 +84,7 @@ class EventCardWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Atrações
-                if (event.attractions?.isNotEmpty == true) ..._buildAttractions(),
+                if (event.attractions?.isNotEmpty == true) ..._buildAttractions(context),
                 
                 // Indicadores
                 Row(
@@ -106,11 +106,13 @@ class EventCardWidget extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildActionButton(
+                        context,
                         AppStrings.viewDetailsButton,
                         Icons.visibility,
                         onViewDetails,
                       ),
                       _buildActionButton(
+                        context,
                         AppStrings.editEventButton,
                         Icons.edit,
                         onEdit,
@@ -128,22 +130,22 @@ class EventCardWidget extends StatelessWidget {
     );
   }
   
-  Widget _buildActionButton(String label, IconData icon, VoidCallback? onTap) {
+  Widget _buildActionButton(BuildContext context, String label, IconData icon, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
       child: Column(
         children: [
           Icon(
             icon,
-            color: AppColors.primary,
+            color: AppColors.primary(context),
             size: AppSizes.iconSize24,
           ),
           const SizedBox(height: AppSizes.spacing4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppSizes.fontSize10,
-              color: AppColors.textPrimary,
+              color: AppColors.textPrimary(context),
             ),
           ),
         ],
@@ -172,16 +174,16 @@ class EventCardWidget extends StatelessWidget {
     );
   }
   
-  List<Widget> _buildAttractions() {
+  List<Widget> _buildAttractions(BuildContext context) {
     return [
       ...event.attractions?.map((attraction) => Padding(
         padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
         child: Text(
           attraction,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppSizes.fontSize16,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: AppColors.textPrimary(context),
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

@@ -35,9 +35,9 @@ class ErrorDisplayWidget extends StatelessWidget {
         Text(
           message ?? AppStrings.genericErrorMessage,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppSizes.fontSize16,
-            color: AppColors.textPrimary,
+            color: AppColors.textPrimary(context),
           ),
         ),
         if (onRetry != null) ...[  
@@ -108,15 +108,15 @@ class EmptyStateWidget extends StatelessWidget {
             Icon(
               icon,
               size: AppSizes.iconSize48,
-              color: AppColors.textHint,
+              color: AppColors.textHint(context),
             ),
             const SizedBox(height: AppSizes.spacing16),
             Text(
               message ?? AppStrings.noDataMessage,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppSizes.fontSize16,
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondary(context),
               ),
             ),
             if (onAction != null && actionLabel != null) ...[  

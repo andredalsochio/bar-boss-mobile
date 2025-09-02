@@ -88,14 +88,10 @@ class AuthService {
     String email,
     String password,
   ) async {
-    try {
-      return await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } catch (e) {
-      throw Exception('Erro ao fazer login com e-mail/senha: $e');
-    }
+    return await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
   }
 
   static Future<UserCredential> signInWithGoogle() async {

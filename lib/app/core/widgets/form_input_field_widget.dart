@@ -54,13 +54,13 @@ class FormInputFieldWidget extends StatelessWidget {
         if (label.isNotEmpty) ...[  
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppSizes.fontSize12,
               fontWeight: FontWeight.bold,
-              color: AppColors.textHint,
+              color: AppColors.textHint(context),
             ),
           ),
-          const SizedBox(height: AppSizes.spacing4),
+          SizedBox(height: AppSizes.spacing4),
         ],
         TextFormField(
           controller: controller,
@@ -77,17 +77,17 @@ class FormInputFieldWidget extends StatelessWidget {
           textInputAction: textInputAction,
           onTap: onTap,
           readOnly: readOnly,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppSizes.fontSize14,
-            color: AppColors.textPrimary,
+            color: AppColors.textPrimary(context),
           ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-              fontSize: AppSizes.fontSize14,
-              color: AppColors.textHint,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
+            hintStyle: TextStyle(
+                fontSize: AppSizes.fontSize14,
+                color: AppColors.textHint(context),
+              ),
+            contentPadding: EdgeInsets.symmetric(
               horizontal: AppSizes.spacing12,
               vertical: AppSizes.spacing12,
             ),
@@ -98,39 +98,39 @@ class FormInputFieldWidget extends StatelessWidget {
             counterText: '',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
-              borderSide: const BorderSide(
-                color: AppColors.border,
+              borderSide: BorderSide(
+                color: AppColors.border(context),
                 width: AppSizes.borderWidth,
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
-              borderSide: const BorderSide(
-                color: AppColors.border,
-                width: AppSizes.borderWidth,
+                borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
+                borderSide: BorderSide(
+                  color: AppColors.border(context),
+                  width: AppSizes.borderWidth,
+                ),
               ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: AppSizes.borderWidth,
-              ),
-            ),
+              focusedBorder: OutlineInputBorder(
+                 borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
+                 borderSide: BorderSide(
+                   color: AppColors.primary(context),
+                   width: AppSizes.borderWidth,
+                 ),
+               ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
-              borderSide: const BorderSide(
-                color: AppColors.error,
-                width: AppSizes.borderWidth,
+                borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
+                borderSide: BorderSide(
+                  color: AppColors.error,
+                  width: AppSizes.borderWidth,
+                ),
               ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
-              borderSide: const BorderSide(
-                color: AppColors.error,
-                width: AppSizes.borderWidth,
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
+                borderSide: BorderSide(
+                  color: AppColors.error,
+                  width: AppSizes.borderWidth,
+                ),
               ),
-            ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
               borderSide: BorderSide(

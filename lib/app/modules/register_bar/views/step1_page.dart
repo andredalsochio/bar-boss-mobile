@@ -12,6 +12,7 @@ import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/step_progress_widget.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
@@ -179,7 +180,7 @@ class _Step1PageState extends State<Step1Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: AppStrings.registerBarStep1Title,
         showBackButton: true,
@@ -194,10 +195,16 @@ class _Step1PageState extends State<Step1Page> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: AppSizes.spacing),
+                  const StepProgressWidget(
+              currentStep: 1,
+              totalSteps: 2,
+              title: 'Etapa 1 de 2: Informações de contato',
+            ),
+                  const SizedBox(height: AppSizes.spacingLarge),
                   Text(
                     AppStrings.registerBarStep1Subtitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textPrimary,
+                          color: AppColors.textPrimary(context),
                         ),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
@@ -241,13 +248,7 @@ class _Step1PageState extends State<Step1Page> {
                     validator: (value) => Validators.phone(value),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
-                  if (viewModel.registrationState == RegistrationState.error && viewModel.errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: AppSizes.spacingMedium),
-                      child: ErrorMessageWidget(
-                        message: viewModel.errorMessage!,
-                      ),
-                    ),
+
                   ButtonWidget(
                     text: AppStrings.continueButton,
                     onPressed: viewModel.isStep1Valid ? _goToNextStep : null,

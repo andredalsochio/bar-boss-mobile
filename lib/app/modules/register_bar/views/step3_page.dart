@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
@@ -76,13 +75,7 @@ class _Step3PageState extends State<Step3Page> {
       if (!mounted) return;
 
       if (_viewModel.registrationState == RegistrationState.success) {
-        Fluttertoast.showToast(
-          msg: AppStrings.registrationSuccessMessage,
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: AppColors.success,
-          textColor: AppColors.white,
-        );
+        // Mensagem de sucesso será exibida pelo ToastService no ViewModel
 
         // Navega para a tela inicial após o cadastro bem-sucedido
         context.goNamed('home');
@@ -96,7 +89,7 @@ class _Step3PageState extends State<Step3Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: AppStrings.registerBarStep3Title,
         showBackButton: true,
@@ -115,7 +108,7 @@ class _Step3PageState extends State<Step3Page> {
                   Text(
                     AppStrings.registerBarStep3Subtitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textPrimary,
+                          color: AppColors.textPrimary(context),
                         ),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
@@ -135,13 +128,7 @@ class _Step3PageState extends State<Step3Page> {
                     validator: Validators.confirmPassword(_passwordController.text),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
-                  if (viewModel.registrationState == RegistrationState.error && viewModel.errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: AppSizes.spacingMedium),
-                      child: ErrorMessageWidget(
-                        message: viewModel.errorMessage!,
-                      ),
-                    ),
+
                   ButtonWidget(
                     text: AppStrings.submitRegistrationButton,
                     onPressed: viewModel.isStep3Valid ? _submitRegistration : null,

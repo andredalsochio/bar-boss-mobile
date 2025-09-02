@@ -7,6 +7,7 @@ import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/storage/draft_storage.dart';
+import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 
 /// Estados possíveis do cadastro de bar
 enum RegistrationState { initial, loading, success, error }
@@ -504,6 +505,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       // Limpa os rascunhos após sucesso
       await clearDrafts();
 
+      ToastService.instance.showSuccess(message: 'Bar cadastrado com sucesso!');
       _setRegistrationState(RegistrationState.success);
     } catch (e) {
       _setError(e.toString());
@@ -619,6 +621,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void _setError(String message) {
     _errorMessage = message;
     _registrationState = RegistrationState.error;
+    ToastService.instance.showError(message: message);
     notifyListeners();
   }
 

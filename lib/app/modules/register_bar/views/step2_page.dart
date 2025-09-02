@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
@@ -12,6 +11,7 @@ import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/step_progress_widget.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 
@@ -135,12 +135,7 @@ class _Step2PageState extends State<Step2Page> {
       // Cria o bar e salva os dados
       await _viewModel.createBarFromSocialLogin();
       
-      // Mostra mensagem de sucesso
-      Fluttertoast.showToast(
-        msg: 'Cadastro salvo com sucesso!',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-      );
+      // Mensagem de sucesso será exibida pelo ToastService no ViewModel
       
       debugPrint('✅ [STEP2_PAGE] Cadastro completo, navegando para Home');
       // Navega para a Home
@@ -149,12 +144,7 @@ class _Step2PageState extends State<Step2Page> {
       }
     } catch (e) {
       debugPrint('❌ [STEP2_PAGE] Erro ao salvar cadastro: $e');
-      // Mostra mensagem de erro
-      Fluttertoast.showToast(
-        msg: 'Erro ao salvar cadastro: $e',
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-      );
+      // Mensagem de erro será exibida pelo ToastService no ViewModel
     }
   }
 
@@ -165,7 +155,7 @@ class _Step2PageState extends State<Step2Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: AppStrings.registerBarStep2Title,
         showBackButton: true,
@@ -197,10 +187,16 @@ class _Step2PageState extends State<Step2Page> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: AppSizes.spacing),
+                  const StepProgressWidget(
+              currentStep: 2,
+              totalSteps: 2,
+              title: 'Etapa 2 de 2: Endereço do estabelecimento',
+            ),
+                  const SizedBox(height: AppSizes.spacingLarge),
                   Text(
                     AppStrings.registerBarStep2Subtitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textPrimary,
+                          color: AppColors.textPrimary(context),
                         ),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
@@ -237,41 +233,41 @@ class _Step2PageState extends State<Step2Page> {
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
                       labelText: AppStrings.stateLabel,
-                      labelStyle: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: AppSizes.fontSizeMedium,
-                      ),
+                      labelStyle: TextStyle(
+                          color: AppColors.textPrimary(context),
+                          fontSize: AppSizes.fontSizeMedium,
+                        ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                        borderSide: const BorderSide(
-                          color: AppColors.border,
-                          width: AppSizes.borderWidth,
-                        ),
+                        borderSide: BorderSide(
+                            color: AppColors.border(context),
+                            width: AppSizes.borderWidth,
+                          ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                        borderSide: const BorderSide(
-                          color: AppColors.border,
-                          width: AppSizes.borderWidth,
-                        ),
+                        borderSide: BorderSide(
+                            color: AppColors.border(context),
+                            width: AppSizes.borderWidth,
+                          ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                        borderSide: const BorderSide(
-                          color: AppColors.primary,
-                          width: AppSizes.borderWidth,
-                        ),
+                        borderSide: BorderSide(
+                            color: AppColors.primary(context),
+                            width: AppSizes.borderWidth,
+                          ),
                       ),
                       errorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                        borderSide: const BorderSide(
-                          color: AppColors.error,
-                          width: AppSizes.borderWidth,
-                        ),
+                        borderSide: BorderSide(
+                            color: AppColors.error,
+                            width: AppSizes.borderWidth,
+                          ),
                       ),
                       filled: true,
-                      fillColor: AppColors.inputBackground,
-                      contentPadding: const EdgeInsets.symmetric(
+                      fillColor: AppColors.inputBackground(context),
+                      contentPadding: EdgeInsets.symmetric(
                         horizontal: AppSizes.inputHorizontalPadding,
                         vertical: AppSizes.inputVerticalPadding,
                       ),
@@ -289,11 +285,11 @@ class _Step2PageState extends State<Step2Page> {
                       }
                     },
                     hint: Text(AppStrings.stateHint),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: AppSizes.fontSizeMedium,
-                    ),
-                    dropdownColor: AppColors.inputBackground,
+                    style: TextStyle(
+                        color: AppColors.textPrimary(context),
+                        fontSize: AppSizes.fontSizeMedium,
+                      ),
+                    dropdownColor: AppColors.inputBackground(context),
                     isExpanded: true,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),

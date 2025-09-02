@@ -10,7 +10,6 @@ import 'package:bar_boss_mobile/app/core/utils/validators.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 
 /// Tela de login
@@ -26,7 +25,6 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  String? _errorMessage;
   bool _isLoading = false;
 
   @override
@@ -41,115 +39,91 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
-    try {
-      final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+    final authViewModel = context.read<AuthViewModel>();
+    await authViewModel.loginWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Navega para a tela inicial após o login bem-sucedido
+    // Navega para a tela inicial se o login foi bem-sucedido
+    if (authViewModel.errorMessage == null) {
       context.goNamed('home');
-    } catch (e) {
+    }
+
+    if (mounted) {
       setState(() {
-        _errorMessage = AppStrings.loginErrorMessage;
+        _isLoading = false;
       });
-      debugPrint('Erro ao fazer login: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   Future<void> _loginWithGoogle() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
-    try {
-      final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithGoogle();
+    final authViewModel = context.read<AuthViewModel>();
+    await authViewModel.loginWithGoogle();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Navega para a tela inicial após o login bem-sucedido
+    // Navega para a tela inicial se o login foi bem-sucedido
+    if (authViewModel.errorMessage == null) {
       context.goNamed('home');
-    } catch (e) {
+    }
+
+    if (mounted) {
       setState(() {
-        _errorMessage = AppStrings.loginErrorMessage;
+        _isLoading = false;
       });
-      debugPrint('Erro ao fazer login com Google: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   Future<void> _loginWithApple() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
-    try {
-      final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithApple();
+    final authViewModel = context.read<AuthViewModel>();
+    await authViewModel.loginWithApple();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Navega para a tela inicial após o login bem-sucedido
+    // Navega para a tela inicial se o login foi bem-sucedido
+    if (authViewModel.errorMessage == null) {
       context.goNamed('home');
-    } catch (e) {
+    }
+
+    if (mounted) {
       setState(() {
-        _errorMessage = AppStrings.loginErrorMessage;
+        _isLoading = false;
       });
-      debugPrint('Erro ao fazer login com Apple: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   Future<void> _loginWithFacebook() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
-    try {
-      final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithFacebook();
+    final authViewModel = context.read<AuthViewModel>();
+    await authViewModel.loginWithFacebook();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Navega para a tela inicial após o login bem-sucedido
+    // Navega para a tela inicial se o login foi bem-sucedido
+    if (authViewModel.errorMessage == null) {
       context.goNamed('home');
-    } catch (e) {
+    }
+
+    if (mounted) {
       setState(() {
-        _errorMessage = AppStrings.loginErrorMessage;
+        _isLoading = false;
       });
-      debugPrint('Erro ao fazer login com Facebook: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -160,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       body: LoadingOverlay(
         isLoading: _isLoading,
         child: SafeArea(
@@ -177,7 +151,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       AppStrings.appName,
                       style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: AppColors.primary,
+                            color: AppColors.primary(context),
                             fontWeight: FontWeight.bold,
                           ),
                     ),
@@ -187,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       AppStrings.loginSubtitle,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: AppColors.textSecondary(context),
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -216,23 +190,16 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: _login,
                     isLoading: _isLoading,
                   ),
-                  if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSizes.spacingMedium),
-                      child: ErrorMessageWidget(
-                        message: _errorMessage!,
-                      ),
-                    ),
                   const SizedBox(height: AppSizes.spacingLarge),
                   // Divisor
                   Row(
                     children: [
-                      const Expanded(
-                        child: Divider(
-                          color: AppColors.border,
-                          thickness: 1,
+                      Expanded(
+                          child: Divider(
+                            color: AppColors.border(context),
+                            thickness: 1,
+                          ),
                         ),
-                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSizes.spacingMedium,
@@ -240,16 +207,16 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(
                           AppStrings.orLoginWith,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
+                                color: AppColors.textSecondary(context),
                               ),
                         ),
                       ),
-                      const Expanded(
-                        child: Divider(
-                          color: AppColors.border,
-                          thickness: 1,
+                      Expanded(
+                          child: Divider(
+                            color: AppColors.border(context),
+                            thickness: 1,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
@@ -282,7 +249,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         AppStrings.dontHaveBarQuestion,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.primary,
+                              color: AppColors.primary(context),
                               fontWeight: FontWeight.bold,
                             ),
                       ),
@@ -312,12 +279,12 @@ class _LoginPageState extends State<LoginPage> {
           color: AppColors.white,
           borderRadius: BorderRadius.circular(AppSizes.borderRadiusLarge),
           border: Border.all(
-            color: AppColors.border,
+            color: AppColors.border(context),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow.withAlpha(26),
+              color: AppColors.shadow(context).withValues(alpha: 0.1),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),

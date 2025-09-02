@@ -208,58 +208,44 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   /// Verifica se um email já está em uso no Firebase Auth
+  /// Usa tentativa de criação de conta para verificar disponibilidade
   @override
   Future<bool> isEmailInUse(String email) async {
     debugPrint('🔍 [AUTH_REPO] isEmailInUse INICIADO para: "$email"');
     
     try {
-      // MÉTODO 1: Usa fetchSignInMethodsForEmail
-      debugPrint('🔍 [AUTH_REPO] MÉTODO 1: Tentando fetchSignInMethodsForEmail...');
-      final signInMethods = await _auth.fetchSignInMethodsForEmail(email);
-      debugPrint('🔍 [AUTH_REPO] MÉTODO 1: signInMethods = $signInMethods');
+      // Tenta criar uma conta temporária para verificar se o email está disponível
+      debugPrint('🔍 [AUTH_REPO] Tentando createUserWithEmailAndPassword com senha temporária...');
       
-      if (signInMethods.isNotEmpty) {
-        debugPrint('✅ [AUTH_REPO] MÉTODO 1: Email EM USO (métodos encontrados)');
-        return true;
-      }
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: 'temp_password_123456789', // Senha temporária
+      );
       
-      debugPrint('🔍 [AUTH_REPO] MÉTODO 1: Nenhum método encontrado, tentando MÉTODO 2...');
+      // Se chegou aqui, o email estava disponível
+      // Deletar a conta temporária imediatamente
+      debugPrint('🔍 [AUTH_REPO] Email disponível, deletando conta temporária...');
+      await credential.user?.delete();
       
-      // MÉTODO 2: Tenta login com senha inválida
-       debugPrint('🔍 [AUTH_REPO] MÉTODO 2: Tentando signIn com senha inválida...');
-       try {
-         await _auth.signInWithEmailAndPassword(
-           email: email,
-           password: 'senha_invalida_para_teste_123456789',
-         );
-         debugPrint('⚠️ [AUTH_REPO] MÉTODO 2: Login funcionou (inesperado) - email existe');
-         return true;
-       } catch (signInError) {
-         final errorStr = signInError.toString();
-         debugPrint('🔍 [AUTH_REPO] MÉTODO 2: Erro capturado: $errorStr');
-         
-         if (errorStr.contains('wrong-password')) {
-           debugPrint('✅ [AUTH_REPO] MÉTODO 2: Email EM USO (wrong-password)');
-           return true;
-         } else if (errorStr.contains('user-not-found')) {
-           debugPrint('✅ [AUTH_REPO] MÉTODO 2: Email DISPONÍVEL (user-not-found)');
-           return false;
-         } else if (errorStr.contains('invalid-credential')) {
-           // CORREÇÃO: invalid-credential quando MÉTODO 1 retorna lista vazia = email NÃO existe
-           debugPrint('✅ [AUTH_REPO] MÉTODO 2: Email DISPONÍVEL (invalid-credential + sem métodos)');
-           return false;
-         } else {
-           debugPrint('⚠️ [AUTH_REPO] MÉTODO 2: Erro desconhecido, assumindo DISPONÍVEL');
-           return false;
-         }
-       }
+      debugPrint('✅ [AUTH_REPO] Email DISPONÍVEL');
+      return false;
       
     } catch (e) {
-      debugPrint('❌ [AUTH_REPO] ERRO CRÍTICO: $e');
+      final errorStr = e.toString();
+      debugPrint('🔍 [AUTH_REPO] Erro capturado: $errorStr');
       
-      // Para erros críticos, assume que o email está em uso por segurança
-      debugPrint('⚠️ [AUTH_REPO] Assumindo email EM USO por segurança devido a erro crítico');
-      return true;
+      if (errorStr.contains('email-already-in-use')) {
+        debugPrint('✅ [AUTH_REPO] Email EM USO (email-already-in-use)');
+        return true;
+      } else if (errorStr.contains('invalid-email')) {
+        debugPrint('❌ [AUTH_REPO] Email inválido');
+        throw Exception('Email inválido');
+      } else {
+        debugPrint('❌ [AUTH_REPO] ERRO CRÍTICO: $e');
+        // Para erros críticos, assume que o email está em uso por segurança
+        debugPrint('⚠️ [AUTH_REPO] Assumindo email EM USO por segurança devido a erro crítico');
+        return true;
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
@@ -142,20 +143,20 @@ class FirebaseBarRepository implements BarRepositoryDomain {
   Future<bool> isCnpjInUse(String cnpj) async {
     try {
       final normalizedCnpj = _normalizeCnpj(cnpj);
-      print('🔍 [DEBUG] Verificando CNPJ: original="$cnpj", normalizado="$normalizedCnpj"');
-      print('🔍 [DEBUG] Consultando documento: ${FirestoreKeys.cnpjRegistryCollection}/$normalizedCnpj');
+      debugPrint('🔍 [DEBUG] Verificando CNPJ: original="$cnpj", normalizado="$normalizedCnpj"');
+      debugPrint('🔍 [DEBUG] Consultando documento: ${FirestoreKeys.cnpjRegistryCollection}/$normalizedCnpj');
       
       final doc = await _cnpjRegCol.doc(normalizedCnpj).get();
-      print('🔍 [DEBUG] Documento existe: ${doc.exists}');
+      debugPrint('🔍 [DEBUG] Documento existe: ${doc.exists}');
       
       if (doc.exists) {
         final data = doc.data();
-        print('🔍 [DEBUG] Dados do documento: $data');
+        debugPrint('🔍 [DEBUG] Dados do documento: $data');
       }
       
       return doc.exists;
     } catch (e) {
-      print('❌ [DEBUG] Erro ao verificar CNPJ: $e');
+      debugPrint('❌ [DEBUG] Erro ao verificar CNPJ: $e');
       throw Exception('Erro ao verificar CNPJ: $e');
     }
   }

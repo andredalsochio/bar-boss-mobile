@@ -149,7 +149,7 @@ class _Step1PageState extends State<Step1Page> {
            // Se não, salva apenas como rascunho
            if (hasExistingBar) {
              debugPrint('🏢 [STEP1_PAGE] Usuário tem bar existente, salvando no Firestore...');
-             await _viewModel.saveStep1(userProfile!.currentBarId!);
+             await _viewModel.saveStep1(userProfile.currentBarId!);
            } else {
              debugPrint('📝 [STEP1_PAGE] Usuário sem bar, salvando como rascunho...');
              _viewModel.saveDraftStep1();

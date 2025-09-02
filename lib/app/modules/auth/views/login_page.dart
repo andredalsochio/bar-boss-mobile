@@ -10,7 +10,6 @@ import 'package:bar_boss_mobile/app/core/utils/validators.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 
 /// Tela de login
@@ -26,7 +25,6 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  String? _errorMessage;
   bool _isLoading = false;
 
   @override
@@ -41,115 +39,91 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
-    try {
-      final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+    final authViewModel = context.read<AuthViewModel>();
+    await authViewModel.loginWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Navega para a tela inicial após o login bem-sucedido
+    // Navega para a tela inicial se o login foi bem-sucedido
+    if (authViewModel.errorMessage == null) {
       context.goNamed('home');
-    } catch (e) {
+    }
+
+    if (mounted) {
       setState(() {
-        _errorMessage = AppStrings.loginErrorMessage;
+        _isLoading = false;
       });
-      debugPrint('Erro ao fazer login: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   Future<void> _loginWithGoogle() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
-    try {
-      final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithGoogle();
+    final authViewModel = context.read<AuthViewModel>();
+    await authViewModel.loginWithGoogle();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Navega para a tela inicial após o login bem-sucedido
+    // Navega para a tela inicial se o login foi bem-sucedido
+    if (authViewModel.errorMessage == null) {
       context.goNamed('home');
-    } catch (e) {
+    }
+
+    if (mounted) {
       setState(() {
-        _errorMessage = AppStrings.loginErrorMessage;
+        _isLoading = false;
       });
-      debugPrint('Erro ao fazer login com Google: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   Future<void> _loginWithApple() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
-    try {
-      final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithApple();
+    final authViewModel = context.read<AuthViewModel>();
+    await authViewModel.loginWithApple();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Navega para a tela inicial após o login bem-sucedido
+    // Navega para a tela inicial se o login foi bem-sucedido
+    if (authViewModel.errorMessage == null) {
       context.goNamed('home');
-    } catch (e) {
+    }
+
+    if (mounted) {
       setState(() {
-        _errorMessage = AppStrings.loginErrorMessage;
+        _isLoading = false;
       });
-      debugPrint('Erro ao fazer login com Apple: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   Future<void> _loginWithFacebook() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
-    try {
-      final authViewModel = context.read<AuthViewModel>();
-      await authViewModel.loginWithFacebook();
+    final authViewModel = context.read<AuthViewModel>();
+    await authViewModel.loginWithFacebook();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Navega para a tela inicial após o login bem-sucedido
+    // Navega para a tela inicial se o login foi bem-sucedido
+    if (authViewModel.errorMessage == null) {
       context.goNamed('home');
-    } catch (e) {
+    }
+
+    if (mounted) {
       setState(() {
-        _errorMessage = AppStrings.loginErrorMessage;
+        _isLoading = false;
       });
-      debugPrint('Erro ao fazer login com Facebook: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -216,13 +190,6 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: _login,
                     isLoading: _isLoading,
                   ),
-                  if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSizes.spacingMedium),
-                      child: ErrorMessageWidget(
-                        message: _errorMessage!,
-                      ),
-                    ),
                   const SizedBox(height: AppSizes.spacingLarge),
                   // Divisor
                   Row(

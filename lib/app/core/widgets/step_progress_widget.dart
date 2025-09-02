@@ -22,10 +22,10 @@ class StepProgressWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.spacingMedium),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: AppColors.cardBackground(context),
         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
         border: Border.all(
-          color: AppColors.border,
+          color: AppColors.border(context),
           width: 1,
         ),
       ),
@@ -36,7 +36,7 @@ class StepProgressWidget extends StatelessWidget {
             Text(
               title!,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimary(context),
                     fontWeight: FontWeight.w600,
                   ),
             ),
@@ -50,8 +50,8 @@ class StepProgressWidget extends StatelessWidget {
                   currentStep: currentStep,
                   size: 6,
                   padding: 2,
-                  selectedColor: AppColors.primary,
-                  unselectedColor: AppColors.border,
+                  selectedColor: AppColors.primary(context),
+                  unselectedColor: AppColors.border(context),
                   roundedEdges: const Radius.circular(3),
                 ),
               ),
@@ -59,7 +59,7 @@ class StepProgressWidget extends StatelessWidget {
               Text(
                 '$currentStep/$totalSteps',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: AppColors.textSecondary(context),
                       fontWeight: FontWeight.w500,
                     ),
               ),

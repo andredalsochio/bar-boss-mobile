@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: AppStrings.homeTitle,
         showBackButton: false,
@@ -144,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                                 _showNoBarModal(context);
                               },
                         icon: Icons.add_circle,
-                        backgroundColor: AppColors.primary, // Sempre habilitado
+                        backgroundColor: AppColors.primary(context), // Sempre habilitado
                       );
                     },
                   ),
@@ -164,19 +164,19 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Text(
                   AppStrings.nextEventLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppSizes.fontSizeLarge,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimary(context),
                   ),
                 ),
                 TextButton(
                   onPressed: () => context.pushNamed('eventsList'),
                   child: Text(
                     AppStrings.manageScheduleLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: AppSizes.fontSizeSmall,
-                      color: AppColors.primary,
+                      color: AppColors.primary(context),
                     ),
                   ),
                 ),
@@ -199,17 +199,17 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.event_busy,
                           size: AppSizes.iconSizeLarge,
-                          color: AppColors.textSecondary,
+                          color: AppColors.textSecondary(context),
                         ),
                         const SizedBox(height: AppSizes.spacingMedium),
                         Text(
                           AppStrings.noEventsMessage,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: AppSizes.fontSizeMedium,
-                            color: AppColors.textSecondary,
+                            color: AppColors.textSecondary(context),
                           ),
                         ),
                         const SizedBox(height: AppSizes.spacingLarge),

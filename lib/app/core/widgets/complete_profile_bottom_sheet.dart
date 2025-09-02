@@ -34,14 +34,14 @@ class CompleteProfileBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
       ),
-      padding: const EdgeInsets.all(AppSizes.spacingLarge),
+      padding: EdgeInsets.all(AppSizes.spacingLarge),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -50,7 +50,7 @@ class CompleteProfileBottomSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: AppColors.border(context),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -62,25 +62,25 @@ class CompleteProfileBottomSheet extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary(context).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_circle_outline,
               size: 40,
-              color: AppColors.primary,
+              color: AppColors.primary(context),
             ),
           ),
           
           const SizedBox(height: AppSizes.spacingLarge),
           
           // Título
-          const Text(
+          Text(
             'Evento criado com sucesso!',
             style: TextStyle(
               fontSize: AppSizes.fontSizeLarge,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.textPrimary(context),
             ),
             textAlign: TextAlign.center,
           ),
@@ -90,9 +90,9 @@ class CompleteProfileBottomSheet extends StatelessWidget {
           // Subtítulo
           Text(
             'Complete seu perfil ($completedSteps/$totalSteps) para aproveitar todos os recursos do app',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppSizes.fontSizeMedium,
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondary(context),
             ),
             textAlign: TextAlign.center,
           ),
@@ -104,7 +104,7 @@ class CompleteProfileBottomSheet extends StatelessWidget {
             height: 8,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(4),
-              color: AppColors.border,
+              color: AppColors.border(context),
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
@@ -112,7 +112,7 @@ class CompleteProfileBottomSheet extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
-                  color: AppColors.primary,
+                  color: AppColors.primary(context),
                 ),
               ),
             ),
@@ -128,16 +128,16 @@ class CompleteProfileBottomSheet extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: const BorderSide(color: AppColors.border),
-                    padding: const EdgeInsets.symmetric(
+                    foregroundColor: AppColors.textSecondary(context),
+                    side: BorderSide(color: AppColors.border(context)),
+                    padding: EdgeInsets.symmetric(
                       vertical: AppSizes.spacingMedium,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Depois',
                     style: TextStyle(
                       fontSize: AppSizes.fontSizeMedium,
@@ -158,16 +158,16 @@ class CompleteProfileBottomSheet extends StatelessWidget {
                     context.pushNamed('barProfile');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primary(context),
                     foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       vertical: AppSizes.spacingMedium,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Completar agora',
                     style: TextStyle(
                       fontSize: AppSizes.fontSizeMedium,

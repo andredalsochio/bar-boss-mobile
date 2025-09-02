@@ -89,14 +89,14 @@ class _EventFormPageState extends State<EventFormPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.white,
-              onSurface: AppColors.textPrimary,
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary(context),
+                onPrimary: AppColors.white,
+                onSurface: AppColors.textPrimary(context),
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
+                foregroundColor: AppColors.primary(context),
               ),
             ),
           ),
@@ -112,14 +112,14 @@ class _EventFormPageState extends State<EventFormPage> {
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppColors.primary,
+              colorScheme: ColorScheme.light(
+                primary: AppColors.primary(context),
                 onPrimary: AppColors.white,
-                onSurface: AppColors.textPrimary,
+                onSurface: AppColors.textPrimary(context),
               ),
               textButtonTheme: TextButtonThemeData(
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
+                  foregroundColor: AppColors.primary(context),
                 ),
               ),
             ),
@@ -227,7 +227,7 @@ class _EventFormPageState extends State<EventFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: _isEditing
             ? AppStrings.editEventTitle
@@ -236,10 +236,10 @@ class _EventFormPageState extends State<EventFormPage> {
         actions: _isEditing
             ? [
                 IconButton(
-                  icon: const Icon(
-                    Icons.delete,
-                    color: AppColors.error,
-                  ),
+                  icon: Icon(
+                      Icons.delete,
+                      color: AppColors.error,
+                    ),
                   onPressed: _deleteEvent,
                   tooltip: AppStrings.deleteEventTooltip,
                 ),
@@ -302,11 +302,11 @@ class _EventFormPageState extends State<EventFormPage> {
       children: [
         Text(
           AppStrings.eventDateLabel,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: AppSizes.fontSizeMedium,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(
+              color: AppColors.textPrimary(context),
+              fontSize: AppSizes.fontSizeMedium,
+              fontWeight: FontWeight.bold,
+            ),
         ),
         const SizedBox(height: AppSizes.spacingSmall),
         InkWell(
@@ -318,10 +318,10 @@ class _EventFormPageState extends State<EventFormPage> {
               vertical: AppSizes.inputVerticalPadding,
             ),
             decoration: BoxDecoration(
-              color: AppColors.inputBackground,
+              color: AppColors.inputBackground(context),
               borderRadius: BorderRadius.circular(AppSizes.borderRadius),
               border: Border.all(
-                color: viewModel.isDateValid ? AppColors.border : AppColors.error,
+                color: viewModel.isDateValid ? AppColors.border(context) : AppColors.error,
                 width: AppSizes.borderWidth,
               ),
             ),
@@ -332,14 +332,14 @@ class _EventFormPageState extends State<EventFormPage> {
                   formattedDate,
                   style: TextStyle(
                     color: viewModel.eventDate != null 
-                        ? AppColors.textPrimary 
-                        : AppColors.textSecondary,
+                        ? AppColors.textPrimary(context)
+            : AppColors.textSecondary(context),
                     fontSize: AppSizes.fontSizeMedium,
                   ),
                 ),
-                const Icon(
+                  Icon(
                   Icons.calendar_today,
-                  color: AppColors.primary,
+                  color: AppColors.primary(context),
                   size: AppSizes.iconSizeSmall,
                 ),
               ],
@@ -370,16 +370,16 @@ class _EventFormPageState extends State<EventFormPage> {
           children: [
             Text(
               AppStrings.attractionsLabel,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: AppColors.textPrimary(context),
                 fontSize: AppSizes.fontSizeMedium,
                 fontWeight: FontWeight.bold,
               ),
             ),
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.add_circle,
-                color: AppColors.primary,
+                color: AppColors.primary(context),
               ),
               onPressed: viewModel.addAttraction,
               tooltip: AppStrings.addAttractionTooltip,
@@ -403,13 +403,13 @@ class _EventFormPageState extends State<EventFormPage> {
                         hintText: AppStrings.attractionHint,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                          borderSide: const BorderSide(
-                            color: AppColors.border,
+                          borderSide: BorderSide(
+                            color: AppColors.border(context),
                             width: AppSizes.borderWidth,
                           ),
                         ),
                         filled: true,
-                        fillColor: AppColors.inputBackground,
+                        fillColor: AppColors.inputBackground(context),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: AppSizes.inputHorizontalPadding,
                           vertical: AppSizes.inputVerticalPadding,
@@ -420,7 +420,7 @@ class _EventFormPageState extends State<EventFormPage> {
                   ),
                   if (viewModel.attractions.length > 1)
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.remove_circle,
                         color: AppColors.error,
                       ),
@@ -453,8 +453,8 @@ class _EventFormPageState extends State<EventFormPage> {
       children: [
         Text(
           AppStrings.promotionsLabel,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
+          style: TextStyle(
+            color: AppColors.textPrimary(context),
             fontSize: AppSizes.fontSizeMedium,
             fontWeight: FontWeight.bold,
           ),
@@ -537,8 +537,8 @@ class _EventFormPageState extends State<EventFormPage> {
                   icon: const Icon(Icons.photo_library),
                   label: const Text('Galeria'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
+                    foregroundColor: AppColors.primary(context),
+                    side: BorderSide(color: AppColors.primary(context)),
                   ),
                 ),
               ),
@@ -549,8 +549,8 @@ class _EventFormPageState extends State<EventFormPage> {
                   icon: const Icon(Icons.camera_alt),
                   label: const Text('Câmera'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
+                    foregroundColor: AppColors.primary(context),
+                    side: BorderSide(color: AppColors.primary(context)),
                   ),
                 ),
               ),
@@ -563,10 +563,10 @@ class _EventFormPageState extends State<EventFormPage> {
             height: 120,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.inputBackground,
+              color: AppColors.inputBackground(context),
               borderRadius: BorderRadius.circular(AppSizes.borderRadius),
               border: Border.all(
-                color: AppColors.border,
+                color: AppColors.border(context),
                 width: AppSizes.borderWidth,
               ),
             ),
@@ -574,17 +574,17 @@ class _EventFormPageState extends State<EventFormPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.add_photo_alternate,
                     size: 32,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondary(context),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     AppStrings.promotionImagesPlaceholder,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: AppSizes.fontSizeSmall,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textSecondary(context),
                     ),
                   ),
                 ],

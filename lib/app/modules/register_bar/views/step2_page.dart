@@ -155,7 +155,7 @@ class _Step2PageState extends State<Step2Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: AppStrings.registerBarStep2Title,
         showBackButton: true,
@@ -196,7 +196,7 @@ class _Step2PageState extends State<Step2Page> {
                   Text(
                     AppStrings.registerBarStep2Subtitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textPrimary,
+                          color: AppColors.textPrimary(context),
                         ),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
@@ -233,41 +233,41 @@ class _Step2PageState extends State<Step2Page> {
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
                       labelText: AppStrings.stateLabel,
-                      labelStyle: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: AppSizes.fontSizeMedium,
-                      ),
+                      labelStyle: TextStyle(
+                          color: AppColors.textPrimary(context),
+                          fontSize: AppSizes.fontSizeMedium,
+                        ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                        borderSide: const BorderSide(
-                          color: AppColors.border,
-                          width: AppSizes.borderWidth,
-                        ),
+                        borderSide: BorderSide(
+                            color: AppColors.border(context),
+                            width: AppSizes.borderWidth,
+                          ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                        borderSide: const BorderSide(
-                          color: AppColors.border,
-                          width: AppSizes.borderWidth,
-                        ),
+                        borderSide: BorderSide(
+                            color: AppColors.border(context),
+                            width: AppSizes.borderWidth,
+                          ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                        borderSide: const BorderSide(
-                          color: AppColors.primary,
-                          width: AppSizes.borderWidth,
-                        ),
+                        borderSide: BorderSide(
+                            color: AppColors.primary(context),
+                            width: AppSizes.borderWidth,
+                          ),
                       ),
                       errorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                        borderSide: const BorderSide(
-                          color: AppColors.error,
-                          width: AppSizes.borderWidth,
-                        ),
+                        borderSide: BorderSide(
+                            color: AppColors.error,
+                            width: AppSizes.borderWidth,
+                          ),
                       ),
                       filled: true,
-                      fillColor: AppColors.inputBackground,
-                      contentPadding: const EdgeInsets.symmetric(
+                      fillColor: AppColors.inputBackground(context),
+                      contentPadding: EdgeInsets.symmetric(
                         horizontal: AppSizes.inputHorizontalPadding,
                         vertical: AppSizes.inputVerticalPadding,
                       ),
@@ -285,11 +285,11 @@ class _Step2PageState extends State<Step2Page> {
                       }
                     },
                     hint: Text(AppStrings.stateHint),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: AppSizes.fontSizeMedium,
-                    ),
-                    dropdownColor: AppColors.inputBackground,
+                    style: TextStyle(
+                        color: AppColors.textPrimary(context),
+                        fontSize: AppSizes.fontSizeMedium,
+                      ),
+                    dropdownColor: AppColors.inputBackground(context),
                     isExpanded: true,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),

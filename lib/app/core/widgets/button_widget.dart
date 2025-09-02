@@ -31,8 +31,8 @@ class ButtonWidget extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    final bgColor = backgroundColor ?? (isOutlined ? Colors.transparent : AppColors.primary);
-    final txtColor = textColor ?? (isOutlined ? AppColors.primary : AppColors.buttonText);
+    final bgColor = backgroundColor ?? (isOutlined ? Colors.transparent : AppColors.primary(context));
+    final txtColor = textColor ?? (isOutlined ? AppColors.primary(context) : AppColors.buttonText(context));
     final double btnHeight = height ?? 48.0;
     final double? btnWidth = isFullWidth ? double.infinity : width;
     
@@ -48,20 +48,20 @@ class ButtonWidget extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
             side: isOutlined
-                ? BorderSide(color: AppColors.primary, width: AppSizes.borderWidth)
+                ? BorderSide(color: AppColors.primary(context), width: AppSizes.borderWidth)
                 : BorderSide.none,
           ),
           padding: AppSizes.paddingHorizontal16,
-          disabledBackgroundColor: AppColors.buttonDisabled,
-          disabledForegroundColor: AppColors.buttonText,
+          disabledBackgroundColor: AppColors.buttonDisabled(context),
+          disabledForegroundColor: AppColors.buttonText(context),
         ),
         child: isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.buttonText),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.buttonText(context)),
                 ),
               )
             : _buildButtonContent(),
@@ -76,10 +76,10 @@ class ButtonWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: AppSizes.iconSize16),
-          const SizedBox(width: AppSizes.spacing8),
+          SizedBox(width: AppSizes.spacing8),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppSizes.fontSize16,
               fontWeight: FontWeight.bold,
             ),
@@ -90,7 +90,7 @@ class ButtonWidget extends StatelessWidget {
     
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: AppSizes.fontSize16,
         fontWeight: FontWeight.bold,
       ),

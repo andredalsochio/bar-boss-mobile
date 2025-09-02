@@ -18,7 +18,7 @@ class ErrorMessageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSizes.spacing12),
+      padding: EdgeInsets.all(AppSizes.spacing12),
       decoration: BoxDecoration(
         color: AppColors.errorLight,
         borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
@@ -31,12 +31,12 @@ class ErrorMessageWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (showIcon) ...[  
-            const Icon(
+            Icon(
               Icons.error_outline,
               color: AppColors.error,
               size: AppSizes.iconSize16,
             ),
-            const SizedBox(width: AppSizes.spacing8),
+            SizedBox(width: AppSizes.spacing8),
           ],
           Expanded(
             child: Column(
@@ -44,20 +44,20 @@ class ErrorMessageWidget extends StatelessWidget {
               children: [
                 Text(
                   message,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppSizes.fontSize12,
                     color: AppColors.error,
                   ),
                 ),
                 if (onRetry != null) ...[  
-                  const SizedBox(height: AppSizes.spacing8),
+                  SizedBox(height: AppSizes.spacing8),
                   GestureDetector(
                     onTap: onRetry,
-                    child: const Text(
+                    child: Text(
                       'Tentar novamente',
                       style: TextStyle(
                         fontSize: AppSizes.fontSize12,
-                        color: AppColors.primary,
+                        color: AppColors.primary(context),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -88,19 +88,19 @@ class FormFieldErrorWidget extends StatelessWidget {
     }
     
     return Padding(
-      padding: const EdgeInsets.only(top: AppSizes.spacing4, left: AppSizes.spacing4),
+      padding: EdgeInsets.only(top: AppSizes.spacing4, left: AppSizes.spacing4),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline,
             color: AppColors.error,
             size: AppSizes.iconSize12,
           ),
-          const SizedBox(width: AppSizes.spacing4),
+          SizedBox(width: AppSizes.spacing4),
           Expanded(
             child: Text(
               errorText!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppSizes.fontSize10,
                 color: AppColors.error,
               ),

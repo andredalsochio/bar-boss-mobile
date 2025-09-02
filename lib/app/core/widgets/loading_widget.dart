@@ -20,17 +20,17 @@ class LoadingWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+        CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary(context)),
         ),
         if (message != null) ...[  
           const SizedBox(height: 16),
           Text(
             message ?? AppStrings.loadingMessage,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.textPrimary,
+              color: AppColors.textPrimary(context),
             ),
           ),
         ],

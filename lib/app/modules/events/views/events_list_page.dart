@@ -102,7 +102,7 @@ class _EventsListPageState extends State<EventsListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: AppStrings.eventsListTitle,
         showBackButton: true,
@@ -129,16 +129,16 @@ class _EventsListPageState extends State<EventsListPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.event_busy,
                     size: AppSizes.iconSizeLarge,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondary(context),
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   Text(
                     AppStrings.noEventsMessage,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: AppColors.textSecondary(context),
                         ),
                     textAlign: TextAlign.center,
                   ),
@@ -148,7 +148,7 @@ class _EventsListPageState extends State<EventsListPage> {
                     icon: const Icon(Icons.add),
                     label: Text(AppStrings.createFirstEventButton),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: AppColors.primary(context),
                       foregroundColor: AppColors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSizes.buttonHorizontalPadding,
@@ -166,7 +166,7 @@ class _EventsListPageState extends State<EventsListPage> {
 
           return RefreshIndicator(
             onRefresh: _loadEvents,
-            color: AppColors.primary,
+            color: AppColors.primary(context),
             child: ListView.builder(
               padding: const EdgeInsets.all(AppSizes.screenPadding),
               itemCount: events.length,
@@ -186,8 +186,8 @@ class _EventsListPageState extends State<EventsListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _goToNewEvent,
-        backgroundColor: AppColors.primary,
-        child: const Icon(
+        backgroundColor: AppColors.primary(context),
+        child: Icon(
           Icons.add,
           color: AppColors.white,
         ),

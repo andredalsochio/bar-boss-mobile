@@ -41,8 +41,8 @@ class ProfileCompleteCardWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
             colors: [
-              AppColors.primary.withOpacity(0.1),
-              AppColors.secondary.withOpacity(0.1),
+              AppColors.primary(context).withValues(alpha: 0.1),
+              AppColors.secondary(context).withValues(alpha: 0.1),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -62,18 +62,18 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                       children: [
                         Text(
                           _getBannerTitle(completedSteps, totalSteps),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: AppSizes.fontSizeLarge,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: AppColors.textPrimary(context),
                           ),
                         ),
                         const SizedBox(height: AppSizes.spacingSmall),
                         Text(
                           'Finalize seu perfil para aproveitar todos os recursos do app',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: AppSizes.fontSizeMedium,
-                            color: AppColors.textSecondary,
+                            color: AppColors.textSecondary(context),
                           ),
                         ),
                       ],
@@ -81,9 +81,9 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: onDismiss,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textSecondary(context),
                     ),
                     tooltip: 'Dispensar',
                   ),
@@ -96,7 +96,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                 height: 8,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
-                  color: AppColors.border,
+                  color: AppColors.border(context),
                 ),
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
@@ -104,7 +104,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
-                      color: AppColors.primary,
+                      color: AppColors.primary(context),
                     ),
                   ),
                 ),
@@ -121,7 +121,7 @@ class ProfileCompleteCardWidget extends StatelessWidget {
                     onComplete();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primary(context),
                     foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(
                       vertical: AppSizes.spacingMedium,

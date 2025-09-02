@@ -50,7 +50,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
                 const SizedBox(height: AppSizes.spacingMedium),
                 Text(
                   viewModel.errorMessage!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppSizes.fontSizeMedium,
                     color: AppColors.error,
                   ),
@@ -67,29 +67,29 @@ class _BarProfilePageState extends State<BarProfilePage> {
         }
 
         if (!viewModel.hasBar) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.store_outlined,
                   size: 64,
-                  color: AppColors.textSecondary,
+                  color: AppColors.textSecondary(context),
                 ),
-                SizedBox(height: AppSizes.spacingMedium),
-                Text(
+                const SizedBox(height: AppSizes.spacingMedium),
+                const Text(
                   'Nenhum bar cadastrado',
                   style: TextStyle(
                     fontSize: AppSizes.fontSizeLarge,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: AppSizes.spacingSmall),
+                const SizedBox(height: AppSizes.spacingSmall),
                 Text(
                   'Complete seu cadastro para visualizar\nos dados do seu bar',
                   style: TextStyle(
                     fontSize: AppSizes.fontSizeMedium,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondary(context),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -105,7 +105,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
 
   Widget _buildBarProfile(BarModel bar) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSizes.spacing24),
+      padding: EdgeInsets.all(AppSizes.spacing24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -114,10 +114,10 @@ class _BarProfilePageState extends State<BarProfilePage> {
             width: double.infinity,
             padding: const EdgeInsets.all(AppSizes.spacing24),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary(context).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary(context).withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -125,11 +125,11 @@ class _BarProfilePageState extends State<BarProfilePage> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(AppSizes.spacing16),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary(context),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.store,
                     size: 40,
                     color: AppColors.white,
@@ -138,10 +138,10 @@ class _BarProfilePageState extends State<BarProfilePage> {
                 const SizedBox(height: AppSizes.spacingMedium),
                 Text(
                   bar.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppSizes.fontSize24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: AppColors.primary(context),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -152,13 +152,13 @@ class _BarProfilePageState extends State<BarProfilePage> {
                     vertical: AppSizes.spacing8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
+                    color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
                     border: Border.all(
-                      color: AppColors.success.withOpacity(0.3),
+                      color: AppColors.success.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Ativo',
                     style: TextStyle(
                       color: AppColors.success,
@@ -244,7 +244,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
           BoxShadow(
             color: AppColors.black.withOpacity(0.05),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -255,16 +255,16 @@ class _BarProfilePageState extends State<BarProfilePage> {
             children: [
               Icon(
                 icon,
-                color: AppColors.primary,
+                color: AppColors.primary(context),
                 size: 20,
               ),
               const SizedBox(width: AppSizes.spacingSmall),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: AppSizes.fontSizeLarge,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: AppColors.primary(context),
                 ),
               ),
             ],
@@ -286,9 +286,9 @@ class _BarProfilePageState extends State<BarProfilePage> {
             width: 100,
             child: Text(
               '$label:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondary(context),
               ),
             ),
           ),
@@ -296,8 +296,8 @@ class _BarProfilePageState extends State<BarProfilePage> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: AppColors.textPrimary(context),
               ),
             ),
           ),

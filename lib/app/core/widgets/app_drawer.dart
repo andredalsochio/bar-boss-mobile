@@ -20,20 +20,20 @@ class AppDrawer extends StatelessWidget {
             builder: (context, authViewModel, _) {
               final user = authViewModel.currentUser;
               return DrawerHeader(
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                decoration: BoxDecoration(
+                  color: AppColors.primary(context),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 30,
                       backgroundColor: AppColors.white,
                       child: Icon(
                         Icons.person,
                         size: 35,
-                        color: AppColors.primary,
+                        color: AppColors.primary(context),
                       ),
                     ),
                     const SizedBox(height: AppSizes.spacingMedium),

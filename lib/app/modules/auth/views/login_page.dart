@@ -134,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       body: LoadingOverlay(
         isLoading: _isLoading,
         child: SafeArea(
@@ -151,7 +151,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       AppStrings.appName,
                       style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: AppColors.primary,
+                            color: AppColors.primary(context),
                             fontWeight: FontWeight.bold,
                           ),
                     ),
@@ -161,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       AppStrings.loginSubtitle,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: AppColors.textSecondary(context),
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -194,12 +194,12 @@ class _LoginPageState extends State<LoginPage> {
                   // Divisor
                   Row(
                     children: [
-                      const Expanded(
-                        child: Divider(
-                          color: AppColors.border,
-                          thickness: 1,
+                      Expanded(
+                          child: Divider(
+                            color: AppColors.border(context),
+                            thickness: 1,
+                          ),
                         ),
-                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSizes.spacingMedium,
@@ -207,16 +207,16 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(
                           AppStrings.orLoginWith,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
+                                color: AppColors.textSecondary(context),
                               ),
                         ),
                       ),
-                      const Expanded(
-                        child: Divider(
-                          color: AppColors.border,
-                          thickness: 1,
+                      Expanded(
+                          child: Divider(
+                            color: AppColors.border(context),
+                            thickness: 1,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
@@ -249,7 +249,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         AppStrings.dontHaveBarQuestion,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.primary,
+                              color: AppColors.primary(context),
                               fontWeight: FontWeight.bold,
                             ),
                       ),
@@ -279,12 +279,12 @@ class _LoginPageState extends State<LoginPage> {
           color: AppColors.white,
           borderRadius: BorderRadius.circular(AppSizes.borderRadiusLarge),
           border: Border.all(
-            color: AppColors.border,
+            color: AppColors.border(context),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow.withAlpha(26),
+              color: AppColors.shadow(context).withValues(alpha: 0.1),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),

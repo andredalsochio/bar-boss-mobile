@@ -178,7 +178,7 @@ class _Step1PageState extends State<Step1Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBarWidget(
         title: AppStrings.registerBarStep1Title,
         showBackButton: true,
@@ -202,7 +202,7 @@ class _Step1PageState extends State<Step1Page> {
                   Text(
                     AppStrings.registerBarStep1Subtitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textPrimary,
+                          color: AppColors.textPrimary(context),
                         ),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),

@@ -16,8 +16,13 @@ import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository
 // ViewModels
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/bar_profile/viewmodels/bar_profile_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/settings/viewmodels/settings_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
+
+// Providers
+import 'package:bar_boss_mobile/app/core/providers/theme_provider.dart';
 
 /// Configuração centralizada de injeção de dependências
 class DependencyInjection {
@@ -81,6 +86,20 @@ class DependencyInjection {
         eventRepository: context.read<EventRepositoryDomain>(),
         authViewModel: context.read<AuthViewModel>(),
       ),
+    ),
+    ChangeNotifierProvider<BarProfileViewModel>(
+      create: (context) => BarProfileViewModel(
+        barRepository: context.read<LegacyBarRepo.BarRepository>(),
+        authViewModel: context.read<AuthViewModel>(),
+      ),
+    ),
+    ChangeNotifierProvider<SettingsViewModel>(
+      create: (context) => SettingsViewModel(),
+    ),
+    
+    // Theme Provider
+    ChangeNotifierProvider<ThemeProvider>(
+      create: (_) => ThemeProvider(),
     ),
   ];
 }

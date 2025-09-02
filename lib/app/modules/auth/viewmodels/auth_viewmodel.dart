@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
+import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/auth_user.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
@@ -152,11 +153,25 @@ class AuthViewModel extends ChangeNotifier {
       if (result.isSuccess) {
         _currentUser = result.user;
         _setState(AuthState.authenticated);
+        ToastService.instance.showSuccess(
+          message: 'Login realizado com sucesso!',
+          title: 'Bem-vindo',
+        );
       } else {
-        _setError(result.errorMessage ?? 'Erro ao fazer login com e-mail.');
+        final errorMsg = result.errorMessage ?? 'Erro ao fazer login com e-mail.';
+        _setError(errorMsg);
+        ToastService.instance.showError(
+          message: errorMsg,
+          title: 'Erro no Login',
+        );
       }
     } catch (e) {
-      _setError('Erro ao fazer login com e-mail. Por favor, tente novamente.');
+      const errorMsg = 'Erro ao fazer login com e-mail. Por favor, tente novamente.';
+      _setError(errorMsg);
+      ToastService.instance.showError(
+        message: errorMsg,
+        title: 'Erro no Login',
+      );
     } finally {
       _setLoading(false);
     }
@@ -177,14 +192,28 @@ class AuthViewModel extends ChangeNotifier {
         debugPrint('🔵 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
+        ToastService.instance.showSuccess(
+          message: 'Login com Google realizado com sucesso!',
+          title: 'Bem-vindo',
+        );
         debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
-        _setError(result.errorMessage ?? 'Erro ao fazer login com Google.');
+        final errorMsg = result.errorMessage ?? 'Erro ao fazer login com Google.';
+        _setError(errorMsg);
+        ToastService.instance.showError(
+          message: errorMsg,
+          title: 'Erro no Login',
+        );
       }
     } catch (e) {
       debugPrint('❌ [AuthViewModel] Exceção durante login com Google: $e');
-      _setError('Erro ao fazer login com Google. Por favor, tente novamente.');
+      const errorMsg = 'Erro ao fazer login com Google. Por favor, tente novamente.';
+      _setError(errorMsg);
+      ToastService.instance.showError(
+        message: errorMsg,
+        title: 'Erro no Login',
+      );
     } finally {
       _setLoading(false);
       debugPrint('🔵 [AuthViewModel] Login com Google finalizado (loading=false)');
@@ -338,11 +367,25 @@ class AuthViewModel extends ChangeNotifier {
       if (result.isSuccess) {
         _currentUser = result.user;
         _setState(AuthState.authenticated);
+        ToastService.instance.showSuccess(
+          message: 'Login com Apple realizado com sucesso!',
+          title: 'Bem-vindo',
+        );
       } else {
-        _setError(result.errorMessage ?? 'Erro ao fazer login com Apple.');
+        final errorMsg = result.errorMessage ?? 'Erro ao fazer login com Apple.';
+        _setError(errorMsg);
+        ToastService.instance.showError(
+          message: errorMsg,
+          title: 'Erro no Login',
+        );
       }
     } catch (e) {
-      _setError('Erro ao fazer login com Apple. Por favor, tente novamente.');
+      const errorMsg = 'Erro ao fazer login com Apple. Por favor, tente novamente.';
+      _setError(errorMsg);
+      ToastService.instance.showError(
+        message: errorMsg,
+        title: 'Erro no Login',
+      );
     } finally {
       _setLoading(false);
     }
@@ -357,12 +400,24 @@ class AuthViewModel extends ChangeNotifier {
       if (result.isSuccess) {
         _currentUser = result.user;
         _setState(AuthState.authenticated);
+        ToastService.instance.showSuccess(
+          message: 'Login com Facebook realizado com sucesso!',
+          title: 'Bem-vindo',
+        );
       } else {
-        _setError(result.errorMessage ?? 'Erro ao fazer login com Facebook.');
+        final errorMsg = result.errorMessage ?? 'Erro ao fazer login com Facebook.';
+        _setError(errorMsg);
+        ToastService.instance.showError(
+          message: errorMsg,
+          title: 'Erro no Login',
+        );
       }
     } catch (e) {
-      _setError(
-        'Erro ao fazer login com Facebook. Por favor, tente novamente.',
+      const errorMsg = 'Erro ao fazer login com Facebook. Por favor, tente novamente.';
+      _setError(errorMsg);
+      ToastService.instance.showError(
+        message: errorMsg,
+        title: 'Erro no Login',
       );
     } finally {
       _setLoading(false);

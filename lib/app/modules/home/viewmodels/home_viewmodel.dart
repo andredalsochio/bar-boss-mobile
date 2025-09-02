@@ -76,28 +76,29 @@ class HomeViewModel extends ChangeNotifier {
   
   // Calcula quantos passos estão completos (0, 1 ou 2)
   int get profileStepsDone {
-    if (_currentBar == null) return 0;
+    if (_currentUserProfile == null) return 0;
     
-    // Verifica se os campos obrigatórios do Passo 1 estão preenchidos
-    final hasStep1Complete = _currentBar!.cnpj.isNotEmpty &&
-        _currentBar!.name.isNotEmpty &&
-        _currentBar!.responsibleName.isNotEmpty &&
-        _currentBar!.contactPhone.isNotEmpty;
+    int stepsCompleted = 0;
     
-    // Verifica se todos os campos do Passo 1 estão preenchidos
-    final allStep1Fields = hasStep1Complete;
-    
-    // Se todos os campos do Passo 1 estão preenchidos, retorna 1
-    // Se também tem endereço completo, retorna 2
-    if (allStep1Fields) {
-      if (_currentBar!.hasCompleteAddress) {
-        return 2; // Passo 1 + Passo 2 completos
-      } else {
-        return 1; // Apenas Passo 1 completo
+    // Passo 1: Informações de contato
+    if (_currentBar != null) {
+      final hasStep1Complete = _currentBar!.cnpj.isNotEmpty &&
+          _currentBar!.name.isNotEmpty &&
+          _currentBar!.responsibleName.isNotEmpty &&
+          _currentBar!.contactEmail.isNotEmpty &&
+          _currentBar!.contactPhone.isNotEmpty;
+      
+      if (hasStep1Complete) {
+        stepsCompleted = 1;
+        
+        // Passo 2: Endereço
+        if (_currentBar!.hasCompleteAddress) {
+          stepsCompleted = 2;
+        }
       }
     }
     
-    return 0; // Nenhum passo completo
+    return stepsCompleted;
   }
   
   // Verifica se pode criar eventos (tem bar - perfil não bloqueia mais)
@@ -106,8 +107,11 @@ class HomeViewModel extends ChangeNotifier {
   // Verifica se o perfil está completo
   bool get isProfileComplete => _currentBar?.isProfileComplete ?? false;
   
-  // Calcula quantos passos estão completos (X/2) - mantido para compatibilidade
+  // Calcula quantos passos estão completos (X/2) - atualizado para 2 passos
   int get completedSteps => profileStepsDone;
+  
+  // Total de passos do cadastro
+  int get totalSteps => 2;
   
 /// Função centralizada para verificar se o perfil do usuário está completo
   /// Verifica todos os campos obrigatórios dos Passos 1, 2 e 3
@@ -170,16 +174,18 @@ class HomeViewModel extends ChangeNotifier {
     final completedReg = _currentUserProfile?.completedFullRegistration;
     final isFromSocial = _authViewModel.isFromSocialProvider;
     
-    // Usa a função centralizada para verificar se o perfil está completo
-    final isComplete = isUserProfileComplete();
+    // Verifica quantos passos foram completados (0-2)
+    final stepsCompleted = profileStepsDone;
+    final allStepsComplete = stepsCompleted >= 2;
     
-    debugPrint('🏠 DEBUG Banner: isComplete=$isComplete, dismissed=$dismissed, completedFullRegistration=$completedReg, isFromSocial=$isFromSocial');
+    debugPrint('🏠 DEBUG Banner: stepsCompleted=$stepsCompleted/2, allStepsComplete=$allStepsComplete, dismissed=$dismissed, completedFullRegistration=$completedReg, isFromSocial=$isFromSocial');
     
-    // Lógica do banner conforme especificação:
-    // - Se completedFullRegistration == true (cadastro via "Não tem um bar?"), nunca mostrar banner
-    // - Se login via email/senha (não social), nunca mostrar banner
-    // - Se login social E perfil incompleto E não foi dispensado, mostrar banner
-    final shouldShow = isFromSocial && !isComplete && !dismissed && (completedReg != true);
+    // Nova lógica do banner:
+    // - Se completedFullRegistration == true (todos os 2 passos concluídos), nunca mostrar banner
+    // - Se todos os 2 passos estão completos, nunca mostrar banner
+    // - Se foi dispensado pelo usuário, não mostrar banner
+    // - Caso contrário, mostrar banner se não completou todos os passos
+    final shouldShow = !allStepsComplete && !dismissed && (completedReg != true);
     debugPrint('🏠 DEBUG Banner: shouldShowProfileCompleteCard=$shouldShow');
     
     return shouldShow;

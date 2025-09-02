@@ -7,6 +7,7 @@ import 'package:bar_boss_mobile/app/domain/repositories/event_repository_domain.
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
+import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 
 /// Estados possíveis da operação de eventos
 enum EventsState { initial, loading, success, error }
@@ -394,6 +395,7 @@ class EventsViewModel extends ChangeNotifier {
       }
 
       // Define sucesso antes de recarregar eventos
+      ToastService.instance.showSuccess(message: 'Evento salvo com sucesso!');
       _setState(EventsState.success);
       
       // Recarrega os eventos em background (não afeta o estado de sucesso)
@@ -464,6 +466,7 @@ class EventsViewModel extends ChangeNotifier {
       // Recarrega os eventos
       await loadEvents();
 
+      ToastService.instance.showSuccess(message: 'Evento excluído com sucesso!');
       _setState(EventsState.success);
     } catch (e) {
       _setError(AppStrings.deleteEventErrorMessage);
@@ -489,6 +492,7 @@ class EventsViewModel extends ChangeNotifier {
   void _setError(String message) {
     _errorMessage = message;
     _state = EventsState.error;
+    ToastService.instance.showError(message: message);
     notifyListeners();
   }
 

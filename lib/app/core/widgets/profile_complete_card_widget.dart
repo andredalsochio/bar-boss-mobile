@@ -20,9 +20,9 @@ class ProfileCompleteCardWidget extends StatelessWidget {
   /// Retorna o título do banner baseado nos passos completos
   String _getBannerTitle(int completedSteps, int totalSteps) {
     if (completedSteps == 0) {
-      return 'Complete seu cadastro 1/2';
+      return 'Complete seu cadastro (1/2)';
     } else if (completedSteps == 1) {
-      return 'Complete seu cadastro 2/2';
+      return 'Complete seu cadastro (2/2)';
     } else {
       return 'Complete seu cadastro ($completedSteps/$totalSteps)';
     }

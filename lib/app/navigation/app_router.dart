@@ -9,6 +9,8 @@ import 'package:bar_boss_mobile/app/modules/register_bar/views/step1_page.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step2_page.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step3_page.dart';
 import 'package:bar_boss_mobile/app/modules/home/views/home_page.dart';
+import 'package:bar_boss_mobile/app/modules/bar_profile/views/bar_profile_page.dart';
+import 'package:bar_boss_mobile/app/modules/settings/views/settings_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/events_list_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/event_form_page.dart';
 
@@ -81,15 +83,18 @@ class AppRouter {
           },
         ),
 
-        // Rota para perfil do bar (placeholder)
+        // Rota para perfil do bar
         GoRoute(
-          path: '/profile',
+          path: AppRoutes.barProfile,
           name: 'barProfile',
-          builder: (context, state) => const Scaffold(
-            body: Center(
-              child: Text('Perfil do Bar - Em desenvolvimento'),
-            ),
-          ),
+          builder: (context, state) => const BarProfilePage(),
+        ),
+
+        // Rota para configurações
+        GoRoute(
+          path: AppRoutes.settings,
+          name: 'settings',
+          builder: (context, state) => const SettingsPage(),
         ),
       ],
     );

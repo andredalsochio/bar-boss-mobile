@@ -122,14 +122,7 @@ class AppDrawer extends StatelessWidget {
                   },
                 ),
                 
-                ListTile(
-                  leading: const Icon(Icons.analytics),
-                  title: const Text('Relatórios'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: Implementar navegação para relatórios
-                  },
-                ),
+
                 
                 const Divider(),
                 
@@ -138,7 +131,7 @@ class AppDrawer extends StatelessWidget {
                   title: const Text('Configurações'),
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Implementar navegação para configurações
+                    context.pushNamed('settings');
                   },
                 ),
                 

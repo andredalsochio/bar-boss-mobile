@@ -242,7 +242,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
         borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withOpacity(0.05),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),

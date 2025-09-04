@@ -531,7 +531,6 @@ class EventsViewModel extends ChangeNotifier {
   void _setError(String message) {
     _errorMessage = message;
     _state = EventsState.error;
-    ToastService.instance.showError(message: message);
     notifyListeners();
   }
 

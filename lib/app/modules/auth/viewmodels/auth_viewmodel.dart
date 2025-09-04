@@ -162,10 +162,6 @@ class AuthViewModel extends ChangeNotifier {
         debugPrint('🔐 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
-        ToastService.instance.showSuccess(
-          message: 'Login realizado com sucesso!',
-          title: 'Bem-vindo',
-        );
         debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
@@ -205,10 +201,7 @@ class AuthViewModel extends ChangeNotifier {
         debugPrint('🔵 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
-        ToastService.instance.showSuccess(
-          message: 'Login com Google realizado com sucesso!',
-          title: 'Bem-vindo',
-        );
+        // Toast de boas-vindas removido conforme solicitado
         debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
@@ -436,10 +429,7 @@ class AuthViewModel extends ChangeNotifier {
         debugPrint('🍎 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
-        ToastService.instance.showSuccess(
-          message: 'Login com Apple realizado com sucesso!',
-          title: 'Bem-vindo',
-        );
+        // Toast de boas-vindas removido conforme solicitado
         debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
@@ -479,10 +469,7 @@ class AuthViewModel extends ChangeNotifier {
         debugPrint('📘 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
-        ToastService.instance.showSuccess(
-          message: 'Login com Facebook realizado com sucesso!',
-          title: 'Bem-vindo',
-        );
+        // Toast de boas-vindas removido conforme solicitado
         debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');

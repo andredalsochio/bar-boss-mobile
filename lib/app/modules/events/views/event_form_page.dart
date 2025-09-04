@@ -182,7 +182,7 @@ class _EventFormPageState extends State<EventFormPage> {
     CompleteProfileBottomSheet.show(
       context,
       completedSteps: homeViewModel.completedSteps,
-      totalSteps: 2,
+      totalSteps: homeViewModel.totalSteps,
     );
   }
 

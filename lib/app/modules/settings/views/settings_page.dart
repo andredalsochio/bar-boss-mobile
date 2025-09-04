@@ -302,8 +302,11 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
   Widget build(BuildContext context) {
     return Consumer<SettingsViewModel>(
       builder: (context, viewModel, child) {
-        final hasPasswordProvider = viewModel.hasPasswordProvider;
-        final userLoginType = viewModel.userLoginType;
+        return FutureBuilder<bool>(
+          future: viewModel.checkHasPasswordProvider(),
+          builder: (context, snapshot) {
+            final hasPasswordProvider = snapshot.data ?? viewModel.hasPasswordProvider;
+            final userLoginType = viewModel.userLoginType;
         
         return AlertDialog(
           title: Text(hasPasswordProvider ? 'Alterar Senha' : 'Criar Senha'),
@@ -498,6 +501,8 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   : Text(hasPasswordProvider ? 'Alterar' : 'Criar'),
             ),
           ],
+        );
+          },
         );
       },
     );

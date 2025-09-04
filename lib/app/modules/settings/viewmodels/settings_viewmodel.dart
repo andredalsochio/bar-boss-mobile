@@ -153,6 +153,21 @@ class SettingsViewModel extends ChangeNotifier {
     return user.providerData.any((provider) => provider.providerId == 'password');
   }
 
+  /// Força a atualização dos dados do usuário e verifica se tem provedor de senha
+  Future<bool> checkHasPasswordProvider() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    
+    // Recarrega os dados do usuário para garantir informações atualizadas
+    await user.reload();
+    
+    // Verifica novamente após o reload
+    final updatedUser = FirebaseAuth.instance.currentUser;
+    if (updatedUser == null) return false;
+    
+    return updatedUser.providerData.any((provider) => provider.providerId == 'password');
+  }
+
   /// Altera a senha do usuário
   /// Para usuários de login social, primeiro vincula credencial de email/senha
   Future<bool> changePassword({

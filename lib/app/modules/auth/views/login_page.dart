@@ -131,6 +131,10 @@ class _LoginPageState extends State<LoginPage> {
     context.pushNamed('registerStep1');
   }
 
+  void _goToForgotPassword() {
+    context.pushNamed('forgotPassword');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,6 +186,21 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _passwordController,
                     obscureText: true,
                     validator: (value) => Validators.password(value),
+                  ),
+                  const SizedBox(height: AppSizes.spacingSmall),
+                  // Link "Esqueci minha senha"
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _goToForgotPassword,
+                      child: Text(
+                        AppStrings.forgotPasswordButton,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.primary(context),
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   // Botão de login

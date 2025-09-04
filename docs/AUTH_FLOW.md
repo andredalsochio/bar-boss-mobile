@@ -49,11 +49,14 @@ Este documento descreve o fluxo completo de autenticação implementado no Bar B
 ### 4. Recuperação de Senha
 
 ```
-1. Usuário acessa ForgotPasswordPage
-2. Insere e-mail cadastrado
-3. Sistema envia link de reset via Firebase Auth
-4. Usuário redefine senha através do link
-5. Nova senha mantém verificação de e-mail existente
+1. Usuário clica em "Esqueci minha senha" na tela de login
+2. Sistema redireciona para ForgotPasswordPage
+3. Usuário insere e-mail cadastrado
+4. Sistema envia e-mail de redefinição via Firebase Auth
+5. Usuário recebe e-mail com link de redefinição
+6. Usuário clica no link e define nova senha
+7. Sistema confirma alteração e usuário pode fazer login
+8. Nova senha mantém verificação de e-mail existente
 ```
 
 ## Guards de Navegação

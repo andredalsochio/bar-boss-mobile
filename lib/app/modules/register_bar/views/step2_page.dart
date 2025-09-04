@@ -125,26 +125,9 @@ class _Step2PageState extends State<Step2Page> {
 
   /// Salva o Passo 2 para usuários de login social
   Future<void> _saveSocialLoginStep2() async {
-    if (!_viewModel.isStep2Valid) return;
-
-    try {
-      debugPrint('💾 [STEP2_PAGE] Salvando dados do Passo 2...');
-      // Salva os dados do Passo 2 como rascunho
-      _viewModel.saveDraftStep2();
-      
-      // Cria o bar e salva os dados
-      await _viewModel.createBarFromSocialLogin();
-      
-      // Mensagem de sucesso será exibida pelo ToastService no ViewModel
-      
-      debugPrint('✅ [STEP2_PAGE] Cadastro completo, navegando para Home');
-      // Navega para a Home
-      if (mounted) {
-        context.goNamed('home');
-      }
-    } catch (e) {
-      debugPrint('❌ [STEP2_PAGE] Erro ao salvar cadastro: $e');
-      // Mensagem de erro será exibida pelo ToastService no ViewModel
+    if (_viewModel.isStep2Valid) {
+      // Para login social, após completar Step 2, navegar para Step 3
+      context.pushNamed('registerStep3');
     }
   }
 
@@ -189,8 +172,8 @@ class _Step2PageState extends State<Step2Page> {
                   const SizedBox(height: AppSizes.spacing),
                   const StepProgressWidget(
               currentStep: 2,
-              totalSteps: 2,
-              title: 'Etapa 2 de 2: Endereço do estabelecimento',
+              totalSteps: 3,
+              title: 'Etapa 2 de 3: Endereço do estabelecimento',
             ),
                   const SizedBox(height: AppSizes.spacingLarge),
                   Text(

@@ -197,8 +197,8 @@ class _Step1PageState extends State<Step1Page> {
                   const SizedBox(height: AppSizes.spacing),
                   const StepProgressWidget(
               currentStep: 1,
-              totalSteps: 2,
-              title: 'Etapa 1 de 2: Informações de contato',
+              totalSteps: 3,
+              title: 'Etapa 1 de 3: Informações de contato',
             ),
                   const SizedBox(height: AppSizes.spacingLarge),
                   Text(

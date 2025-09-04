@@ -13,7 +13,7 @@ class StepProgressWidget extends StatelessWidget {
   const StepProgressWidget({
     super.key,
     required this.currentStep,
-    this.totalSteps = 2,
+    this.totalSteps = 3,
     required this.title,
   });
 

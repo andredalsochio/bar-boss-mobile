@@ -11,7 +11,9 @@ import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/step_progress_widget.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 
 /// Tela de cadastro de bar - Passo 3 (Senha)
 class Step3Page extends StatefulWidget {
@@ -26,11 +28,13 @@ class _Step3PageState extends State<Step3Page> {
   final _confirmPasswordController = TextEditingController();
 
   late final BarRegistrationViewModel _viewModel;
+  late final AuthViewModel _authViewModel;
 
   @override
   void initState() {
     super.initState();
     _viewModel = context.read<BarRegistrationViewModel>();
+    _authViewModel = context.read<AuthViewModel>();
 
     // Inicializa os controladores com os valores do ViewModel
     _passwordController.text = _viewModel.password;
@@ -70,7 +74,14 @@ class _Step3PageState extends State<Step3Page> {
     if (!_viewModel.isStep3Valid) return;
 
     try {
-      await _viewModel.registerBarAndUser();
+      // Verifica se é usuário de login social
+      if (_authViewModel.isFromSocialProvider) {
+        // Para usuários de login social, usa o método específico
+        await _viewModel.finalizeSocialLoginRegistration();
+      } else {
+        // Para usuários de cadastro tradicional, usa o método padrão
+        await _viewModel.registerBarAndUser();
+      }
 
       if (!mounted) return;
 
@@ -105,6 +116,12 @@ class _Step3PageState extends State<Step3Page> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: AppSizes.spacing),
+                  const StepProgressWidget(
+                    currentStep: 3,
+                    totalSteps: 3,
+                    title: 'Etapa 3 de 3: Criar senha',
+                  ),
+                  const SizedBox(height: AppSizes.spacingLarge),
                   Text(
                     AppStrings.registerBarStep3Subtitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(

@@ -74,7 +74,7 @@ class HomeViewModel extends ChangeNotifier {
   // Retorna o ID do bar atual (se houver)
   String? get currentBarId => _currentBar?.id;
   
-  // Calcula quantos passos estão completos (0, 1 ou 2)
+  // Calcula quantos passos estão completos (0, 1, 2 ou 3)
   int get profileStepsDone {
     if (_currentUserProfile == null) return 0;
     
@@ -94,6 +94,11 @@ class HomeViewModel extends ChangeNotifier {
         // Passo 2: Endereço
         if (_currentBar!.hasCompleteAddress) {
           stepsCompleted = 2;
+          
+          // Passo 3: Senha (verificado pela existência de usuário autenticado)
+          if (_currentUserProfile != null && _currentUserProfile!.email.isNotEmpty) {
+            stepsCompleted = 3;
+          }
         }
       }
     }
@@ -111,7 +116,7 @@ class HomeViewModel extends ChangeNotifier {
   int get completedSteps => profileStepsDone;
   
   // Total de passos do cadastro
-  int get totalSteps => 2;
+  int get totalSteps => 3;
   
 /// Função centralizada para verificar se o perfil do usuário está completo
   /// Verifica todos os campos obrigatórios dos Passos 1, 2 e 3
@@ -174,15 +179,15 @@ class HomeViewModel extends ChangeNotifier {
     final completedReg = _currentUserProfile?.completedFullRegistration;
     final isFromSocial = _authViewModel.isFromSocialProvider;
     
-    // Verifica quantos passos foram completados (0-2)
+    // Verifica quantos passos foram completados (0-3)
     final stepsCompleted = profileStepsDone;
-    final allStepsComplete = stepsCompleted >= 2;
+    final allStepsComplete = stepsCompleted >= 3;
     
-    debugPrint('🏠 DEBUG Banner: stepsCompleted=$stepsCompleted/2, allStepsComplete=$allStepsComplete, dismissed=$dismissed, completedFullRegistration=$completedReg, isFromSocial=$isFromSocial');
+    debugPrint('🏠 DEBUG Banner: stepsCompleted=$stepsCompleted/3, allStepsComplete=$allStepsComplete, dismissed=$dismissed, completedFullRegistration=$completedReg, isFromSocial=$isFromSocial');
     
     // Nova lógica do banner:
-    // - Se completedFullRegistration == true (todos os 2 passos concluídos), nunca mostrar banner
-    // - Se todos os 2 passos estão completos, nunca mostrar banner
+    // - Se completedFullRegistration == true (todos os 3 passos concluídos), nunca mostrar banner
+    // - Se todos os 3 passos estão completos, nunca mostrar banner
     // - Se foi dispensado pelo usuário, não mostrar banner
     // - Caso contrário, mostrar banner se não completou todos os passos
     final shouldShow = !allStepsComplete && !dismissed && (completedReg != true);

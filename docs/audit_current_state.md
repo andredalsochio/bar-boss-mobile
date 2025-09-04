@@ -41,11 +41,11 @@ Este relatório apresenta uma análise detalhada do estado atual do aplicativo B
 - **AuthViewModel**: Gerencia estado de autenticação corretamente
 - **Guards**: Redirecionamento básico implementado
 
-### ❌ Divergências das Regras de Negócio
+### ✅ Implementações Recentes
 
-#### 1. Verificação de E-mail
-**Regra:** E-mail deve ser verificado antes do login  
-**Implementação:** Não implementado (comentário "Não fazer por enquanto")
+#### 1. Verificação de E-mail para Login Social
+**Regra:** E-mail deve ser verificado antes do login, exceto para provedores sociais  
+**Implementação:** ✅ **CORRIGIDO** - Implementada propriedade `isFromSocialProvider` e guards atualizados
 
 #### 2. Verificação de Bar Cadastrado
 **Regra:** Após login social, verificar se usuário possui bar e exibir banner se necessário  
@@ -176,15 +176,18 @@ Este relatório apresenta uma análise detalhada do estado atual do aplicativo B
 - **Causa:** Verificações de `hasBarRegistered()` não implementadas
 - **Solução:** Implementar guards em rotas e ações
 
-### 3. **Banner de Completude Incorreto**
-- **Impacto:** Médio - UX inconsistente
-- **Causa:** Lógica não diferencia origem do usuário
-- **Solução:** Implementar flags de completude e origem
+### 3. **Banner de Completude Implementado**
+- **Status:** ✅ **IMPLEMENTADO** - Banner adicionado nas telas de cadastro
+- **Melhoria:** Lógica pode ser refinada para diferenciar melhor origem do usuário
 
 ### 4. **Cadastro Incompleto**
 - **Impacto:** Alto - Usuários não conseguem finalizar cadastro
 - **Causa:** `registerBarAndUser()` não implementado
 - **Solução:** Implementar transação atômica
+
+### ✅ **Verificação de E-mail - CORRIGIDO**
+- **Status:** ✅ **IMPLEMENTADO** - Usuários de login social não são mais redirecionados incorretamente
+- **Implementação:** Propriedade `isFromSocialProvider` e guards atualizados
 
 ---
 

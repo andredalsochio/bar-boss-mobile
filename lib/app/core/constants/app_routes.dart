@@ -2,6 +2,9 @@
 class AppRoutes {
   // Rotas de autenticação
   static const String login = '/login';
+  static const String emailVerification = '/email-verification';
+  static const String forgotPassword = '/forgot-password';
+  static const String emailVerificationSuccess = '/email-verification-success';
   
   // Rotas de cadastro
   static const String registerStep1 = '/register/step1';

@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_routes.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/auth/views/login_page.dart';
+import 'package:bar_boss_mobile/app/modules/auth/views/email_verification_page.dart';
+import 'package:bar_boss_mobile/app/modules/auth/views/email_verification_success_page.dart';
+import 'package:bar_boss_mobile/app/modules/auth/views/forgot_password_page.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step1_page.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step2_page.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step3_page.dart';
@@ -27,6 +30,21 @@ class AppRouter {
           path: AppRoutes.login,
           name: 'login',
           builder: (context, state) => const LoginPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.emailVerification,
+          name: 'emailVerification',
+          builder: (context, state) => const EmailVerificationPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.forgotPassword,
+          name: 'forgotPassword',
+          builder: (context, state) => const ForgotPasswordPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.emailVerificationSuccess,
+          name: 'emailVerificationSuccess',
+          builder: (context, state) => const EmailVerificationSuccessPage(),
         ),
 
         // Rotas de cadastro
@@ -109,20 +127,38 @@ class AppRouter {
     final isLoggedIn = authViewModel.isAuthenticated;
     final isLoggingIn = state.matchedLocation == AppRoutes.login;
     final isRegistering = state.matchedLocation.startsWith('/register');
+    final isEmailVerificationFlow = state.matchedLocation == AppRoutes.emailVerification ||
+        state.matchedLocation == AppRoutes.forgotPassword;
 
-    // Se o usuário não está logado e não está na tela de login ou cadastro
-    if (!isLoggedIn && !isLoggingIn && !isRegistering) {
+    // Se o usuário não está logado e não está na tela de login, cadastro ou verificação
+    if (!isLoggedIn && !isLoggingIn && !isRegistering && !isEmailVerificationFlow) {
       return AppRoutes.login;
     }
 
-    // Se o usuário está logado e está na tela de login
-    if (isLoggedIn && isLoggingIn) {
-      return AppRoutes.home;
-    }
-
-    // Implementar guard de completude de perfil conforme PROJECT_RULES.md
-    if (isLoggedIn && !isLoggingIn && !isRegistering) {
-      return _handleProfileCompletenessGuard(context, state);
+    // Se o usuário está logado
+    if (isLoggedIn) {
+      // Verificar se o e-mail está verificado
+      final emailVerified = authViewModel.isCurrentUserEmailVerified;
+      
+      // Se está na tela de login e e-mail verificado, vai para home
+      if (isLoggingIn && emailVerified) {
+        return AppRoutes.home;
+      }
+      
+      // Se e-mail não verificado e não está na tela de verificação
+      if (!emailVerified && state.matchedLocation != AppRoutes.emailVerification) {
+        return AppRoutes.emailVerification;
+      }
+      
+      // Se e-mail verificado e está na tela de verificação, vai para home
+      if (emailVerified && state.matchedLocation == AppRoutes.emailVerification) {
+        return AppRoutes.home;
+      }
+      
+      // Guard de completude de perfil (apenas se e-mail verificado)
+      if (emailVerified && !isLoggingIn && !isRegistering && !isEmailVerificationFlow) {
+        return _handleProfileCompletenessGuard(context, state);
+      }
     }
 
     // Não redireciona

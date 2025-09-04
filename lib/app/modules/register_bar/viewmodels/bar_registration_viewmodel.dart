@@ -410,31 +410,54 @@ class BarRegistrationViewModel extends ChangeNotifier {
 
   // Busca o endereço pelo CEP
   Future<void> _searchCep() async {
-    if (_cep.isEmpty) return;
+    debugPrint('🔍 [VIEWMODEL] _searchCep: Iniciando busca de CEP');
+    
+    if (_cep.isEmpty) {
+      debugPrint('❌ [VIEWMODEL] _searchCep: CEP vazio, cancelando busca');
+      return;
+    }
 
     // Remove caracteres não numéricos
     final numericCep = _cep.replaceAll(RegExp(r'\D'), '');
+    debugPrint('🔍 [VIEWMODEL] _searchCep: CEP formatado: $numericCep');
 
-    if (numericCep.length != 8) return;
+    if (numericCep.length != 8) {
+      debugPrint('❌ [VIEWMODEL] _searchCep: CEP inválido (${numericCep.length} dígitos), cancelando busca');
+      return;
+    }
 
+    debugPrint('🔍 [VIEWMODEL] _searchCep: Iniciando busca na API ViaCEP para CEP: $numericCep');
     _setLoading(true);
 
     try {
       final viaCepSearchCep = ViaCepSearchCep();
       final result = await viaCepSearchCep.searchInfoByCep(cep: numericCep);
 
-      result.fold((error) => debugPrint('Erro ao buscar CEP: $error'), (info) {
-        // Atualiza os campos de endereço
-        setStreet(info.logradouro ?? '');
-        setState(info.uf ?? '');
-        setCity(info.localidade ?? '');
+      result.fold(
+        (error) {
+          debugPrint('❌ [VIEWMODEL] _searchCep: Erro na API ViaCEP: $error');
+        },
+        (info) {
+          debugPrint('✅ [VIEWMODEL] _searchCep: Sucesso na busca do CEP');
+          debugPrint('🔍 [VIEWMODEL] _searchCep: Logradouro: ${info.logradouro}');
+          debugPrint('🔍 [VIEWMODEL] _searchCep: UF: ${info.uf}');
+          debugPrint('🔍 [VIEWMODEL] _searchCep: Localidade: ${info.localidade}');
+          
+          // Atualiza os campos de endereço
+          setStreet(info.logradouro ?? '');
+          setState(info.uf ?? '');
+          setCity(info.localidade ?? '');
 
-        // Não atualiza o número e complemento para não sobrescrever
-        // dados que o usuário possa ter inserido
-      });
+          debugPrint('✅ [VIEWMODEL] _searchCep: Campos de endereço atualizados com sucesso');
+          // Não atualiza o número e complemento para não sobrescrever
+          // dados que o usuário possa ter inserido
+        }
+      );
     } catch (e) {
-      debugPrint('Erro ao buscar CEP: $e');
+      debugPrint('❌ [VIEWMODEL] _searchCep: Erro crítico na busca do CEP: $e');
+      debugPrint('❌ [VIEWMODEL] _searchCep: Stack trace: ${StackTrace.current}');
     } finally {
+      debugPrint('🔍 [VIEWMODEL] _searchCep: Finalizando busca de CEP');
       _setLoading(false);
     }
   }
@@ -508,23 +531,37 @@ class BarRegistrationViewModel extends ChangeNotifier {
       ToastService.instance.showSuccess(message: 'Bar cadastrado com sucesso!');
       _setRegistrationState(RegistrationState.success);
     } catch (e) {
+      debugPrint('❌ [BarRegistrationViewModel] Erro durante o registro: $e');
+      debugPrint('❌ [BarRegistrationViewModel] Stack trace: ${StackTrace.current}');
       _setError(e.toString());
       rethrow;
     } finally {
+      debugPrint('🔄 [BarRegistrationViewModel] Finalizando registerBarAndUser - definindo loading = false');
       _setLoading(false);
     }
   }
 
   // Registra o bar e o usuário
   Future<void> registerBarAndUser() async {
-    if (!isStep3Valid) return;
+    debugPrint('🚀 [BarRegistrationViewModel] Iniciando registerBarAndUser...');
+    debugPrint('🚀 [BarRegistrationViewModel] Step3 válido: $isStep3Valid');
+    
+    if (!isStep3Valid) {
+      debugPrint('❌ [BarRegistrationViewModel] Step3 inválido, cancelando registro');
+      return;
+    }
 
+    debugPrint('🔄 [BarRegistrationViewModel] Definindo loading = true');
     _setLoading(true);
     _clearError();
 
     try {
       // Cria o usuário no Firebase Auth
       final displayName = _responsibleName;
+      debugPrint('👤 [BarRegistrationViewModel] Criando usuário no Firebase Auth...');
+      debugPrint('👤 [BarRegistrationViewModel] Email: ${_email.substring(0, 3)}***');
+      debugPrint('👤 [BarRegistrationViewModel] DisplayName: $displayName');
+      
       final authResult = await _authRepository.signUpWithEmail(
         _email,
         _password,
@@ -532,18 +569,25 @@ class BarRegistrationViewModel extends ChangeNotifier {
       );
 
       if (!authResult.isSuccess) {
+        debugPrint('❌ [BarRegistrationViewModel] Falha na criação do usuário: ${authResult.errorMessage}');
         _setError(authResult.errorMessage ?? 'Erro ao criar usuário');
         return;
       }
+      
+      debugPrint('✅ [BarRegistrationViewModel] Usuário criado com sucesso no Firebase Auth!');
 
       // Obtém o UID do usuário recém-criado
+      debugPrint('🔍 [BarRegistrationViewModel] Obtendo UID do usuário recém-criado...');
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) {
+        debugPrint('❌ [BarRegistrationViewModel] Erro: usuário não encontrado após criação');
         throw Exception('Erro ao obter ID do usuário');
       }
+      debugPrint('✅ [BarRegistrationViewModel] UID obtido: ${currentUser.uid}');
 
       // Cria o bar no Firestore com perfil completo
       // Como o usuário passou por todos os passos (1, 2 e 3), marca as flags como true
+      debugPrint('🏢 [BarRegistrationViewModel] Criando modelo do bar...');
       final bar = BarModel.empty().copyWith(
         contactEmail: _email,
         cnpj: _cnpj,
@@ -569,13 +613,20 @@ class BarRegistrationViewModel extends ChangeNotifier {
       );
 
       // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
+      debugPrint('💾 [BarRegistrationViewModel] Criando bar no Firestore com operação atômica...');
+      debugPrint('💾 [BarRegistrationViewModel] CNPJ: ${_cnpj.substring(0, 5)}***');
+      debugPrint('💾 [BarRegistrationViewModel] Nome do bar: $_name');
+      
       final barId = await _barRepository.createBarWithReservation(
         bar: bar,
         ownerUid: currentUser.uid,
       );
+      
+      debugPrint('✅ [BarRegistrationViewModel] Bar criado com sucesso! ID: $barId');
 
       // Cria o UserProfile com completedFullRegistration = true e currentBarId
       // Como o usuário passou por todos os passos (1, 2 e 3), marca a flag como true
+      debugPrint('👤 [BarRegistrationViewModel] Criando perfil do usuário...');
       final userProfile = UserProfile(
         uid: currentUser.uid,
         email: _email,
@@ -588,7 +639,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
         completedFullRegistration: true, // Usuário completou cadastro completo
       );
 
+      debugPrint('💾 [BarRegistrationViewModel] Salvando perfil do usuário no Firestore...');
       await _userRepository.upsert(userProfile);
+      debugPrint('✅ [BarRegistrationViewModel] Perfil do usuário salvo com sucesso!');
 
       // Debug log conforme especificado
       debugPrint('🎉 DEBUG Cadastro finalizado: Bar criado com sucesso para usuário ${currentUser.uid}');
@@ -596,7 +649,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🎉 DEBUG Cadastro finalizado: UserProfile criado com completedFullRegistration=true');
 
       // Limpa os rascunhos após sucesso
+      debugPrint('🧹 [BarRegistrationViewModel] Limpando rascunhos...');
       await clearDrafts();
+      debugPrint('✅ [BarRegistrationViewModel] Rascunhos limpos com sucesso!');
+      
+      debugPrint('🎉 [BarRegistrationViewModel] Registro completo finalizado com sucesso!');
 
       _setRegistrationState(RegistrationState.success);
     } catch (e) {
@@ -686,22 +743,33 @@ class BarRegistrationViewModel extends ChangeNotifier {
 
   /// Salva o Passo 2 e atualiza a completude do perfil
   Future<void> saveStep2(String barId) async {
+    debugPrint('🔍 [VIEWMODEL] saveStep2: Iniciando salvamento do Passo 2');
+    debugPrint('🔍 [VIEWMODEL] saveStep2: barId = $barId');
+    debugPrint('🔍 [VIEWMODEL] saveStep2: isStep2Valid = $isStep2Valid');
+    
     try {
+      debugPrint('🔍 [VIEWMODEL] saveStep2: Definindo loading = true');
       _setLoading(true);
       _clearError();
       
+      debugPrint('🔍 [VIEWMODEL] saveStep2: Salvando rascunho do Passo 2');
       // Salva o rascunho
       _saveDraftStep2();
       
+      debugPrint('🔍 [VIEWMODEL] saveStep2: Atualizando completude do endereço no Firestore');
       // Atualiza a completude do perfil
       await _updateAddressCompleteness(barId);
       
+      debugPrint('✅ [VIEWMODEL] saveStep2: Passo 2 salvo com sucesso');
       // Debug log conforme especificado
       debugPrint('📝 DEBUG Passo 2: profile.addressComplete = $isStep2Valid para barId = $barId');
     } catch (e) {
+      debugPrint('❌ [VIEWMODEL] saveStep2: Erro ao salvar Passo 2: $e');
+      debugPrint('❌ [VIEWMODEL] saveStep2: Stack trace: ${StackTrace.current}');
       _setError(e.toString());
       rethrow;
     } finally {
+      debugPrint('🔍 [VIEWMODEL] saveStep2: Finalizando salvamento (loading = false)');
       _setLoading(false);
     }
   }
@@ -738,26 +806,42 @@ class BarRegistrationViewModel extends ChangeNotifier {
    }
  
    Future<void> _loadDraftStep1() async {
+     debugPrint('🔍 [VIEWMODEL] _loadDraftStep1: Carregando rascunho do Passo 1');
+     
      final draft = await DraftStorage.readStep1Draft();
      if (draft != null) {
+       debugPrint('✅ [VIEWMODEL] _loadDraftStep1: Rascunho encontrado, carregando dados');
+       
        _email = draft['email'] ?? '';
        _cnpj = draft['cnpj'] ?? '';
        _name = draft['name'] ?? '';
        _responsibleName = draft['responsibleName'] ?? '';
        _phone = draft['phone'] ?? '';
  
+       debugPrint('🔍 [VIEWMODEL] _loadDraftStep1: Email carregado: ${_email.isNotEmpty ? "${_email.substring(0, 3)}***" : "(vazio)"}');
+       debugPrint('🔍 [VIEWMODEL] _loadDraftStep1: CNPJ carregado: ${_cnpj.isNotEmpty ? "${_cnpj.substring(0, 3)}***" : "(vazio)"}');
+       debugPrint('🔍 [VIEWMODEL] _loadDraftStep1: Nome carregado: ${_name.isNotEmpty ? _name : "(vazio)"}');
+       
        // Valida os campos carregados
        _validateEmail();
        _validateCnpj();
        _validateName();
        _validateResponsibleName();
        _validatePhone();
+       
+       debugPrint('✅ [VIEWMODEL] _loadDraftStep1: Rascunho carregado e validado com sucesso');
+     } else {
+       debugPrint('ℹ️ [VIEWMODEL] _loadDraftStep1: Nenhum rascunho encontrado');
      }
    }
  
    Future<void> _loadDraftStep2() async {
+     debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Carregando rascunho do Passo 2');
+     
      final draft = await DraftStorage.readStep2Draft();
      if (draft != null) {
+       debugPrint('✅ [VIEWMODEL] _loadDraftStep2: Rascunho encontrado, carregando dados');
+       
        _cep = draft['cep'] ?? '';
        _street = draft['street'] ?? '';
        _number = draft['number'] ?? '';
@@ -765,12 +849,22 @@ class BarRegistrationViewModel extends ChangeNotifier {
        _stateUf = draft['state'] ?? '';
        _city = draft['city'] ?? '';
  
+       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: CEP carregado: ${_cep.isNotEmpty ? _cep : "(vazio)"}');
+       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Rua carregada: ${_street.isNotEmpty ? _street : "(vazio)"}');
+       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Número carregado: ${_number.isNotEmpty ? _number : "(vazio)"}');
+       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Estado carregado: ${_stateUf.isNotEmpty ? _stateUf : "(vazio)"}');
+       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Cidade carregada: ${_city.isNotEmpty ? _city : "(vazio)"}');
+       
        // Valida os campos carregados
        _validateCep();
        _validateStreet();
        _validateNumber();
        _validateState();
        _validateCity();
+       
+       debugPrint('✅ [VIEWMODEL] _loadDraftStep2: Rascunho carregado e validado com sucesso');
+     } else {
+       debugPrint('ℹ️ [VIEWMODEL] _loadDraftStep2: Nenhum rascunho encontrado');
      }
    }
  

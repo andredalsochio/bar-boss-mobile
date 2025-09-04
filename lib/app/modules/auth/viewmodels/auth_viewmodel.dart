@@ -57,6 +57,9 @@ class AuthViewModel extends ChangeNotifier {
   /// Retorna o nome do usuário atual
   String? get userName => _currentUser?.displayName;
 
+  /// Verifica se o e-mail do usuário atual foi verificado
+  bool get isCurrentUserEmailVerified => _currentUser?.emailVerified ?? false;
+
   /// Verifica o estado inicial da autenticação
   Future<void> _checkInitialAuthState() async {
     _setLoading(true);
@@ -146,18 +149,26 @@ class AuthViewModel extends ChangeNotifier {
     String email,
     String password,
   ) async {
+    debugPrint('🔐 [AuthViewModel] Iniciando login com e-mail: ${email.substring(0, 3)}***');
     try {
       _setLoading(true);
       _clearError();
+      debugPrint('🔐 [AuthViewModel] Chamando _authRepository.signInWithEmail...');
       final result = await _authRepository.signInWithEmail(email, password);
+      debugPrint('🔐 [AuthViewModel] Resultado recebido: isSuccess=${result.isSuccess}');
+      
       if (result.isSuccess) {
+        debugPrint('✅ [AuthViewModel] Login com e-mail bem-sucedido!');
+        debugPrint('🔐 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
         ToastService.instance.showSuccess(
           message: 'Login realizado com sucesso!',
           title: 'Bem-vindo',
         );
+        debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
+        debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
         final errorMsg = result.errorMessage ?? 'Erro ao fazer login com e-mail.';
         _setError(errorMsg);
         ToastService.instance.showError(
@@ -166,6 +177,7 @@ class AuthViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
+      debugPrint('❌ [AuthViewModel] Exceção durante login com e-mail: $e');
       const errorMsg = 'Erro ao fazer login com e-mail. Por favor, tente novamente.';
       _setError(errorMsg);
       ToastService.instance.showError(
@@ -174,6 +186,7 @@ class AuthViewModel extends ChangeNotifier {
       );
     } finally {
       _setLoading(false);
+      debugPrint('🔐 [AuthViewModel] Login com e-mail finalizado (loading=false)');
     }
   }
 
@@ -222,18 +235,24 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Faz logout
   Future<void> logout() async {
+    debugPrint('🚪 [AuthViewModel] Iniciando logout...');
     _setLoading(true);
     _clearError();
 
     try {
+      debugPrint('🚪 [AuthViewModel] Chamando _authRepository.signOut()...');
       await _authRepository.signOut();
+      debugPrint('✅ [AuthViewModel] Logout realizado com sucesso!');
       _currentUser = null;
       _setState(AuthState.unauthenticated);
+      debugPrint('✅ [AuthViewModel] Estado alterado para unauthenticated');
     } catch (e) {
+      debugPrint('❌ [AuthViewModel] Erro durante logout: $e');
       _setError(AppStrings.logoutErrorMessage);
       rethrow;
     } finally {
       _setLoading(false);
+      debugPrint('🚪 [AuthViewModel] Logout finalizado (loading=false)');
     }
   }
 
@@ -244,35 +263,50 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Envia e-mail de redefinição de senha
   Future<void> sendPasswordResetEmail(String email) async {
+    debugPrint('📧 [AuthViewModel] Iniciando envio de e-mail de redefinição de senha para: ${email.substring(0, 3)}***');
     _setLoading(true);
     _clearError();
 
     try {
+      debugPrint('📧 [AuthViewModel] Chamando _authRepository.sendPasswordResetEmail...');
       await _authRepository.sendPasswordResetEmail(email);
+      debugPrint('✅ [AuthViewModel] E-mail de redefinição de senha enviado com sucesso!');
     } catch (e) {
+      debugPrint('❌ [AuthViewModel] Erro ao enviar e-mail de redefinição: $e');
       _setError(AppStrings.resetPasswordErrorMessage);
       rethrow;
     } finally {
       _setLoading(false);
+      debugPrint('📧 [AuthViewModel] Envio de e-mail de redefinição finalizado (loading=false)');
     }
   }
 
   /// Verifica se o usuário tem um bar cadastrado
   Future<bool> hasBarRegistered() async {
+    debugPrint('🏪 [AuthViewModel] Verificando se usuário tem bar cadastrado...');
     try {
       final currentUser = _authRepository.currentUser;
-      if (currentUser == null) return false;
+      if (currentUser == null) {
+        debugPrint('❌ [AuthViewModel] Usuário não autenticado - retornando false');
+        return false;
+      }
+      debugPrint('🏪 [AuthViewModel] Usuário autenticado: ${currentUser.email}');
       
+      debugPrint('🏪 [AuthViewModel] Buscando perfil do usuário...');
       final userProfile = await _userRepository.getMe();
       if (userProfile?.currentBarId != null) {
+        debugPrint('✅ [AuthViewModel] Usuário tem currentBarId: ${userProfile!.currentBarId}');
         return true;
       }
+      debugPrint('🏪 [AuthViewModel] currentBarId é null, verificando bars cadastrados...');
       
       // Fallback: verificar se tem bars cadastrados
       final bars = await _barRepository.listMyBars(currentUser.uid).first;
-      return bars.isNotEmpty;
+      final hasBar = bars.isNotEmpty;
+      debugPrint('🏪 [AuthViewModel] Resultado da verificação de bars: $hasBar (${bars.length} bars encontrados)');
+      return hasBar;
     } catch (e) {
-      debugPrint('Erro ao verificar bar: $e');
+      debugPrint('❌ [AuthViewModel] Erro ao verificar bar: $e');
       return false;
     }
   }
@@ -288,47 +322,76 @@ class AuthViewModel extends ChangeNotifier {
   
   /// Obtém o perfil do usuário atual
   Future<UserProfile?> getCurrentUserProfile() async {
+    debugPrint('👤 [AuthViewModel] Obtendo perfil do usuário atual...');
     try {
-      return await _userRepository.getMe();
+      final profile = await _userRepository.getMe();
+      if (profile != null) {
+        debugPrint('✅ [AuthViewModel] Perfil obtido: ${profile.email}');
+        debugPrint('👤 [AuthViewModel] currentBarId: ${profile.currentBarId}');
+        debugPrint('👤 [AuthViewModel] completedFullRegistration: ${profile.completedFullRegistration}');
+      } else {
+        debugPrint('❌ [AuthViewModel] Perfil não encontrado');
+      }
+      return profile;
     } catch (e) {
-      debugPrint('Erro ao obter perfil do usuário: $e');
+      debugPrint('❌ [AuthViewModel] Erro ao obter perfil do usuário: $e');
       return null;
     }
   }
   
   /// Verifica se deve mostrar o banner de completar cadastro
   Future<bool> shouldShowProfileCompleteCard() async {
-    if (!isFromSocialProvider) return false;
+    debugPrint('🎯 [AuthViewModel] Verificando se deve mostrar banner de completar cadastro...');
+    if (!isFromSocialProvider) {
+      debugPrint('🎯 [AuthViewModel] Usuário não é de provedor social - não mostrar banner');
+      return false;
+    }
+    debugPrint('🎯 [AuthViewModel] Usuário é de provedor social, verificando completude...');
     
     try {
       final profile = await getCurrentUserProfile();
-      if (profile == null) return true;
+      if (profile == null) {
+        debugPrint('🎯 [AuthViewModel] Perfil não encontrado - mostrar banner');
+        return true;
+      }
       
       // Para login social, mostrar banner se não completou o registro completo
-      return !profile.completedFullRegistration;
+      final shouldShow = !profile.completedFullRegistration;
+      debugPrint('🎯 [AuthViewModel] completedFullRegistration: ${profile.completedFullRegistration}, shouldShow: $shouldShow');
+      return shouldShow;
     } catch (e) {
-      debugPrint('Erro ao verificar completude do perfil: $e');
+      debugPrint('❌ [AuthViewModel] Erro ao verificar completude do perfil: $e');
       return false;
     }
   }
   
   /// Verifica se o usuário pode criar eventos
   Future<bool> canCreateEvent() async {
+    debugPrint('🎪 [AuthViewModel] Verificando se usuário pode criar eventos...');
     try {
       final currentUser = _authRepository.currentUser;
-      if (currentUser == null) return false;
+      if (currentUser == null) {
+        debugPrint('❌ [AuthViewModel] Usuário não autenticado - não pode criar eventos');
+        return false;
+      }
+      debugPrint('🎪 [AuthViewModel] Usuário autenticado: ${currentUser.email}');
       
       // Verifica se tem currentBarId
+      debugPrint('🎪 [AuthViewModel] Verificando currentBarId...');
       final userProfile = await _userRepository.getMe();
       if (userProfile?.currentBarId != null) {
+        debugPrint('✅ [AuthViewModel] Usuário tem currentBarId: ${userProfile!.currentBarId} - pode criar eventos');
         return true;
       }
+      debugPrint('🎪 [AuthViewModel] currentBarId é null, verificando se é membro de algum bar...');
       
       // Verifica se é membro de algum bar
       final bars = await _barRepository.listMyBars(currentUser.uid).first;
-      return bars.isNotEmpty;
+      final canCreate = bars.isNotEmpty;
+      debugPrint('🎪 [AuthViewModel] Resultado da verificação de membros: $canCreate (${bars.length} bars encontrados)');
+      return canCreate;
     } catch (e) {
-      debugPrint('Erro ao verificar permissão para criar evento: $e');
+      debugPrint('❌ [AuthViewModel] Erro ao verificar permissão para criar evento: $e');
       return false;
     }
   }
@@ -360,18 +423,26 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Faz login com Apple
   Future<void> loginWithApple() async {
+    debugPrint('🍎 [AuthViewModel] Iniciando login com Apple...');
     try {
       _setLoading(true);
       _clearError();
+      debugPrint('🍎 [AuthViewModel] Chamando _authRepository.signInWithApple()...');
       final result = await _authRepository.signInWithApple();
+      debugPrint('🍎 [AuthViewModel] Resultado recebido: isSuccess=${result.isSuccess}');
+      
       if (result.isSuccess) {
+        debugPrint('✅ [AuthViewModel] Login com Apple bem-sucedido!');
+        debugPrint('🍎 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
         ToastService.instance.showSuccess(
           message: 'Login com Apple realizado com sucesso!',
           title: 'Bem-vindo',
         );
+        debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
+        debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
         final errorMsg = result.errorMessage ?? 'Erro ao fazer login com Apple.';
         _setError(errorMsg);
         ToastService.instance.showError(
@@ -380,6 +451,7 @@ class AuthViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
+      debugPrint('❌ [AuthViewModel] Exceção durante login com Apple: $e');
       const errorMsg = 'Erro ao fazer login com Apple. Por favor, tente novamente.';
       _setError(errorMsg);
       ToastService.instance.showError(
@@ -388,23 +460,32 @@ class AuthViewModel extends ChangeNotifier {
       );
     } finally {
       _setLoading(false);
+      debugPrint('🍎 [AuthViewModel] Login com Apple finalizado (loading=false)');
     }
   }
 
   /// Faz login com Facebook
   Future<void> loginWithFacebook() async {
+    debugPrint('📘 [AuthViewModel] Iniciando login com Facebook...');
     try {
       _setLoading(true);
       _clearError();
+      debugPrint('📘 [AuthViewModel] Chamando _authRepository.signInWithFacebook()...');
       final result = await _authRepository.signInWithFacebook();
+      debugPrint('📘 [AuthViewModel] Resultado recebido: isSuccess=${result.isSuccess}');
+      
       if (result.isSuccess) {
+        debugPrint('✅ [AuthViewModel] Login com Facebook bem-sucedido!');
+        debugPrint('📘 [AuthViewModel] Usuário: ${result.user?.email}');
         _currentUser = result.user;
         _setState(AuthState.authenticated);
         ToastService.instance.showSuccess(
           message: 'Login com Facebook realizado com sucesso!',
           title: 'Bem-vindo',
         );
+        debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
       } else {
+        debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
         final errorMsg = result.errorMessage ?? 'Erro ao fazer login com Facebook.';
         _setError(errorMsg);
         ToastService.instance.showError(
@@ -413,6 +494,7 @@ class AuthViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
+      debugPrint('❌ [AuthViewModel] Exceção durante login com Facebook: $e');
       const errorMsg = 'Erro ao fazer login com Facebook. Por favor, tente novamente.';
       _setError(errorMsg);
       ToastService.instance.showError(
@@ -421,6 +503,39 @@ class AuthViewModel extends ChangeNotifier {
       );
     } finally {
       _setLoading(false);
+      debugPrint('📘 [AuthViewModel] Login com Facebook finalizado (loading=false)');
+    }
+  }
+
+  /// Envia e-mail de verificação
+  Future<bool> sendEmailVerification() async {
+    debugPrint('📧 [AuthViewModel] Iniciando envio de e-mail de verificação...');
+    try {
+      debugPrint('📧 [AuthViewModel] Chamando _authRepository.sendEmailVerification()...');
+      final success = await _authRepository.sendEmailVerification();
+      if (success) {
+        debugPrint('✅ [AuthViewModel] E-mail de verificação enviado com sucesso!');
+      } else {
+        debugPrint('⚠️ [AuthViewModel] Falha ao enviar e-mail de verificação');
+      }
+      return success;
+    } catch (e) {
+      debugPrint('❌ [AuthViewModel] Erro ao enviar e-mail de verificação: $e');
+      throw Exception('Erro ao enviar e-mail de verificação: $e');
+    }
+  }
+
+  /// Verifica se o e-mail foi verificado
+  Future<bool> checkEmailVerified() async {
+    debugPrint('🔍 [AuthViewModel] Verificando status de verificação do e-mail...');
+    try {
+      debugPrint('🔍 [AuthViewModel] Chamando _authRepository.isEmailVerified()...');
+      final isVerified = await _authRepository.isEmailVerified();
+      debugPrint('🔍 [AuthViewModel] Status de verificação: $isVerified');
+      return isVerified;
+    } catch (e) {
+      debugPrint('❌ [AuthViewModel] Erro ao verificar e-mail: $e');
+      throw Exception('Erro ao verificar e-mail: $e');
     }
   }
 }

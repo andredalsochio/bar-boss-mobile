@@ -23,10 +23,13 @@ abstract class AuthRepository {
   Future<AuthResult> signUpWithEmail(String email, String password, {String? displayName});
 
   /// Envia email de verificação para o usuário atual
-  Future<void> sendEmailVerification();
+  Future<bool> sendEmailVerification();
 
   /// Verifica se o email do usuário atual está verificado
   Future<bool> isEmailVerified();
+
+  /// Verifica se o email foi verificado (com reload)
+  Future<bool> checkEmailVerified();
 
   /// Vincula email e senha à conta atual
   Future<void> linkEmailPassword(String email, String password);

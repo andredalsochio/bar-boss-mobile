@@ -12,6 +12,7 @@ class AuthService {
   static User? get currentUser => _auth.currentUser;
   static String? get currentUserId => _auth.currentUser?.uid;
   static String? get currentUserEmail => _auth.currentUser?.email;
+  static bool get isCurrentUserEmailVerified => _auth.currentUser?.emailVerified ?? false;
 
   static User? getCurrentUser(BuildContext context) {
     return _auth.currentUser;
@@ -57,6 +58,47 @@ class AuthService {
     }
   }
 
+  /// Envia e-mail de verificação para o usuário atual
+  static Future<void> sendEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        // Configurar ActionCodeSettings para deep links
+        final actionCodeSettings = ActionCodeSettings(
+          url: 'https://barboss.page.link/emailVerification',
+          handleCodeInApp: true,
+          iOSBundleId: 'com.barboss.mobile',
+          androidPackageName: 'com.barboss.mobile',
+          androidInstallApp: true,
+          androidMinimumVersion: '21',
+        );
+        
+        await user.sendEmailVerification(actionCodeSettings);
+      }
+    } catch (e) {
+      throw Exception('Erro ao enviar e-mail de verificação: $e');
+    }
+  }
+
+  /// Recarrega os dados do usuário atual para verificar se o e-mail foi verificado
+  static Future<void> reloadUser() async {
+    try {
+      await _auth.currentUser?.reload();
+    } catch (e) {
+      throw Exception('Erro ao recarregar dados do usuário: $e');
+    }
+  }
+
+  /// Verifica se o e-mail do usuário atual foi verificado (após reload)
+  static Future<bool> checkEmailVerified() async {
+    try {
+      await reloadUser();
+      return _auth.currentUser?.emailVerified ?? false;
+    } catch (e) {
+      throw Exception('Erro ao verificar status do e-mail: $e');
+    }
+  }
+
   static Future<bool> isEmailInUse(String email) async {
     try {
       final methods = await _auth.fetchSignInMethodsForEmail(email);
@@ -78,6 +120,10 @@ class AuthService {
         password: password,
       );
       await credential.user?.updateDisplayName('$firstName $lastName'.trim());
+      
+      // Enviar e-mail de verificação automaticamente após cadastro
+      await sendEmailVerification();
+      
       return credential;
     } catch (e) {
       throw Exception('Erro ao criar conta: $e');
@@ -88,10 +134,20 @@ class AuthService {
     String email,
     String password,
   ) async {
-    return await _auth.signInWithEmailAndPassword(
+    final credential = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+    
+    // Verificar se o e-mail foi verificado
+    if (!credential.user!.emailVerified) {
+      throw FirebaseAuthException(
+        code: 'email-not-verified',
+        message: 'E-mail não verificado. Verifique sua caixa de entrada.',
+      );
+    }
+    
+    return credential;
   }
 
   static Future<UserCredential> signInWithGoogle() async {

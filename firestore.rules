@@ -4,6 +4,7 @@ service cloud.firestore {
 
     // Helpers
     function isAuth() { return request.auth != null; }
+    function isEmailVerified() { return request.auth != null && request.auth.token.email_verified == true; }
     function me() { return request.auth.uid; }
 
     function isMember(barId, uid) {
@@ -70,38 +71,38 @@ service cloud.firestore {
       allow read: if isAuth() && (isMember(barId, me()) ||
                                   resource.data.createdByUid == me());
 
-      // Criar bar - permitir se o usuário é o criador
-      allow create: if isAuth() && validBar(request.resource.data);
+      // Criar bar - permitir se o usuário é o criador e tem e-mail verificado
+      allow create: if isAuth() && isEmailVerified() && validBar(request.resource.data);
 
-      // Atualizar bar - somente membros com permissão
-      allow update: if isAuth() && isMember(barId, me()) && canManageBar(barId) &&
+      // Atualizar bar - somente membros com permissão e e-mail verificado
+      allow update: if isAuth() && isEmailVerified() && isMember(barId, me()) && canManageBar(barId) &&
                     validBar(request.resource.data);
 
-      // Deletar bar
-      allow delete: if isAuth() && (isOwnerRole(barId) ||
+      // Deletar bar - requer e-mail verificado
+      allow delete: if isAuth() && isEmailVerified() && (isOwnerRole(barId) ||
                     resource.data.createdByUid == me());
 
       // MEMBERS
       match /members/{memberUid} {
         allow read: if isAuth() && isMember(barId, me());
-        // Permitir criação se é o próprio usuário (criação inicial) ou se é owner
-        allow create: if isAuth() && (memberUid == me() || isOwnerRole(barId));
-        allow update, delete: if isAuth() && isOwnerRole(barId);
+        // Permitir criação se é o próprio usuário (criação inicial) ou se é owner - requer e-mail verificado
+        allow create: if isAuth() && isEmailVerified() && (memberUid == me() || isOwnerRole(barId));
+        allow update, delete: if isAuth() && isEmailVerified() && isOwnerRole(barId);
       }
 
       // EVENTS
       match /events/{eventId} {
         allow read: if isAuth() && isMember(barId, me());
-        allow create: if isAuth() && isMember(barId, me()) &&
+        allow create: if isAuth() && isEmailVerified() && isMember(barId, me()) &&
                       validEvent(request.resource.data);
-        allow update, delete: if isAuth() && isMember(barId, me());
+        allow update, delete: if isAuth() && isEmailVerified() && isMember(barId, me());
       }
     }
 
     // CNPJ REGISTRY
     match /cnpj_registry/{cnpj} {
       allow read: if true;               // permitir verificação de unicidade sem auth
-      allow create: if isAuth();         // criado no batch
+      allow create: if isAuth() && isEmailVerified();         // criado no batch - requer e-mail verificado
       allow update, delete: if false;    // imutável (ou política interna)
     }
 

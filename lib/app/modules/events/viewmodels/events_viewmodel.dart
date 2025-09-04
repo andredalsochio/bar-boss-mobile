@@ -330,7 +330,9 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Salva o evento (cria ou atualiza)
   Future<void> saveEvent() async {
+    debugPrint('💾 [EventsViewModel] Iniciando salvamento de evento...');
     if (!isFormValid) {
+      debugPrint('❌ [EventsViewModel] Formulário inválido - cancelando salvamento');
       _setError(AppStrings.formValidationErrorMessage);
       return;
     }
@@ -341,26 +343,33 @@ class EventsViewModel extends ChangeNotifier {
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) {
+        debugPrint('❌ [EventsViewModel] Usuário não autenticado');
         _setError(AppStrings.userNotLoggedInErrorMessage);
         return;
       }
+      debugPrint('💾 [EventsViewModel] Usuário autenticado: ${currentUser.email}');
 
       // Busca bares do usuário
+      debugPrint('💾 [EventsViewModel] Buscando bares do usuário...');
       final barsSnapshot = await _barRepository.listMyBars(currentUser.uid).first;
       
       if (barsSnapshot.isEmpty) {
+        debugPrint('❌ [EventsViewModel] Nenhum bar encontrado para o usuário');
         _setError(AppStrings.userNotFoundErrorMessage);
         return;
       }
       
       final bar = barsSnapshot.first; // Assume que o usuário tem apenas um bar
+      debugPrint('💾 [EventsViewModel] Usando bar: ${bar.id} - ${bar.name}');
 
       // Remove atrações vazias
       final filteredAttractions =
           _attractions.where((a) => a.trim().isNotEmpty).toList();
+      debugPrint('💾 [EventsViewModel] Atrações filtradas: ${filteredAttractions.length} itens');
 
       if (_currentEvent == null) {
         // Cria um novo evento
+        debugPrint('➕ [EventsViewModel] Criando novo evento...');
         final eventStartDate = _eventDate ?? DateTime.now();
         final newEvent = EventModel(
           id: '',
@@ -377,10 +386,13 @@ class EventsViewModel extends ChangeNotifier {
           createdAt: DateTime.now(), // será sobrescrito pelo repositório
           updatedAt: DateTime.now(), // será sobrescrito pelo repositório
         );
+        debugPrint('➕ [EventsViewModel] Dados do novo evento: data=$eventStartDate, atrações=${filteredAttractions.length}');
 
         await _eventRepository.create(bar.id, newEvent);
+        debugPrint('✅ [EventsViewModel] Novo evento criado com sucesso!');
       } else {
         // Atualiza o evento existente
+        debugPrint('📝 [EventsViewModel] Atualizando evento existente: ${_currentEvent!.id}');
         final eventStartDate = _eventDate ?? _currentEvent!.startAt;
         final updatedEvent = _currentEvent!.copyWith(
           startAt: eventStartDate,
@@ -390,45 +402,57 @@ class EventsViewModel extends ChangeNotifier {
           updatedByUid: currentUser.uid,
           updatedAt: DateTime.now(), // será sobrescrito pelo repositório
         );
+        debugPrint('📝 [EventsViewModel] Dados atualizados: data=$eventStartDate, atrações=${filteredAttractions.length}');
 
         await _eventRepository.update(bar.id, updatedEvent);
+        debugPrint('✅ [EventsViewModel] Evento atualizado com sucesso!');
       }
 
       // Define sucesso antes de recarregar eventos
+      debugPrint('🎉 [EventsViewModel] Salvamento concluído com sucesso!');
       ToastService.instance.showSuccess(message: 'Evento salvo com sucesso!');
       _setState(EventsState.success);
       
       // Recarrega os eventos em background (não afeta o estado de sucesso)
+      debugPrint('🔄 [EventsViewModel] Recarregando eventos em background...');
       try {
         await loadEvents();
+        debugPrint('✅ [EventsViewModel] Eventos recarregados com sucesso!');
       } catch (e) {
         // Log do erro mas não altera o estado de sucesso do salvamento
-        debugPrint('Erro ao recarregar eventos após salvar: $e');
+        debugPrint('⚠️ [EventsViewModel] Erro ao recarregar eventos após salvar: $e');
       }
     } catch (e) {
+      debugPrint('❌ [EventsViewModel] Erro ao salvar evento: $e');
       _setError(AppStrings.saveEventErrorMessage);
-      debugPrint('Erro ao salvar evento: $e');
     } finally {
       _setLoading(false);
+      debugPrint('🏁 [EventsViewModel] Finalizando processo de salvamento');
     }
   }
 
   /// Carrega os próximos eventos
   Future<void> loadUpcomingEvents() async {
+    debugPrint('📅 [EventsViewModel] Iniciando carregamento de próximos eventos...');
     _setLoading(true);
     _clearError();
 
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) {
+        debugPrint('❌ [EventsViewModel] Usuário não autenticado');
         _setError(AppStrings.userNotFoundErrorMessage);
         return;
       }
+      debugPrint('👤 [EventsViewModel] Usuário autenticado: ${currentUser.uid}');
 
       // Busca os bares do usuário usando membership
+      debugPrint('🏪 [EventsViewModel] Buscando bares do usuário...');
       final barsSnapshot = await _barRepository.listMyBars(currentUser.uid).first;
+      debugPrint('🏪 [EventsViewModel] Encontrados ${barsSnapshot.length} bares');
       
       if (barsSnapshot.isEmpty) {
+        debugPrint('⚠️ [EventsViewModel] Usuário não possui bares associados');
         _events = [];
         _upcomingEvents = [];
         _setState(EventsState.success);
@@ -436,17 +460,22 @@ class EventsViewModel extends ChangeNotifier {
       }
       
       final bar = barsSnapshot.first; // Assume que o usuário tem apenas um bar
+      debugPrint('🏪 [EventsViewModel] Usando bar: ${bar.id} - ${bar.name}');
 
       // Carrega eventos futuros usando stream
+      debugPrint('📅 [EventsViewModel] Buscando próximos eventos do bar...');
       final eventsSnapshot = await _eventRepository.upcomingByBar(bar.id).first;
+      debugPrint('📅 [EventsViewModel] Encontrados ${eventsSnapshot.length} próximos eventos');
       _events = eventsSnapshot;
       _upcomingEvents = eventsSnapshot
             ..sort((a, b) => a.startAt.compareTo(b.startAt));
+      debugPrint('📅 [EventsViewModel] Eventos ordenados por data');
 
       _setState(EventsState.success);
+      debugPrint('✅ [EventsViewModel] Próximos eventos carregados com sucesso!');
     } catch (e) {
+      debugPrint('❌ [EventsViewModel] Erro ao carregar próximos eventos: $e');
       _setError(AppStrings.loadEventsErrorMessage);
-      debugPrint('Erro ao carregar próximos eventos: $e');
     } finally {
       _setLoading(false);
     }
@@ -454,25 +483,35 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Exclui o evento atual
   Future<void> deleteEvent() async {
-    if (_currentEvent == null) return;
+    if (_currentEvent == null) {
+      debugPrint('⚠️ [EventsViewModel] Tentativa de excluir evento nulo');
+      return;
+    }
 
+    debugPrint('🗑️ [EventsViewModel] Iniciando exclusão do evento: ${_currentEvent!.id}');
     _setLoading(true);
     _clearError();
 
     try {
       // Usa o barId do evento atual
+      debugPrint('🗑️ [EventsViewModel] Excluindo evento do bar: ${_currentEvent!.barId}');
       await _eventRepository.delete(_currentEvent!.barId, _currentEvent!.id);
+      debugPrint('✅ [EventsViewModel] Evento excluído do repositório');
 
       // Recarrega os eventos
+      debugPrint('🔄 [EventsViewModel] Recarregando eventos após exclusão...');
       await loadEvents();
+      debugPrint('✅ [EventsViewModel] Eventos recarregados após exclusão');
 
       ToastService.instance.showSuccess(message: 'Evento excluído com sucesso!');
       _setState(EventsState.success);
+      debugPrint('🎉 [EventsViewModel] Exclusão concluída com sucesso!');
     } catch (e) {
+      debugPrint('❌ [EventsViewModel] Erro ao excluir evento: $e');
       _setError(AppStrings.deleteEventErrorMessage);
-      debugPrint('Erro ao excluir evento: $e');
     } finally {
       _setLoading(false);
+      debugPrint('🏁 [EventsViewModel] Finalizando processo de exclusão');
     }
   }
 

@@ -4,16 +4,17 @@ Este documento contém instruções para configurar adequadamente o Firebase Con
 
 ## 1. Configuração da Política de Senha
 
-### Problema
-Atualmente, a validação de senha no aplicativo exige um mínimo de 8 caracteres, mas o Firebase Auth permite senhas com apenas 6 caracteres por padrão. Isso causa inconsistência quando usuários alteram suas senhas através do link de redefinição.
+### Status Atual
+O aplicativo agora está alinhado com o padrão do Firebase Auth, exigindo um mínimo de 6 caracteres para senhas. Esta configuração garante consistência entre a validação do aplicativo e as políticas do Firebase.
 
-### Solução
+### Configuração (Opcional)
+Se desejar alterar a política de senha no Firebase Console:
 1. Acesse o [Firebase Console](https://console.firebase.google.com/)
 2. Selecione o projeto `bar-boss-mobile`
 3. Navegue para **Authentication** > **Settings**
 4. Clique na aba **Password policy**
 5. Configure os seguintes parâmetros:
-   - **Minimum length**: 8 caracteres
+   - **Minimum length**: 6 caracteres (padrão atual)
    - **Require uppercase letters**: Opcional (recomendado: desabilitado para simplicidade)
    - **Require lowercase letters**: Opcional (recomendado: desabilitado para simplicidade)
    - **Require numeric characters**: Opcional (recomendado: desabilitado para simplicidade)
@@ -21,14 +22,14 @@ Atualmente, a validação de senha no aplicativo exige um mínimo de 8 caractere
 6. Clique em **Save**
 
 ### Validação no Código
-O validador de senha no arquivo `lib/app/core/utils/validators.dart` já está configurado corretamente:
+O validador de senha no arquivo `lib/app/core/utils/validators.dart` está configurado para 6 caracteres mínimos:
 
 ```dart
 static String? password(String? value) {
   if (value == null || value.isEmpty) {
     return AppStrings.requiredField;
   }
-  if (value.length < 8) {
+  if (value.length < 6) {
     return AppStrings.passwordTooShort;
   }
   return null;
@@ -83,9 +84,9 @@ Os e-mails enviados pelo Firebase Auth (redefinição de senha, verificação de
 ## 4. Verificação das Configurações
 
 ### Teste da Política de Senha
-1. Tente criar uma conta com senha de 6 caracteres
-2. Deve ser rejeitada pelo Firebase
-3. Tente com senha de 8+ caracteres
+1. Tente criar uma conta com senha de 5 caracteres
+2. Deve ser rejeitada pelo aplicativo
+3. Tente com senha de 6+ caracteres
 4. Deve ser aceita
 
 ### Teste do Nome do Projeto

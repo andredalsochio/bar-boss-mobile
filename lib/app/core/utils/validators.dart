@@ -130,7 +130,7 @@ class Validators {
       return AppStrings.requiredField;
     }
     
-    if (value.length < 8) {
+    if (value.length < 6) {
       return AppStrings.passwordTooShort;
     }
     

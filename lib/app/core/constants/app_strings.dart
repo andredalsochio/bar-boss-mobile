@@ -103,8 +103,8 @@ class AppStrings {
   static const String invalidCepError = 'CEP inválido';
   static const String invalidPhone = 'Telefone inválido';
   static const String invalidPhoneError = 'Telefone inválido';
-  static const String passwordTooShort = 'A senha deve ter pelo menos 8 caracteres';
-  static const String passwordTooShortError = 'A senha deve ter pelo menos 8 caracteres';
+  static const String passwordTooShort = 'A senha deve ter pelo menos 6 caracteres';
+  static const String passwordTooShortError = 'A senha deve ter pelo menos 6 caracteres';
   static const String passwordsDontMatch = 'As senhas não conferem';
   static const String passwordMismatchError = 'As senhas não coincidem';
   static const String emailInUseErrorMessage = 'Este e-mail já está em uso. Por favor, utilize outro e-mail.';

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:search_cep/search_cep.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
@@ -254,17 +255,29 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      // Validação assíncrona de email usando fetchSignInMethodsForEmail
-      debugPrint('🔍 [VIEWMODEL] ETAPA 1: Verificando se email "$_email" já está em uso...');
-      final emailInUse = await _authRepository.isEmailInUse(_email);
-      debugPrint('🔍 [VIEWMODEL] ETAPA 1: Resultado - Email em uso: $emailInUse');
+      // Verificar se o usuário está autenticado e se o email é o mesmo
+      final currentUser = _authRepository.currentUser;
+      final isCurrentUserEmail = currentUser != null && currentUser.email == _email;
       
-      if (emailInUse) {
-        debugPrint('❌ [VIEWMODEL] ETAPA 1: Email já está cadastrado, BLOQUEANDO avanço');
-        _setError('Este email já está cadastrado');
-        return false;
+      debugPrint('🔍 [VIEWMODEL] ETAPA 1: Verificando email "$_email"...');
+      debugPrint('🔍 [VIEWMODEL] ETAPA 1: Usuário autenticado: ${currentUser?.email}');
+      debugPrint('🔍 [VIEWMODEL] ETAPA 1: É o email do usuário atual: $isCurrentUserEmail');
+      
+      if (isCurrentUserEmail) {
+        debugPrint('✅ [VIEWMODEL] ETAPA 1: Email é do usuário autenticado, PERMITINDO avanço');
+      } else {
+        // Validação assíncrona de email usando fetchSignInMethodsForEmail
+        debugPrint('🔍 [VIEWMODEL] ETAPA 1: Verificando se email "$_email" já está em uso...');
+        final emailInUse = await _authRepository.isEmailInUse(_email);
+        debugPrint('🔍 [VIEWMODEL] ETAPA 1: Resultado - Email em uso: $emailInUse');
+        
+        if (emailInUse) {
+          debugPrint('❌ [VIEWMODEL] ETAPA 1: Email já está cadastrado, BLOQUEANDO avanço');
+          _setError('Este email já está cadastrado');
+          return false;
+        }
+        debugPrint('✅ [VIEWMODEL] ETAPA 1: Email disponível, prosseguindo...');
       }
-      debugPrint('✅ [VIEWMODEL] ETAPA 1: Email disponível, prosseguindo...');
 
       // Validação assíncrona de CNPJ via /cnpj_registry
       debugPrint('🔍 [VIEWMODEL] ETAPA 2: Verificando unicidade do CNPJ "$_cnpj"...');
@@ -989,5 +1002,98 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _isConfirmPasswordValid = false;
 
     notifyListeners();
+  }
+
+  /// Finaliza o cadastro para usuários de login social no Step 3
+  Future<void> finalizeSocialLoginRegistration() async {
+    debugPrint('🚀 [BarRegistrationViewModel] Iniciando finalizeSocialLoginRegistration...');
+    debugPrint('🚀 [BarRegistrationViewModel] Step3 válido: $isStep3Valid');
+    
+    if (!isStep3Valid) {
+      debugPrint('❌ [BarRegistrationViewModel] Step3 inválido, cancelando registro');
+      return;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      // Obtém o usuário atual (já autenticado via social)
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
+        throw Exception('Usuário não autenticado');
+      }
+
+      // Vincula credencial de email/senha ao usuário de login social
+      debugPrint('🔗 [BarRegistrationViewModel] Vinculando credencial de email/senha...');
+      await _authRepository.linkEmailPassword(_email, _password);
+      debugPrint('✅ [BarRegistrationViewModel] Credencial de email/senha vinculada com sucesso!');
+      
+      // Recarrega os dados do usuário para atualizar os provedores
+      debugPrint('🔄 [BarRegistrationViewModel] Recarregando dados do usuário...');
+      await FirebaseAuth.instance.currentUser?.reload();
+      debugPrint('✅ [BarRegistrationViewModel] Dados do usuário recarregados!');
+
+      // Cria o bar no Firestore com perfil completo
+      // Como o usuário completou todos os 3 passos, marca todas as flags como true
+      final bar = BarModel.empty().copyWith(
+        contactEmail: _email,
+        cnpj: _cnpj,
+        name: _name,
+        responsibleName: _responsibleName,
+        contactPhone: _phone,
+        address: BarAddress(
+          cep: _cep,
+          street: _street,
+          number: _number,
+          complement: _complement,
+          state: _stateUf,
+          city: _city,
+        ),
+        profile: BarProfile(
+          contactsComplete: true, // Passo 1 completo
+          addressComplete: true,  // Passo 2 completo
+        ),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        createdByUid: currentUser.uid,
+        primaryOwnerUid: currentUser.uid,
+      );
+
+      // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
+      final barId = await _barRepository.createBarWithReservation(
+        bar: bar,
+        ownerUid: currentUser.uid,
+      );
+
+      // Atualiza o UserProfile com currentBarId e marca como completedFullRegistration = true
+      final existingProfile = await _userRepository.getMe();
+      if (existingProfile != null) {
+        final updatedProfile = existingProfile.copyWith(
+          currentBarId: barId,
+          completedFullRegistration: true, // Marca como completo após Step 3
+        );
+        await _userRepository.upsert(updatedProfile);
+      }
+
+      // Debug log conforme especificado
+      debugPrint('🎉 DEBUG Login Social Step 3: Bar criado com sucesso para usuário ${currentUser.uid}');
+      debugPrint('🎉 DEBUG Login Social Step 3: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true');
+      debugPrint('🎉 DEBUG Login Social Step 3: UserProfile atualizado com currentBarId=$barId e completedFullRegistration=true');
+
+      // Limpa os rascunhos após sucesso
+      await clearDrafts();
+
+      ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
+      _setRegistrationState(RegistrationState.success);
+    } catch (e) {
+      debugPrint('❌ [BarRegistrationViewModel] Erro durante o registro social step 3: $e');
+      debugPrint('❌ [BarRegistrationViewModel] Stack trace: ${StackTrace.current}');
+      _setError(e.toString());
+      rethrow;
+    } finally {
+      debugPrint('🔄 [BarRegistrationViewModel] Finalizando finalizeSocialLoginRegistration - definindo loading = false');
+      _setLoading(false);
+    }
   }
 }

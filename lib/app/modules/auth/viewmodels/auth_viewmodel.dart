@@ -529,8 +529,8 @@ class AuthViewModel extends ChangeNotifier {
   Future<bool> checkEmailVerified() async {
     debugPrint('🔍 [AuthViewModel] Verificando status de verificação do e-mail...');
     try {
-      debugPrint('🔍 [AuthViewModel] Chamando _authRepository.isEmailVerified()...');
-      final isVerified = await _authRepository.isEmailVerified();
+      debugPrint('🔍 [AuthViewModel] Chamando _authRepository.checkEmailVerified()...');
+      final isVerified = await _authRepository.checkEmailVerified();
       debugPrint('🔍 [AuthViewModel] Status de verificação: $isVerified');
       return isVerified;
     } catch (e) {

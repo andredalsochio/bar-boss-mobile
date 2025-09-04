@@ -350,7 +350,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage>
       if (isVerified) {
         if (mounted) {
           ToastService.instance.showSuccess(message: 'E-mail verificado com sucesso!');
-          context.go(AppRoutes.emailVerificationSuccess);
+          context.go(AppRoutes.login);
         }
       } else {
         if (mounted) {

@@ -139,6 +139,7 @@ class AppRouter {
     if (isLoggedIn) {
       // Verificar se o e-mail está verificado
       final emailVerified = authViewModel.isCurrentUserEmailVerified;
+      final isFromSocialProvider = authViewModel.isFromSocialProvider;
       
       // Se está na tela de login e e-mail verificado, vai para home
       if (isLoggingIn && emailVerified) {
@@ -146,17 +147,18 @@ class AppRouter {
       }
       
       // Se e-mail não verificado e não está na tela de verificação
-      if (!emailVerified && state.matchedLocation != AppRoutes.emailVerification) {
+      // IMPORTANTE: Usuários de login social não precisam verificar e-mail
+      if (!emailVerified && !isFromSocialProvider && state.matchedLocation != AppRoutes.emailVerification) {
         return AppRoutes.emailVerification;
       }
       
-      // Se e-mail verificado e está na tela de verificação, vai para home
-      if (emailVerified && state.matchedLocation == AppRoutes.emailVerification) {
+      // Se e-mail verificado OU é de provedor social e está na tela de verificação, vai para home
+      if ((emailVerified || isFromSocialProvider) && state.matchedLocation == AppRoutes.emailVerification) {
         return AppRoutes.home;
       }
       
-      // Guard de completude de perfil (apenas se e-mail verificado)
-      if (emailVerified && !isLoggingIn && !isRegistering && !isEmailVerificationFlow) {
+      // Guard de completude de perfil (apenas se e-mail verificado OU é de provedor social)
+      if ((emailVerified || isFromSocialProvider) && !isLoggingIn && !isRegistering && !isEmailVerificationFlow) {
         return _handleProfileCompletenessGuard(context, state);
       }
     }
@@ -176,7 +178,7 @@ class AppRouter {
     // "Não bloquear criação de evento por perfil incompleto; apenas avisar"
     
     // A verificação de completude será feita na HomePage via HomeViewModel
-    // que exibirá o banner "Complete seu cadastro (X/2)" quando necessário
+    // que exibirá o banner "Complete seu cadastro (X/3)" quando necessário
     
     return null; // Não redireciona
   }

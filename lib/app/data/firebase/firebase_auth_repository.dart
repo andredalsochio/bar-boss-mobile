@@ -33,13 +33,23 @@ class FirebaseAuthRepository implements AuthRepository {
       );
       debugPrint('✅ [FirebaseAuthRepository] Autenticação Firebase bem-sucedida!');
       
-      // Verificar se o e-mail foi verificado
+      // Verificar se o e-mail foi verificado (apenas para usuários de e-mail/senha)
       if (credential.user != null && !credential.user!.emailVerified) {
-        debugPrint('❌ [FirebaseAuthRepository] E-mail não verificado, fazendo logout...');
-        // Fazer logout do usuário não verificado
-        await _auth.signOut();
-        debugPrint('❌ [FirebaseAuthRepository] Logout realizado devido a e-mail não verificado');
-        return AuthResult.error('E-mail não verificado. Verifique sua caixa de entrada e clique no link de verificação.');
+        // Verificar se é usuário de provedor social
+        final socialProviders = ['google.com', 'apple.com', 'facebook.com'];
+        final isFromSocialProvider = credential.user!.providerData
+            .any((provider) => socialProviders.contains(provider.providerId));
+        
+        // Apenas bloquear usuários de e-mail/senha com e-mail não verificado
+        if (!isFromSocialProvider) {
+          debugPrint('❌ [FirebaseAuthRepository] E-mail não verificado para usuário de e-mail/senha, fazendo logout...');
+          // Fazer logout do usuário não verificado
+          await _auth.signOut();
+          debugPrint('❌ [FirebaseAuthRepository] Logout realizado devido a e-mail não verificado');
+          return AuthResult.error('E-mail não verificado. Verifique sua caixa de entrada e clique no link de verificação.');
+        } else {
+          debugPrint('✅ [FirebaseAuthRepository] Usuário de provedor social, ignorando verificação de e-mail');
+        }
       }
       
       debugPrint('✅ [FirebaseAuthRepository] E-mail verificado, login autorizado!');

@@ -117,17 +117,53 @@ class _Step2PageState extends State<Step2Page> {
     _viewModel.setCity(_cityController.text);
   }
 
-  void _goToNextStep() {
-    if (_viewModel.isStep2Valid) {
-      context.pushNamed('registerStep3');
+  void _goToNextStep() async {
+    // Valida o Step 2 antes de prosseguir
+    if (!_viewModel.isStep2Valid) {
+      return;
+    }
+
+    if (_authViewModel.isFromSocialProvider) {
+      // Verifica se o usuário já possui senha configurada
+      final hasPassword = await _viewModel.hasPasswordProvider();
+      
+      if (hasPassword) {
+        // Se já tem senha, finaliza o cadastro sem mostrar o Step 3
+        debugPrint('🔍 [Step2Page] Usuário já possui senha, finalizando cadastro sem Step 3...');
+        await _viewModel.finalizeSocialLoginRegistrationWithoutPassword();
+      } else {
+        // Se não tem senha, vai para o Step 3 normalmente
+        debugPrint('🔍 [Step2Page] Usuário não possui senha, indo para Step 3...');
+        context.goNamed('registerStep3');
+      }
+    } else {
+      // Para usuários de cadastro normal, vai para o Step 3
+      context.goNamed('registerStep3');
     }
   }
 
   /// Salva o Passo 2 para usuários de login social
   Future<void> _saveSocialLoginStep2() async {
-    if (_viewModel.isStep2Valid) {
-      // Para login social, após completar Step 2, navegar para Step 3
-      context.pushNamed('registerStep3');
+    if (!_viewModel.isStep2Valid) {
+      return;
+    }
+
+    // Verifica se o usuário já possui senha configurada
+    final hasPassword = await _viewModel.hasPasswordProvider();
+    
+    if (hasPassword) {
+      // Se já tem senha, finaliza o cadastro sem mostrar o Step 3
+      debugPrint('🔍 [Step2Page] Usuário já possui senha, finalizando cadastro sem Step 3...');
+      await _viewModel.finalizeSocialLoginRegistrationWithoutPassword();
+      
+      // Navega para a home após sucesso
+      if (mounted && _viewModel.registrationState == RegistrationState.success) {
+        context.goNamed('home');
+      }
+    } else {
+      // Se não tem senha, vai para o Step 3 normalmente
+      debugPrint('🔍 [Step2Page] Usuário não possui senha, indo para Step 3...');
+      context.goNamed('registerStep3');
     }
   }
 

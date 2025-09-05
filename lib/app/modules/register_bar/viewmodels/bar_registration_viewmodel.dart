@@ -1004,6 +1004,106 @@ class BarRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Verifica se o usuário já tem provedor de senha configurado
+  Future<bool> hasPasswordProvider() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) return false;
+    
+    // Recarrega os dados do usuário para garantir informações atualizadas
+    await firebaseUser.reload();
+    
+    // Verifica novamente após o reload
+    final updatedUser = FirebaseAuth.instance.currentUser;
+    if (updatedUser == null) return false;
+    
+    return updatedUser.providerData.any((provider) => provider.providerId == 'password');
+  }
+
+  /// Finaliza o cadastro para usuários de login social (sem Step 3 se já tem senha)
+  Future<void> finalizeSocialLoginRegistrationWithoutPassword() async {
+    debugPrint('🚀 [BarRegistrationViewModel] Iniciando finalizeSocialLoginRegistrationWithoutPassword...');
+    
+    _setLoading(true);
+    _clearError();
+
+    try {
+      // Obtém o usuário atual (já autenticado via social)
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) {
+        throw Exception('Usuário não autenticado');
+      }
+
+      debugPrint('ℹ️ [BarRegistrationViewModel] Usuário já possui senha configurada, pulando vinculação...');
+      
+      // Recarrega os dados do usuário para atualizar os provedores
+      debugPrint('🔄 [BarRegistrationViewModel] Recarregando dados do usuário...');
+      await FirebaseAuth.instance.currentUser?.reload();
+      debugPrint('✅ [BarRegistrationViewModel] Dados do usuário recarregados!');
+
+      // Cria o bar no Firestore com perfil completo
+      // Como o usuário completou todos os passos (senha já existia), marca todas as flags como true
+      final bar = BarModel.empty().copyWith(
+        contactEmail: _email,
+        cnpj: _cnpj,
+        name: _name,
+        responsibleName: _responsibleName,
+        contactPhone: _phone,
+        address: BarAddress(
+          cep: _cep,
+          street: _street,
+          number: _number,
+          complement: _complement,
+          state: _stateUf,
+          city: _city,
+        ),
+        profile: BarProfile(
+          contactsComplete: true, // Passo 1 completo
+          addressComplete: true,  // Passo 2 completo
+        ),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        createdByUid: currentUser.uid,
+        primaryOwnerUid: currentUser.uid,
+      );
+
+      // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
+      final barId = await _barRepository.createBarWithReservation(
+        bar: bar,
+        ownerUid: currentUser.uid,
+      );
+
+      // Atualiza o UserProfile com currentBarId e marca como completedFullRegistration = true
+      final existingProfile = await _userRepository.getMe();
+      if (existingProfile != null) {
+        final updatedProfile = existingProfile.copyWith(
+          currentBarId: barId,
+          completedFullRegistration: true, // Marca como completo após Step 2 (senha já existia)
+        );
+        await _userRepository.upsert(updatedProfile);
+      }
+
+      // Debug log conforme especificado
+      debugPrint('🎉 DEBUG Login Social Step 2: Bar criado com sucesso para usuário ${currentUser.uid}');
+      debugPrint('🎉 DEBUG Login Social Step 2: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true (senha já existia)');
+      debugPrint('🎉 DEBUG Login Social Step 2: UserProfile atualizado com currentBarId=$barId e completedFullRegistration=true');
+
+      // Limpa os rascunhos após sucesso
+      await clearDrafts();
+
+      ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
+      _setRegistrationState(RegistrationState.success);
+      
+    } catch (e) {
+      debugPrint('❌ [BarRegistrationViewModel] Erro durante o registro social step 2: $e');
+      debugPrint('❌ [BarRegistrationViewModel] Stack trace: ${StackTrace.current}');
+      _setError(e.toString());
+      rethrow;
+    } finally {
+      debugPrint('🔄 [BarRegistrationViewModel] Finalizando finalizeSocialLoginRegistrationWithoutPassword - definindo loading = false');
+      _setLoading(false);
+    }
+  }
+
   /// Finaliza o cadastro para usuários de login social no Step 3
   Future<void> finalizeSocialLoginRegistration() async {
     debugPrint('🚀 [BarRegistrationViewModel] Iniciando finalizeSocialLoginRegistration...');

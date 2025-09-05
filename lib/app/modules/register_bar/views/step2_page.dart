@@ -134,11 +134,11 @@ class _Step2PageState extends State<Step2Page> {
       } else {
         // Se não tem senha, vai para o Step 3 normalmente
         debugPrint('🔍 [Step2Page] Usuário não possui senha, indo para Step 3...');
-        context.goNamed('registerStep3');
+        context.pushNamed('registerStep3');
       }
     } else {
       // Para usuários de cadastro normal, vai para o Step 3
-      context.goNamed('registerStep3');
+      context.pushNamed('registerStep3');
     }
   }
 
@@ -163,7 +163,7 @@ class _Step2PageState extends State<Step2Page> {
     } else {
       // Se não tem senha, vai para o Step 3 normalmente
       debugPrint('🔍 [Step2Page] Usuário não possui senha, indo para Step 3...');
-      context.goNamed('registerStep3');
+      context.pushNamed('registerStep3');
     }
   }
 

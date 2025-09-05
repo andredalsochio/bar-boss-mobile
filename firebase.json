@@ -1,4 +1,14 @@
 {
+  "projects": {
+    "default": "bar-boss-mobile"
+  },
+  "targets": {
+    "bar-boss-mobile": {
+      "hosting": {
+        "production": ["bar-boss-mobile"]
+      }
+    }
+  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
@@ -10,5 +20,8 @@
     "ui": {
       "enabled": true
     }
+  },
+  "crashlytics": {
+    "symbolUploadEnabled": true
   }
 }

@@ -251,9 +251,32 @@ class FirebaseAuthRepository implements AuthRepository {
         debugPrint('❌ [FirebaseAuthRepository] Usuário não encontrado para vincular e-mail/senha');
         throw Exception('Usuário não encontrado');
       }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('❌ [FirebaseAuthRepository] FirebaseAuthException ao vincular e-mail/senha: ${e.code} - ${e.message}');
+      if (e.code == 'provider-already-linked') {
+        debugPrint('ℹ️ [FirebaseAuthRepository] Provedor de email/senha já está vinculado, ignorando erro...');
+        return; // Não é um erro real, apenas indica que já está vinculado
+      }
+      throw Exception('Erro ao vincular email/senha: ${_getErrorMessage(e.code)}');
     } catch (e) {
-      debugPrint('❌ [FirebaseAuthRepository] Erro ao vincular e-mail/senha: $e');
+      debugPrint('❌ [FirebaseAuthRepository] Erro genérico ao vincular e-mail/senha: $e');
       throw Exception('Erro ao vincular email/senha: $e');
+    }
+  }
+
+  /// Retorna mensagem de erro amigável baseada no código do Firebase
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'credential-already-in-use':
+        return 'Esta credencial já está sendo usada por outra conta';
+      case 'email-already-in-use':
+        return 'Este email já está em uso';
+      case 'weak-password':
+        return 'A senha é muito fraca';
+      case 'invalid-email':
+        return 'Email inválido';
+      default:
+        return 'Erro de autenticação';
     }
   }
 

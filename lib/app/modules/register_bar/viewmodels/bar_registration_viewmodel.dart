@@ -1024,10 +1024,19 @@ class BarRegistrationViewModel extends ChangeNotifier {
         throw Exception('Usuário não autenticado');
       }
 
-      // Vincula credencial de email/senha ao usuário de login social
-      debugPrint('🔗 [BarRegistrationViewModel] Vinculando credencial de email/senha...');
-      await _authRepository.linkEmailPassword(_email, _password);
-      debugPrint('✅ [BarRegistrationViewModel] Credencial de email/senha vinculada com sucesso!');
+      // Verifica se o usuário já tem provedor de email/senha vinculado
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final hasEmailProvider = firebaseUser?.providerData
+          .any((provider) => provider.providerId == 'password') ?? false;
+      
+      if (!hasEmailProvider) {
+        // Vincula credencial de email/senha ao usuário de login social
+        debugPrint('🔗 [BarRegistrationViewModel] Vinculando credencial de email/senha...');
+        await _authRepository.linkEmailPassword(_email, _password);
+        debugPrint('✅ [BarRegistrationViewModel] Credencial de email/senha vinculada com sucesso!');
+      } else {
+        debugPrint('ℹ️ [BarRegistrationViewModel] Usuário já possui provedor de email/senha vinculado, pulando vinculação...');
+      }
       
       // Recarrega os dados do usuário para atualizar os provedores
       debugPrint('🔄 [BarRegistrationViewModel] Recarregando dados do usuário...');

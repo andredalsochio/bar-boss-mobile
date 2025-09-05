@@ -55,7 +55,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>YOUR_REVERSED_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.779191401505-nvntfl7i61ku97c38vr5aiv82j3tf828</string>
 			</array>
 		</dict>
 		<!-- Esquema para Facebook (fb<APP_ID>) -->
@@ -82,6 +82,8 @@
 	<key>FacebookAppID</key>
 	<string>FACEBOOK_APP_ID</string>
 	<key>FacebookDisplayName</key>
-	<string>FACEBOOK_DISPLAY_NAME</string>
+	<string>Bar Boss Mobile</string>
+	<key>GIDClientID</key>
+	<string>779191401505-nvntfl7i61ku97c38vr5aiv82j3tf828.apps.googleusercontent.com</string>
 </dict>
 </plist>

@@ -266,8 +266,8 @@ class HomeViewModel extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      _setError(e.toString());
       debugPrint('❌ DEBUG Home: Erro ao carregar bar - $e');
+      _setError('Erro ao carregar informações. Tente novamente.');
     } finally {
       _setLoading(false);
     }

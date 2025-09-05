@@ -73,7 +73,7 @@ class FirebaseEventRepository implements EventRepositoryDomain {
       await _eventsCollection(barId).doc(eventId).set(eventData);
       return eventId;
     } catch (e) {
-      throw Exception('Erro ao criar evento: $e');
+      throw Exception('Erro ao criar evento. Tente novamente.');
     }
   }
 
@@ -89,7 +89,7 @@ class FirebaseEventRepository implements EventRepositoryDomain {
         _toFirestore(event)..addAll({'updatedAt': _now}),
       );
     } catch (e) {
-      throw Exception('Erro ao atualizar evento: $e');
+      throw Exception('Erro ao atualizar evento. Tente novamente.');
     }
   }
 
@@ -98,7 +98,7 @@ class FirebaseEventRepository implements EventRepositoryDomain {
     try {
       await _eventsCollection(barId).doc(eventId).delete();
     } catch (e) {
-      throw Exception('Erro ao excluir evento: $e');
+      throw Exception('Erro ao excluir evento. Tente novamente.');
     }
   }
 

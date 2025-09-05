@@ -106,7 +106,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       debugPrint('✅ [FirebaseBarRepository] Bar atualizado com sucesso!');
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao atualizar bar: $e');
-      throw Exception('Erro ao atualizar bar: $e');
+      throw Exception('Erro ao atualizar informações do bar. Tente novamente.');
     }
   }
 
@@ -162,7 +162,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       return bars;
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao buscar bares do usuário: $e');
-      throw Exception('Erro ao buscar bares do usuário: $e');
+      throw Exception('Erro ao carregar seus bares. Tente novamente.');
     }
   }
 
@@ -195,7 +195,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       debugPrint('✅ [FirebaseBarRepository] Membro adicionado com sucesso!');
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao adicionar membro: $e');
-      throw Exception('Erro ao adicionar membro: $e');
+      throw Exception('Erro ao adicionar membro. Tente novamente.');
     }
   }
 
@@ -212,7 +212,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       return _fromFirestore(doc);
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao buscar bar: $e');
-      throw Exception('Erro ao buscar bar: $e');
+      throw Exception('Erro ao carregar informações do bar. Tente novamente.');
     }
   }
 
@@ -236,7 +236,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       return exists;
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao verificar CNPJ: $e');
-      throw Exception('Erro ao verificar CNPJ: $e');
+      throw Exception('Erro ao verificar CNPJ. Tente novamente.');
     }
   }
 
@@ -281,7 +281,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       debugPrint('✅ [FirebaseBarRepository] Membro removido com sucesso!');
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao remover membro: $e');
-      throw Exception('Erro ao remover membro: $e');
+      throw Exception('Erro ao remover membro. Tente novamente.');
     }
   }
 

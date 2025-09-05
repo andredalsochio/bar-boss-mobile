@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_routes.dart';
+import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/core/utils/validators.dart';
 import 'package:go_router/go_router.dart';
@@ -29,12 +30,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background(context),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary(context)),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -63,25 +64,25 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
+              color: AppColors.primaryLight(context),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.lock_reset_outlined,
               size: 60,
-              color: Colors.orange.shade600,
+              color: AppColors.primary(context),
             ),
           ),
           
           const SizedBox(height: 32),
           
           // Título
-          const Text(
+          Text(
             'Esqueci minha senha',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: AppColors.textPrimary(context),
             ),
             textAlign: TextAlign.center,
           ),
@@ -89,11 +90,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           const SizedBox(height: 16),
           
           // Descrição
-          const Text(
+          Text(
             'Digite seu e-mail e enviaremos um link para redefinir sua senha.',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.black54,
+              color: AppColors.textSecondary(context),
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -110,14 +111,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             decoration: InputDecoration(
               labelText: 'E-mail',
               hintText: 'Digite seu e-mail',
-              prefixIcon: const Icon(Icons.email_outlined),
+              prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary(context)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.border(context)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.orange.shade600, width: 2),
+                borderSide: BorderSide(color: AppColors.primary(context), width: 2),
               ),
+              labelStyle: TextStyle(color: AppColors.textSecondary(context)),
+              hintStyle: TextStyle(color: AppColors.textHint(context)),
             ),
             validator: Validators.email,
           ),
@@ -131,8 +135,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _sendResetEmail,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade600,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.primary(context),
+                foregroundColor: AppColors.buttonText(context),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -167,11 +171,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 context.go(AppRoutes.login);
               }
             },
-            child: const Text(
+            child: Text(
               'Voltar ao login',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black54,
+                color: AppColors.textSecondary(context),
                 decoration: TextDecoration.underline,
               ),
             ),
@@ -191,25 +195,25 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
+            color: AppColors.success.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: const Icon(
             Icons.check_circle_outline,
             size: 60,
-            color: Colors.green.shade600,
+            color: AppColors.success,
           ),
         ),
         
         const SizedBox(height: 32),
         
         // Título
-        const Text(
+        Text(
           'E-mail enviado!',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: AppColors.textPrimary(context),
           ),
           textAlign: TextAlign.center,
         ),
@@ -219,9 +223,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         // Descrição
         Text(
           'Enviamos um link de recuperação para\n${_emailController.text}\n\nVerifique sua caixa de entrada e spam.',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: Colors.black54,
+            color: AppColors.textSecondary(context),
             height: 1.5,
           ),
           textAlign: TextAlign.center,
@@ -236,8 +240,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           child: OutlinedButton(
             onPressed: _isLoading ? null : _sendResetEmail,
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.orange.shade600,
-              side: BorderSide(color: Colors.orange.shade600),
+              foregroundColor: AppColors.primary(context),
+              side: BorderSide(color: AppColors.primary(context)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -248,7 +252,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary(context)),
                     ),
                   )
                 : const Text(
@@ -276,8 +280,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange.shade600,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.primary(context),
+              foregroundColor: AppColors.buttonText(context),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

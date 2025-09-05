@@ -53,7 +53,7 @@ class FirebaseUserRepository implements UserRepository {
       return profile;
     } catch (e) {
       debugPrint('❌ [DEBUG] UserRepository.getMe: Erro - $e');
-      throw Exception('Erro ao buscar perfil do usuário: $e');
+      throw Exception('Erro ao carregar perfil do usuário. Tente novamente.');
     }
   }
 
@@ -86,7 +86,7 @@ class FirebaseUserRepository implements UserRepository {
       debugPrint('✅ [DEBUG] UserRepository.upsert: Perfil salvo com sucesso');
     } catch (e) {
       debugPrint('❌ [DEBUG] UserRepository.upsert: Erro - $e');
-      throw Exception('Erro ao salvar perfil do usuário: $e');
+      throw Exception('Erro ao salvar perfil do usuário. Tente novamente.');
     }
   }
 

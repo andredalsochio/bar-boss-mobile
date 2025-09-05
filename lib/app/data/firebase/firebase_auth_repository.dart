@@ -394,8 +394,52 @@ class FirebaseAuthRepository implements AuthRepository {
       case 'operation-not-allowed':
         errorMessage = 'Operação não permitida';
         break;
+      case 'invalid-credential':
+        errorMessage = 'Credenciais inválidas. Verifique seu email e senha';
+        break;
+      case 'credential-already-in-use':
+        errorMessage = 'Esta credencial já está sendo usada por outra conta';
+        break;
+      case 'account-exists-with-different-credential':
+        errorMessage = 'Já existe uma conta com este email usando um método de login diferente';
+        break;
+      case 'invalid-verification-code':
+        errorMessage = 'Código de verificação inválido';
+        break;
+      case 'invalid-verification-id':
+        errorMessage = 'ID de verificação inválido';
+        break;
+      case 'network-request-failed':
+        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente';
+        break;
+      case 'requires-recent-login':
+        errorMessage = 'Por segurança, faça login novamente para continuar';
+        break;
+      case 'provider-already-linked':
+        errorMessage = 'Este método de login já está vinculado à sua conta';
+        break;
+      case 'no-such-provider':
+        errorMessage = 'Método de login não encontrado';
+        break;
+      case 'invalid-user-token':
+        errorMessage = 'Sessão expirada. Faça login novamente';
+        break;
+      case 'user-token-expired':
+        errorMessage = 'Sessão expirada. Faça login novamente';
+        break;
+      case 'null-user':
+        errorMessage = 'Usuário não encontrado';
+        break;
+      case 'keychain-error':
+        errorMessage = 'Erro no sistema de segurança. Tente novamente';
+        break;
+      case 'internal-error':
+        errorMessage = 'Erro interno. Tente novamente em alguns instantes';
+        break;
       default:
-        errorMessage = exception.message ?? 'Erro de autenticação';
+        // Log do erro original para debug, mas exibe mensagem amigável
+        debugPrint('🔍 [AUTH_REPO] Código de erro não tratado: ${exception.code} - ${exception.message}');
+        errorMessage = 'Erro de autenticação. Tente novamente';
     }
     
     return AuthResult.error(errorMessage);

@@ -71,7 +71,8 @@ class AuthViewModel extends ChangeNotifier {
         _setState(AuthState.unauthenticated);
       }
     } catch (e) {
-      _setError(e.toString());
+      debugPrint('❌ [DEBUG] AuthViewModel.checkAuthState: Erro - $e');
+      _setError('Erro ao verificar autenticação. Tente novamente.');
     } finally {
       _setLoading(false);
     }

@@ -358,8 +358,9 @@ class _EmailVerificationPageState extends State<EmailVerificationPage>
         }
       }
     } catch (e) {
+      debugPrint('❌ [EmailVerificationPage] Erro ao verificar e-mail: $e');
       if (mounted) {
-        ToastService.instance.showError(message: 'Erro ao verificar e-mail: $e');
+        ToastService.instance.showError(message: 'Erro ao verificar e-mail. Tente novamente.');
       }
     } finally {
       if (mounted) {
@@ -396,7 +397,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage>
     } catch (e) {
       debugPrint('❌ [EmailVerificationPage] Erro ao reenviar e-mail: $e');
       if (mounted) {
-        ToastService.instance.showError(message: 'Erro ao reenviar e-mail: $e');
+        ToastService.instance.showError(message: 'Erro ao reenviar e-mail. Tente novamente.');
       }
     } finally {
       if (mounted) {

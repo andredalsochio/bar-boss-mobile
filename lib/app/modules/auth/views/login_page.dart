@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -248,11 +249,13 @@ class _LoginPageState extends State<LoginPage> {
                         color: AppColors.googleRed,
                         onPressed: _loginWithGoogle,
                       ),
-                      _buildSocialLoginButton(
-                        icon: FontAwesomeIcons.apple,
-                        color: AppColors.black,
-                        onPressed: _loginWithApple,
-                      ),
+                      // Botão Apple só aparece no iOS
+                      if (Platform.isIOS)
+                        _buildSocialLoginButton(
+                          icon: FontAwesomeIcons.apple,
+                          color: AppColors.black,
+                          onPressed: _loginWithApple,
+                        ),
                       _buildSocialLoginButton(
                         icon: FontAwesomeIcons.facebook,
                         color: AppColors.facebookBlue,

@@ -6,22 +6,22 @@ class AppColors {
   // Cores primárias - baseadas no tema
   static Color primary(BuildContext context) => Theme.of(context).colorScheme.primary;
   static Color primaryDark(BuildContext context) => Theme.of(context).colorScheme.primary.withValues(alpha: .8);
-  static Color primaryLight(BuildContext context) => Theme.of(context).colorScheme.primary.withOpacity(0.6);
+  static Color primaryLight(BuildContext context) => Theme.of(context).colorScheme.primary.withValues(alpha: 0.6);
   
   // Cores secundárias - baseadas no tema
   static Color secondary(BuildContext context) => Theme.of(context).colorScheme.secondary;
-  static Color secondaryDark(BuildContext context) => Theme.of(context).colorScheme.secondary.withOpacity(0.8);
-  static Color secondaryLight(BuildContext context) => Theme.of(context).colorScheme.secondary.withOpacity(0.6);
+  static Color secondaryDark(BuildContext context) => Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8);
+  static Color secondaryLight(BuildContext context) => Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6);
   
   // Cores de fundo - baseadas no tema
-  static Color background(BuildContext context) => Theme.of(context).colorScheme.background;
+  static Color background(BuildContext context) => Theme.of(context).colorScheme.surface;
   static Color cardBackground(BuildContext context) => Theme.of(context).colorScheme.surface;
-  static Color surfaceVariant(BuildContext context) => Theme.of(context).colorScheme.surfaceVariant;
+  static Color surfaceVariant(BuildContext context) => Theme.of(context).colorScheme.surfaceContainerHighest;
   
   // Cores de texto - baseadas no tema
   static Color textPrimary(BuildContext context) => Theme.of(context).colorScheme.onSurface;
-  static Color textSecondary(BuildContext context) => Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
-  static Color textHint(BuildContext context) => Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
+  static Color textSecondary(BuildContext context) => Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
+  static Color textHint(BuildContext context) => Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5);
   static Color textLight(BuildContext context) => Theme.of(context).colorScheme.onPrimary;
   
   // Cores de estado - fixas (não dependem do tema)
@@ -37,7 +37,7 @@ class AppColors {
   
   // Cores de botões - baseadas no tema
   static Color buttonText(BuildContext context) => Theme.of(context).colorScheme.onPrimary;
-  static Color buttonDisabled(BuildContext context) => Theme.of(context).colorScheme.onSurface.withOpacity(0.3);
+  static Color buttonDisabled(BuildContext context) => Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3);
   
   // Cores básicas - fixas
   static const Color white = Color(0xFFFFFFFF);

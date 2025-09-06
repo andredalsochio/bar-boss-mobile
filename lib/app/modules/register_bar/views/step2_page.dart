@@ -168,7 +168,13 @@ class _Step2PageState extends State<Step2Page> {
   }
 
   void _goToPreviousStep() {
-    context.pop();
+    // Verifica se há algo na pilha de navegação para fazer pop
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      // Se não há nada para fazer pop, navega diretamente para o step2
+      context.goNamed('registerStep1');
+    }
   }
 
   @override

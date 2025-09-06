@@ -87,7 +87,16 @@ class AppRouter {
           name: 'eventEdit',
           redirect: _handleBarRegistrationGuard,
           builder: (context, state) {
-            final eventId = state.pathParameters['id'] ?? '';
+            final eventId = state.pathParameters['id'];
+            if (eventId == null) {
+              // Se não há ID, redireciona para lista de eventos
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                context.pushReplacementNamed('eventsList');
+              });
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
             return EventFormPage(eventId: eventId);
           },
         ),
@@ -96,8 +105,17 @@ class AppRouter {
           name: 'eventDetails',
           redirect: _handleBarRegistrationGuard,
           builder: (context, state) {
-            final eventId = state.pathParameters['id'] ?? '';
-            return EventFormPage(eventId: eventId, readOnly: true);
+            final eventId = state.pathParameters['id'];
+            if (eventId == null) {
+              // Se não há ID, redireciona para lista de eventos
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                context.pushReplacementNamed('eventsList');
+              });
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return EventFormPage(eventId: eventId);
           },
         ),
 

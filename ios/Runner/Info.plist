@@ -85,5 +85,11 @@
 	<string>Bar Boss Mobile</string>
 	<key>GIDClientID</key>
 	<string>779191401505-nvntfl7i61ku97c38vr5aiv82j3tf828.apps.googleusercontent.com</string>
+
+	<!-- Permissões para câmera e galeria -->
+	<key>NSCameraUsageDescription</key>
+	<string>Este app precisa acessar a câmera para capturar fotos de promoções dos eventos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Este app precisa acessar a galeria de fotos para selecionar imagens de promoções dos eventos.</string>
 </dict>
 </plist>

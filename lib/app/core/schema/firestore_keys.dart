@@ -63,6 +63,10 @@ class FirestoreKeys {
   static const String eventCreatedByUid = 'createdByUid';
   static const String eventUpdatedByUid = 'updatedByUid';
   
+  // Event promotion fields
+  static const String eventPromoDetails = 'promoDetails';
+  static const String eventPromoImages = 'promoImages';
+  
   // CNPJ Registry document fields (/cnpj_registry/{cnpj})
   static const String cnpjRegistryBarId = 'barId';
   static const String cnpjRegistryReservedByUid = 'reservedByUid';

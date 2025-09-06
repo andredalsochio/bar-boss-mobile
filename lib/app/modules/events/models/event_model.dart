@@ -11,6 +11,8 @@ class EventModel {
   final String? description;
   final List<String>? attractions;
   final String? coverImageUrl;
+  final String? promoDetails;
+  final List<String>? promoImages;
   final bool published;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -26,6 +28,8 @@ class EventModel {
     this.description,
     this.attractions,
     this.coverImageUrl,
+    this.promoDetails,
+    this.promoImages,
     this.published = false,
     required this.createdAt,
     required this.updatedAt,
@@ -45,6 +49,8 @@ class EventModel {
       description: null,
       attractions: [],
       coverImageUrl: null,
+      promoDetails: null,
+      promoImages: [],
       published: false,
       createdAt: now,
       updatedAt: now,
@@ -68,6 +74,10 @@ class EventModel {
           ? List<String>.from(data[FirestoreKeys.eventAttractions])
           : null,
       coverImageUrl: data[FirestoreKeys.eventCoverImageUrl],
+      promoDetails: data[FirestoreKeys.eventPromoDetails],
+      promoImages: data[FirestoreKeys.eventPromoImages] != null
+          ? List<String>.from(data[FirestoreKeys.eventPromoImages])
+          : null,
       published: data[FirestoreKeys.eventPublished] ?? false,
       createdAt: _parseDateTime(data[FirestoreKeys.eventCreatedAt]),
       updatedAt: _parseDateTime(data[FirestoreKeys.eventUpdatedAt]),
@@ -99,6 +109,8 @@ class EventModel {
       'description': description,
       'attractions': attractions,
       'coverImageUrl': coverImageUrl,
+      'promoDetails': promoDetails,
+      'promoImages': promoImages,
       'published': published,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -117,6 +129,8 @@ class EventModel {
     String? description,
     List<String>? attractions,
     String? coverImageUrl,
+    String? promoDetails,
+    List<String>? promoImages,
     bool? published,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -132,6 +146,8 @@ class EventModel {
       description: description ?? this.description,
       attractions: attractions ?? this.attractions,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      promoDetails: promoDetails ?? this.promoDetails,
+      promoImages: promoImages ?? this.promoImages,
       published: published ?? this.published,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

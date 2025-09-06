@@ -1,293 +1,166 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
-import 'dart:io';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
+import '../../../core/widgets/button_widget.dart';
+import '../../../core/widgets/form_input_field_widget.dart';
+import '../models/event_model.dart';
+import '../viewmodels/events_viewmodel.dart';
 
-import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
-import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
-import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
-import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/complete_profile_bottom_sheet.dart';
-import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
-import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
-
-/// Tela de formulário de evento (criar/editar)
 class EventFormPage extends StatefulWidget {
+  final EventModel? event;
   final String? eventId;
-  final bool readOnly;
 
-  const EventFormPage({super.key, this.eventId, this.readOnly = false});
+  const EventFormPage({super.key, this.event, this.eventId});
 
   @override
   State<EventFormPage> createState() => _EventFormPageState();
 }
 
 class _EventFormPageState extends State<EventFormPage> {
-  late final EventsViewModel _viewModel;
-  final _formKey = GlobalKey<FormState>();
-  final _promotionDetailsController = TextEditingController();
-
-  bool _isLoading = true;
-  bool _isEditing = false;
+  late EventsViewModel _viewModel;
+  final TextEditingController _promoDetailsController = TextEditingController();
+  final TextEditingController _attractionController = TextEditingController();
+  
+  // Lista de controllers para as atrações
+  List<TextEditingController> _attractionControllers = [];
 
   @override
   void initState() {
     super.initState();
-    _viewModel = context.read<EventsViewModel>();
-    _isEditing = widget.eventId != null;
-
-    // Inicializa o formulário após o build inicial para evitar setState durante build
+    _viewModel = Provider.of<EventsViewModel>(context, listen: false);
+    
+    // Adiciona listener para atualizar o contador de caracteres
+    _promoDetailsController.addListener(() {
+      setState(() {});
+    });
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initForm();
+      _initializeForm();
     });
   }
 
-  Future<void> _initForm() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      if (_isEditing && widget.eventId != null) {
-        await _viewModel.loadEvent(widget.eventId!);
-        _promotionDetailsController.text = _viewModel.promotionDetails;
-      } else {
-        _viewModel.initNewEvent();
-        _promotionDetailsController.text = '';
-      }
-    } catch (e) {
-      debugPrint('Erro ao inicializar formulário: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+  void _initializeForm() async {
+    if (widget.event != null) {
+      await _viewModel.loadEvent(widget.event!.id);
+      // Atualiza o controller após carregar o evento
+      _promoDetailsController.text = _viewModel.promotionDetails;
+    } else if (widget.eventId != null) {
+      // Carrega evento pelo ID
+      await _viewModel.loadEventById(widget.eventId!);
+      // Atualiza o controller após carregar o evento
+      _promoDetailsController.text = _viewModel.promotionDetails;
+    } else {
+      _viewModel.initNewEvent();
     }
   }
 
   @override
   void dispose() {
-    _promotionDetailsController.dispose();
+    _promoDetailsController.dispose();
+    _attractionController.dispose();
+    
+    // Dispose de todos os controllers de atrações
+    for (final controller in _attractionControllers) {
+      controller.dispose();
+    }
+    _attractionControllers.clear();
+    
     super.dispose();
   }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime initialDate = _viewModel.eventDate ?? DateTime.now();
-    final BuildContext currentContext = context;
+  
+  /// Sincroniza os controllers com a lista de atrações do ViewModel
+  void _syncAttractionControllers() {
+    final attractions = _viewModel.attractions;
     
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary(context),
-                onPrimary: AppColors.white,
-                onSurface: AppColors.textPrimary(context),
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary(context),
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && mounted) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(initialDate),
-        builder: (builderContext, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
-                primary: AppColors.primary(context),
-                onPrimary: AppColors.white,
-                onSurface: AppColors.textPrimary(context),
-              ),
-              textButtonTheme: TextButtonThemeData(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary(context),
-                ),
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (pickedTime != null) {
-        final DateTime newDateTime = DateTime(
-          picked.year,
-          picked.month,
-          picked.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-
-        _viewModel.setEventDate(newDateTime);
-      }
+    // Remove controllers extras
+    while (_attractionControllers.length > attractions.length) {
+      _attractionControllers.removeLast().dispose();
     }
-  }
-
-  Future<void> _saveEvent() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    try {
-      await _viewModel.saveEvent();
-
-      if (!mounted) return;
-
-      // Verificar se houve erro no ViewModel
-      if (_viewModel.state == EventsState.error) {
-        return;
-      }
-
-      // Verificar se o perfil está incompleto após criar evento
-      if (!_isEditing && mounted) {
-        final homeViewModel = context.read<HomeViewModel>();
-        await homeViewModel.loadCurrentBar();
-        
-        if (!homeViewModel.isProfileComplete) {
-          await _showCompleteProfileBottomSheet(homeViewModel);
-        }
-      }
-
-      if (!mounted) return;
-      if (mounted) {
-        context.pop();
-      }
-    } catch (e) {
-      debugPrint('Erro ao salvar evento: $e');
-      
-      if (!mounted) return;
-      
-
+    
+    // Adiciona controllers faltantes
+    while (_attractionControllers.length < attractions.length) {
+      _attractionControllers.add(TextEditingController());
     }
-  }
-
-  Future<void> _showCompleteProfileBottomSheet(HomeViewModel homeViewModel) async {
-    CompleteProfileBottomSheet.show(
-      context,
-      completedSteps: homeViewModel.completedSteps,
-      totalSteps: homeViewModel.totalSteps,
-    );
-  }
-
-  Future<void> _deleteEvent() async {
-    if (!_isEditing) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppStrings.deleteEventConfirmationTitle),
-        content: Text(AppStrings.deleteEventConfirmationMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(AppStrings.cancelButton),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.error,
-            ),
-            child: Text(AppStrings.deleteButton),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await _viewModel.deleteEvent();
-
-      if (!mounted) return;
-
-      
-
-      if (!mounted) return;
-      if (mounted) {
-        context.pop();
+    
+    // Atualiza o texto dos controllers
+    for (int i = 0; i < attractions.length; i++) {
+      if (_attractionControllers[i].text != attractions[i]) {
+        _attractionControllers[i].text = attractions[i];
       }
-    } catch (e) {
-      debugPrint('Erro ao excluir evento: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background(context),
-      appBar: AppBarWidget(
-        title: _isEditing
-            ? AppStrings.editEventTitle
-            : AppStrings.newEventTitle,
-        showBackButton: true,
-        actions: _isEditing
-            ? [
-                IconButton(
-                  icon: Icon(
-                      Icons.delete,
-                      color: AppColors.error,
-                    ),
-                  onPressed: _deleteEvent,
-                  tooltip: AppStrings.deleteEventTooltip,
-                ),
-              ]
-            : null,
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: Text(
+          widget.event != null ? 'Editar Evento' : 'Novo Evento',
+          style: const TextStyle(
+            fontSize: AppSizes.fontSize18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(
+          color: AppColors.primary(context),
+        ),
       ),
       body: Consumer<EventsViewModel>(
-        builder: (context, viewModel, _) {
-          if (_isLoading) {
-            return const LoadingWidget();
+        builder: (context, viewModel, child) {
+          if (viewModel.state == EventsState.loading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
-          return LoadingOverlay(
-            isLoading: viewModel.isLoading,
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSizes.screenPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Data do evento
-                    _buildDateSection(context, viewModel),
-                    const SizedBox(height: AppSizes.spacingLarge),
-
-                    // Atrações
-                    _buildAttractionsSection(context, viewModel),
-                    const SizedBox(height: AppSizes.spacingLarge),
-
-                    // Promoções
-                    _buildPromotionsSection(context, viewModel),
-                    const SizedBox(height: AppSizes.spacingLarge),
-
-                    // Botão de salvar
-                    ButtonWidget(
-                      text: _isEditing
-                          ? AppStrings.saveChangesButton
-                          : AppStrings.createEventButton,
-                      onPressed: viewModel.isFormValid ? _saveEvent : null,
-                      isLoading: viewModel.isLoading,
-                    ),
-                  ],
-                ),
+          if (viewModel.state == EventsState.error) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    viewModel.errorMessage ?? 'Erro desconhecido',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  const SizedBox(height: AppSizes.spacing16),
+                  ButtonWidget(
+                    text: 'Tentar novamente',
+                    onPressed: _initializeForm,
+                  ),
+                ],
               ),
+            );
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSizes.spacing16),
+            child: Column(
+              children: [
+                // Card 1 - Data do Evento
+                _buildDateCard(viewModel),
+                const SizedBox(height: AppSizes.spacing16),
+                
+                // Card 2 - Atrações
+                _buildAttractionsCard(viewModel),
+                const SizedBox(height: AppSizes.spacing16),
+                
+                // Card 3 - Imagens de Promoção
+                _buildPromotionImagesCard(viewModel),
+                const SizedBox(height: AppSizes.spacing16),
+                
+                // Card 4 - Detalhes da Promoção
+                _buildPromotionDetailsCard(viewModel),
+                const SizedBox(height: AppSizes.spacing32),
+                
+                // Botões de ação
+                _buildActionButtons(viewModel),
+              ],
             ),
           );
         },
@@ -295,231 +168,131 @@ class _EventFormPageState extends State<EventFormPage> {
     );
   }
 
-  Widget _buildDateSection(BuildContext context, EventsViewModel viewModel) {
-    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    final formattedDate = viewModel.eventDate != null 
-        ? dateFormat.format(viewModel.eventDate!) 
-        : 'Selecione a data do evento';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppStrings.eventDateLabel,
-          style: TextStyle(
-              color: AppColors.textPrimary(context),
-              fontSize: AppSizes.fontSizeMedium,
-              fontWeight: FontWeight.bold,
-            ),
-        ),
-        const SizedBox(height: AppSizes.spacingSmall),
-        InkWell(
-          onTap: () => _selectDate(context),
-          borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.inputHorizontalPadding,
-              vertical: AppSizes.inputVerticalPadding,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.inputBackground(context),
-              borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-              border: Border.all(
-                color: viewModel.isDateValid ? AppColors.border(context) : AppColors.error,
-                width: AppSizes.borderWidth,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildDateCard(EventsViewModel viewModel) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacing16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  formattedDate,
-                  style: TextStyle(
-                    color: viewModel.eventDate != null 
-                        ? AppColors.textPrimary(context)
-            : AppColors.textSecondary(context),
-                    fontSize: AppSizes.fontSizeMedium,
-                  ),
-                ),
-                  Icon(
+                Icon(
                   Icons.calendar_today,
                   color: AppColors.primary(context),
-                  size: AppSizes.iconSizeSmall,
+                  size: AppSizes.iconSize24,
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                const Text(
+                  'Dia do evento',
+                  style: TextStyle(
+                    fontSize: AppSizes.fontSize16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
-          ),
-        ),
-        if (!viewModel.isDateValid)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSizes.spacingSmall),
-            child: Text(
-              AppStrings.invalidDateErrorMessage,
-              style: const TextStyle(
-                color: AppColors.error,
-                fontSize: AppSizes.fontSizeSmall,
+            const SizedBox(height: AppSizes.spacing16),
+            InkWell(
+              onTap: () => _selectDate(context, viewModel),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSizes.spacing16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.border(context)),
+                  borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.event,
+                      color: AppColors.primary(context),
+                    ),
+                    const SizedBox(width: AppSizes.spacing8),
+                    Text(
+                      viewModel.eventDate != null
+                          ? '${viewModel.eventDate!.day.toString().padLeft(2, '0')}/${viewModel.eventDate!.month.toString().padLeft(2, '0')}/${viewModel.eventDate!.year}'
+                          : 'Selecionar data',
+                      style: TextStyle(
+                        fontSize: AppSizes.fontSize16,
+                        color: viewModel.eventDate != null
+                             ? Colors.black
+                             : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildAttractionsSection(BuildContext context, EventsViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              AppStrings.attractionsLabel,
-              style: TextStyle(
-                color: AppColors.textPrimary(context),
-                fontSize: AppSizes.fontSizeMedium,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.add_circle,
-                color: AppColors.primary(context),
-              ),
-              onPressed: viewModel.addAttraction,
-              tooltip: AppStrings.addAttractionTooltip,
             ),
           ],
         ),
-        const SizedBox(height: AppSizes.spacingSmall),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: viewModel.attractions.length,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSizes.spacingSmall),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      initialValue: viewModel.attractions[index],
-                      decoration: InputDecoration(
-                        hintText: AppStrings.attractionHint,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-                          borderSide: BorderSide(
-                            color: AppColors.border(context),
-                            width: AppSizes.borderWidth,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: AppColors.inputBackground(context),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.inputHorizontalPadding,
-                          vertical: AppSizes.inputVerticalPadding,
-                        ),
-                      ),
-                      onChanged: (value) => viewModel.updateAttraction(index, value),
-                    ),
+      ),
+    );
+  }
+
+  Widget _buildAttractionsCard(EventsViewModel viewModel) {
+    // Sincroniza os controllers com as atrações do ViewModel
+    _syncAttractionControllers();
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacing16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.music_note,
+                  color: AppColors.primary(context),
+                  size: AppSizes.iconSize24,
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                const Text(
+                  'Atrações',
+                  style: TextStyle(
+                    fontSize: AppSizes.fontSize16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  if (viewModel.attractions.length > 1)
-                    IconButton(
-                      icon: Icon(
-                        Icons.remove_circle,
-                        color: AppColors.error,
-                      ),
-                      onPressed: () => viewModel.removeAttraction(index),
-                      tooltip: AppStrings.removeAttractionTooltip,
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-        if (!viewModel.areAttractionsValid)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSizes.spacingSmall),
-            child: Text(
-              AppStrings.invalidAttractionsErrorMessage,
-              style: const TextStyle(
-                color: AppColors.error,
-                fontSize: AppSizes.fontSizeSmall,
-              ),
+                ),
+              ],
             ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildPromotionsSection(BuildContext context, EventsViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppStrings.promotionsLabel,
-          style: TextStyle(
-            color: AppColors.textPrimary(context),
-            fontSize: AppSizes.fontSizeMedium,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: AppSizes.spacingSmall),
-        // Seção de imagens
-        _buildImageSection(viewModel),
-        const SizedBox(height: AppSizes.spacingMedium),
-        // Detalhes da promoção
-        FormInputFieldWidget(
-          label: AppStrings.promotionDetailsLabel,
-          hint: AppStrings.promotionDetailsHint,
-          controller: _promotionDetailsController,
-          maxLines: 3,
-          onChanged: viewModel.setPromotionDetails,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImageSection(EventsViewModel viewModel) {
-    return Column(
-      children: [
-        // Grid de imagens selecionadas
-        if (viewModel.promotionImages.isNotEmpty)
-          Container(
-            height: 120,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: viewModel.promotionImages.length,
+            const SizedBox(height: AppSizes.spacing8),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: viewModel.attractions.length,
               itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: Stack(
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSizes.spacing8),
+                  child: Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          viewModel.promotionImages[index],
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
+                      Expanded(
+                        child: FormInputFieldWidget(
+                          label: 'Atração ${index + 1}',
+                          hint: 'Nome da atração',
+                          controller: _attractionControllers[index],
+                          onChanged: (value) {
+                            viewModel.updateAttraction(index, value);
+                          },
                         ),
                       ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () => viewModel.removePromotionImage(index),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.error,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              color: AppColors.white,
-                              size: 16,
-                            ),
-                          ),
+                      const SizedBox(width: AppSizes.spacing8),
+                      IconButton(
+                        onPressed: () {
+                          viewModel.removeAttraction(index);
+                        },
+                        icon: const Icon(
+                          Icons.remove_circle,
+                          color: Colors.red,
                         ),
                       ),
                     ],
@@ -527,78 +300,361 @@ class _EventFormPageState extends State<EventFormPage> {
                 );
               },
             ),
-          ),
-        
-        const SizedBox(height: 12),
-        
-        // Botões para adicionar imagens
-        if (viewModel.promotionImages.length < 3)
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => viewModel.addPromotionImageFromGallery(),
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('Galeria'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary(context),
-                    side: BorderSide(color: AppColors.primary(context)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => viewModel.addPromotionImageFromCamera(),
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Câmera'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary(context),
-                    side: BorderSide(color: AppColors.primary(context)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        
-        // Placeholder quando não há imagens
-        if (viewModel.promotionImages.isEmpty)
-          Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.inputBackground(context),
-              borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-              border: Border.all(
-                color: AppColors.border(context),
-                width: AppSizes.borderWidth,
-              ),
+            const SizedBox(height: AppSizes.spacing8),
+            ButtonWidget(
+              text: 'Adicionar atração',
+              onPressed: () {
+                viewModel.addAttraction();
+              },
+              isOutlined: true,
+              isFullWidth: true,
             ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate,
-                    size: 32,
-                    color: AppColors.textSecondary(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromotionImagesCard(EventsViewModel viewModel) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacing16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.image,
+                  color: AppColors.primary(context),
+                  size: AppSizes.iconSize24,
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                const Text(
+                  'Imagens de promoção',
+                  style: TextStyle(
+                    fontSize: AppSizes.fontSize16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    AppStrings.promotionImagesPlaceholder,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSizes.spacing16),
+            // Exibe imagens existentes e novas imagens
+            if (viewModel.existingPromotionImages.isNotEmpty || viewModel.promotionImages.isNotEmpty)
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: viewModel.existingPromotionImages.length + viewModel.promotionImages.length,
+                  itemBuilder: (context, index) {
+                    final isExistingImage = index < viewModel.existingPromotionImages.length;
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(right: AppSizes.spacing8),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
+                            child: isExistingImage
+                                ? Image.network(
+                                    viewModel.existingPromotionImages[index],
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        width: 100,
+                                        height: 100,
+                                        color: Colors.grey[300],
+                                        child: const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 100,
+                                        height: 100,
+                                        color: Colors.grey[300],
+                                        child: const Icon(Icons.error),
+                                      );
+                                    },
+                                  )
+                                : Image.file(
+                                    viewModel.promotionImages[index - viewModel.existingPromotionImages.length],
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () {
+                                if (isExistingImage) {
+                                  viewModel.removeExistingPromotionImage(index);
+                                } else {
+                                  viewModel.removePromotionImage(index - viewModel.existingPromotionImages.length);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: AppSizes.spacing16),
+            Row(
+              children: [
+                Expanded(
+                  child: ButtonWidget(
+                    text: 'Câmera',
+                    onPressed: () {
+                      viewModel.addPromotionImageFromCamera();
+                    },
+                    isOutlined: true,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                Expanded(
+                  child: ButtonWidget(
+                    text: 'Galeria',
+                    onPressed: () {
+                      viewModel.addPromotionImageFromGallery();
+                    },
+                    isOutlined: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromotionDetailsCard(EventsViewModel viewModel) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSizes.spacing16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.description,
+                  color: AppColors.primary(context),
+                  size: AppSizes.iconSize24,
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                const Text(
+                  'Detalhes da promoção',
+                  style: TextStyle(
+                    fontSize: AppSizes.fontSize16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSizes.spacing16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FormInputFieldWidget(
+                  label: 'Detalhes da promoção',
+                  hint: 'Descreva os detalhes da promoção...',
+                  controller: _promoDetailsController,
+                  maxLines: 3,
+                  maxLength: 100,
+                  onChanged: (value) {
+                    viewModel.setPromotionDetails(value);
+                  },
+                ),
+                const SizedBox(height: AppSizes.spacing4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${_promoDetailsController.text.length}/100',
                     style: TextStyle(
-                      fontSize: AppSizes.fontSizeSmall,
-                      color: AppColors.textSecondary(context),
+                      fontSize: AppSizes.fontSize12,
+                      color: _promoDetailsController.text.length > 100 
+                          ? Colors.red 
+                          : AppColors.textSecondary(context),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(EventsViewModel viewModel) {
+    return Column(
+      children: [
+        ButtonWidget(
+          text: widget.event != null ? 'Salvar alterações' : 'Criar evento',
+          onPressed: viewModel.isLoading ? null : () async {
+            await viewModel.saveEvent();
+            if (mounted && viewModel.state == EventsState.success) {
+              Navigator.of(context).pop();
+            }
+          },
+          isLoading: viewModel.isLoading,
+          isFullWidth: true,
+        ),
+        if (widget.event != null) ...[
+          const SizedBox(height: AppSizes.spacing16),
+          ButtonWidget(
+            text: 'Excluir evento',
+            onPressed: viewModel.isLoading ? null : () async {
+              final confirmed = await _showDeleteConfirmation();
+              if (confirmed == true) {
+                await viewModel.deleteEvent();
+                if (mounted && viewModel.state == EventsState.success) {
+                  Navigator.of(context).pop();
+                }
+              }
+            },
+            isOutlined: true,
+            isFullWidth: true,
+            textColor: Colors.red,
           ),
+        ],
       ],
     );
   }
 
+  Future<void> _selectDate(BuildContext context, EventsViewModel viewModel) async {
+    final DateTime? picked;
+    
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      // Cupertino date picker para iOS
+      picked = await showCupertinoModalPopup<DateTime>(
+        context: context,
+        builder: (BuildContext context) {
+          DateTime tempDate = viewModel.eventDate ?? DateTime.now();
+          return Container(
+            height: 300,
+            color: CupertinoColors.systemBackground.resolveFrom(context),
+            child: Column(
+              children: [
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemBackground.resolveFrom(context),
+                    border: const Border(
+                      bottom: BorderSide(
+                        color: CupertinoColors.separator,
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CupertinoButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cancelar'),
+                      ),
+                      CupertinoButton(
+                        onPressed: () => Navigator.of(context).pop(tempDate),
+                        child: const Text('Confirmar'),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.date,
+                    initialDateTime: tempDate,
+                    minimumDate: DateTime.now(),
+                    maximumDate: DateTime.now().add(const Duration(days: 365)),
+                    onDateTimeChanged: (DateTime date) {
+                      tempDate = date;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } else {
+      // Material date picker para Android
+      picked = await showDatePicker(
+        context: context,
+        initialDate: viewModel.eventDate ?? DateTime.now(),
+        firstDate: DateTime.now(),
+        lastDate: DateTime.now().add(const Duration(days: 365)),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: AppColors.primary(context),
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+    }
+    
+    if (picked != null) {
+      viewModel.setEventDate(picked);
+    }
+  }
 
+  Future<bool?> _showDeleteConfirmation() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar exclusão'),
+          content: const Text('Tem certeza que deseja excluir este evento?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'Excluir',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
-// Remover imports não utilizados se necessário, baseado na análise.

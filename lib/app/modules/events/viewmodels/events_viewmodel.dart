@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/event_repository_domain.dart';
@@ -69,8 +71,11 @@ class EventsViewModel extends ChangeNotifier {
   /// Lista de atrações
   List<String> get attractions => _attractions;
 
-  /// Lista de imagens de promoção
+  /// Lista de imagens de promoção (novas imagens locais)
   List<File> get promotionImages => _promotionImages;
+
+  /// Lista de URLs das imagens existentes do evento
+  List<String> get existingPromotionImages => _currentEvent?.promoImages ?? [];
 
   /// Detalhes da promoção
   String get promotionDetails => _promotionDetails;
@@ -210,7 +215,13 @@ class EventsViewModel extends ChangeNotifier {
       _currentEvent = event;
       _eventDate = event.startAt;
       _attractions = List<String>.from(event.attractions ?? []);
-      _promotionDetails = event.description ?? '';
+      _promotionDetails = event.promoDetails ?? '';
+      
+      // Limpa as imagens locais pois estamos carregando um evento existente
+      // As imagens existentes estão nas URLs do evento (promoImages)
+      _promotionImages = [];
+      
+      debugPrint('✅ DEBUG loadEvent: Evento carregado - Data: ${event.startAt}, Atrações: ${event.attractions?.length ?? 0}, Imagens: ${event.promoImages?.length ?? 0}, Detalhes: ${event.promoDetails?.isNotEmpty == true ? "Sim" : "Não"}');
 
       _validateDate();
       _validateAttractions();
@@ -222,6 +233,11 @@ class EventsViewModel extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// Carrega um evento pelo ID (alias para loadEvent)
+  Future<void> loadEventById(String eventId) async {
+    await loadEvent(eventId);
   }
 
   /// Define a data do evento
@@ -250,7 +266,7 @@ class EventsViewModel extends ChangeNotifier {
   /// Atualiza uma atração pelo índice
   void updateAttraction(int index, String value) {
     if (index >= 0 && index < _attractions.length) {
-      _attractions[index] = value.trim();
+      _attractions[index] = value;
       _validateAttractions();
       notifyListeners();
     }
@@ -298,10 +314,20 @@ class EventsViewModel extends ChangeNotifier {
     }
   }
 
-  /// Remove uma imagem de promoção pelo índice
+  /// Remove uma imagem de promoção pelo índice (novas imagens)
   void removePromotionImage(int index) {
     if (index >= 0 && index < _promotionImages.length) {
       _promotionImages.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  /// Remove uma imagem existente do evento pelo índice
+  void removeExistingPromotionImage(int index) {
+    if (_currentEvent != null && index >= 0 && index < (_currentEvent!.promoImages?.length ?? 0)) {
+      final updatedImages = List<String>.from(_currentEvent!.promoImages ?? []);
+      updatedImages.removeAt(index);
+      _currentEvent = _currentEvent!.copyWith(promoImages: updatedImages.isEmpty ? null : updatedImages);
       notifyListeners();
     }
   }
@@ -312,12 +338,68 @@ class EventsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Faz upload de uma imagem para o Firebase Storage
+  Future<String?> _uploadImageToStorage(File imageFile, String eventId) async {
+    try {
+      // Verifica se o Firebase Storage está disponível
+      final storage = FirebaseStorage.instance;
+      
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
+      final storageRef = storage
+          .ref()
+          .child('events')
+          .child(eventId)
+          .child('images')
+          .child(fileName);
+      
+      debugPrint('📸 [EventsViewModel] Iniciando upload da imagem: $fileName');
+      
+      final uploadTask = storageRef.putFile(imageFile);
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      debugPrint('✅ [EventsViewModel] Imagem enviada com sucesso: $downloadUrl');
+      return downloadUrl;
+    } on FirebaseException catch (e) {
+      debugPrint('❌ [EventsViewModel] Erro do Firebase ao enviar imagem: ${e.code} - ${e.message}');
+      if (e.code == 'storage/object-not-found') {
+        debugPrint('💡 [EventsViewModel] Firebase Storage pode não estar configurado');
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ [EventsViewModel] Erro geral ao enviar imagem: $e');
+      return null;
+    }
+  }
 
+  /// Faz upload de todas as imagens de promoção
+  Future<List<String>> _uploadPromotionImages(String eventId) async {
+    final uploadedUrls = <String>[];
+    
+    for (final imageFile in _promotionImages) {
+      final url = await _uploadImageToStorage(imageFile, eventId);
+      if (url != null) {
+        uploadedUrls.add(url);
+      }
+    }
+    
+    debugPrint('📸 [EventsViewModel] ${uploadedUrls.length}/${_promotionImages.length} imagens enviadas');
+    return uploadedUrls;
+  }
 
   /// Valida a data do evento
   void _validateDate() {
-    // A data deve ser no futuro e não pode ser null
-    _isDateValid = _eventDate != null && _eventDate!.isAfter(DateTime.now());
+    // A data deve ser hoje ou no futuro e não pode ser null
+    if (_eventDate == null) {
+      _isDateValid = false;
+      return;
+    }
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final eventDay = DateTime(_eventDate!.year, _eventDate!.month, _eventDate!.day);
+    
+    _isDateValid = eventDay.isAtSameMomentAs(today) || eventDay.isAfter(today);
   }
 
   /// Valida as atrações
@@ -367,6 +449,9 @@ class EventsViewModel extends ChangeNotifier {
           _attractions.where((a) => a.trim().isNotEmpty).toList();
       debugPrint('💾 [EventsViewModel] Atrações filtradas: ${filteredAttractions.length} itens');
 
+      String eventId;
+      List<String> uploadedImageUrls = [];
+
       if (_currentEvent == null) {
         // Cria um novo evento
         debugPrint('➕ [EventsViewModel] Criando novo evento...');
@@ -388,21 +473,63 @@ class EventsViewModel extends ChangeNotifier {
         );
         debugPrint('➕ [EventsViewModel] Dados do novo evento: data=$eventStartDate, atrações=${filteredAttractions.length}');
 
-        await _eventRepository.create(bar.id, newEvent);
-        debugPrint('✅ [EventsViewModel] Novo evento criado com sucesso!');
+        eventId = await _eventRepository.create(bar.id, newEvent);
+        debugPrint('✅ [EventsViewModel] Novo evento criado com sucesso! ID: $eventId');
+        
+        // Faz upload das imagens se houver
+        if (_promotionImages.isNotEmpty) {
+          debugPrint('📸 [EventsViewModel] Fazendo upload de ${_promotionImages.length} imagens...');
+          try {
+            uploadedImageUrls = await _uploadPromotionImages(eventId);
+            
+            // Atualiza o evento com as URLs das imagens
+            if (uploadedImageUrls.isNotEmpty) {
+              final eventWithImages = newEvent.copyWith(
+                id: eventId,
+                promoImages: uploadedImageUrls,
+                promoDetails: _promotionDetails,
+              );
+              await _eventRepository.update(bar.id, eventWithImages);
+              debugPrint('✅ [EventsViewModel] Evento atualizado com imagens!');
+            } else {
+              debugPrint('⚠️ [EventsViewModel] Nenhuma imagem foi enviada com sucesso, mas evento foi criado');
+            }
+          } catch (e) {
+            debugPrint('⚠️ [EventsViewModel] Erro no upload de imagens, mas evento foi criado: $e');
+          }
+        }
       } else {
         // Atualiza o evento existente
         debugPrint('📝 [EventsViewModel] Atualizando evento existente: ${_currentEvent!.id}');
+        eventId = _currentEvent!.id;
         final eventStartDate = _eventDate ?? _currentEvent!.startAt;
+        
+        // Faz upload das novas imagens se houver
+        if (_promotionImages.isNotEmpty) {
+          debugPrint('📸 [EventsViewModel] Fazendo upload de ${_promotionImages.length} imagens...');
+          try {
+            uploadedImageUrls = await _uploadPromotionImages(eventId);
+          } catch (e) {
+            debugPrint('⚠️ [EventsViewModel] Erro no upload de imagens durante atualização: $e');
+            uploadedImageUrls = []; // Continua sem as novas imagens
+          }
+        }
+        
+        // Combina URLs existentes com as novas
+        final existingImages = _currentEvent!.promoImages ?? [];
+        final allImageUrls = [...existingImages, ...uploadedImageUrls];
+        
         final updatedEvent = _currentEvent!.copyWith(
           startAt: eventStartDate,
           endAt: eventStartDate.add(const Duration(hours: 4)),
           attractions: filteredAttractions,
           description: _promotionDetails.isNotEmpty ? _promotionDetails : _currentEvent!.description,
+          promoImages: allImageUrls.isNotEmpty ? allImageUrls : null,
+          promoDetails: _promotionDetails.isNotEmpty ? _promotionDetails : _currentEvent!.promoDetails,
           updatedByUid: currentUser.uid,
           updatedAt: DateTime.now(), // será sobrescrito pelo repositório
         );
-        debugPrint('📝 [EventsViewModel] Dados atualizados: data=$eventStartDate, atrações=${filteredAttractions.length}');
+        debugPrint('📝 [EventsViewModel] Dados atualizados: data=$eventStartDate, atrações=${filteredAttractions.length}, imagens=${allImageUrls.length}');
 
         await _eventRepository.update(bar.id, updatedEvent);
         debugPrint('✅ [EventsViewModel] Evento atualizado com sucesso!');

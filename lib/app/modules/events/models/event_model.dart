@@ -101,21 +101,20 @@ class EventModel {
   /// Converte o modelo para um mapa
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'barId': barId,
-      'title': title,
-      'startAt': startAt.toIso8601String(),
-      'endAt': endAt?.toIso8601String(),
-      'description': description,
-      'attractions': attractions,
-      'coverImageUrl': coverImageUrl,
-      'promoDetails': promoDetails,
-      'promoImages': promoImages,
-      'published': published,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-      'createdByUid': createdByUid,
-      'updatedByUid': updatedByUid,
+      FirestoreKeys.eventBarId: barId,
+      FirestoreKeys.eventTitle: title,
+      FirestoreKeys.eventStartAt: startAt.toIso8601String(),
+      FirestoreKeys.eventEndAt: endAt?.toIso8601String(),
+      FirestoreKeys.eventDescription: description,
+      FirestoreKeys.eventAttractions: attractions,
+      FirestoreKeys.eventCoverImageUrl: coverImageUrl,
+      FirestoreKeys.eventPromoDetails: promoDetails,
+      FirestoreKeys.eventPromoImages: promoImages,
+      FirestoreKeys.eventPublished: published,
+      FirestoreKeys.eventCreatedAt: createdAt.toIso8601String(),
+      FirestoreKeys.eventUpdatedAt: updatedAt.toIso8601String(),
+      FirestoreKeys.eventCreatedByUid: createdByUid,
+      FirestoreKeys.eventUpdatedByUid: updatedByUid,
     };
   }
   

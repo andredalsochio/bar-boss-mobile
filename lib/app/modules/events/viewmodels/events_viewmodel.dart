@@ -223,6 +223,8 @@ class EventsViewModel extends ChangeNotifier {
       _promotionImages = [];
       
       debugPrint('✅ DEBUG loadEvent: Evento carregado - Data: ${event.startAt}, Atrações: ${event.attractions?.length ?? 0}, Imagens: ${event.promoImages?.length ?? 0}, Detalhes: ${event.promoDetails?.isNotEmpty == true ? "Sim" : "Não"}');
+      debugPrint('🖼️ DEBUG loadEvent: URLs das imagens: ${event.promoImages}');
+      debugPrint('🖼️ DEBUG loadEvent: existingPromotionImages getter: ${existingPromotionImages}');
 
       _validateDate();
       _validateAttractions();

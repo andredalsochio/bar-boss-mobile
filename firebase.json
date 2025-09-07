@@ -14,7 +14,8 @@
     "indexes": "firestore.indexes.json"
   },
   "storage": {
-    "rules": "storage.rules"
+    "rules": "storage.rules",
+    "bucket": "bar-boss-mobile.appspot.com"
   },
   "emulators": {
     "firestore": {

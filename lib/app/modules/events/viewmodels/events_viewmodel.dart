@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
@@ -343,6 +344,14 @@ class EventsViewModel extends ChangeNotifier {
     try {
       // Verifica se o Firebase Storage está disponível
       final storage = FirebaseStorage.instance;
+      
+      // Debug: Verifica se o usuário está autenticado
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        debugPrint('❌ [EventsViewModel] Usuário não autenticado para upload');
+        return null;
+      }
+      debugPrint('✅ [EventsViewModel] Usuário autenticado: ${user.uid}');
       
       final fileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
       final storageRef = storage

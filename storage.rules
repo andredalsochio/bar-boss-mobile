@@ -4,7 +4,7 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // Allow authenticated users to read and write their own event images
-    match /events/{eventId}/images/{imageId} {
+    match /events/{eventId}/images/{fileName} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
                    && request.auth.uid != null

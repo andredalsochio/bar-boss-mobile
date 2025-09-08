@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/cache/cache_interfaces.dart';
-import '../../data/cache/services/image_cache_service_impl.dart';
 
 /// Widget para exibir imagens com cache automático
 class CachedImageWidget extends StatefulWidget {

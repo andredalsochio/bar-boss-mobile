@@ -25,7 +25,7 @@ class FormInputFieldWidget extends StatelessWidget {
   final bool readOnly;
   
   const FormInputFieldWidget({
-    Key? key,
+    super.key,
     required this.label,
     this.hint,
     this.initialValue,
@@ -44,7 +44,7 @@ class FormInputFieldWidget extends StatelessWidget {
     this.textInputAction,
     this.onTap,
     this.readOnly = false,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

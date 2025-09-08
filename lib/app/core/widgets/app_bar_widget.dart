@@ -17,7 +17,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final PreferredSizeWidget? bottom;
   
   const AppBarWidget({
-    Key? key,
+    super.key,
     required this.title,
     this.actions,
     this.showBackButton = true,
@@ -28,7 +28,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     this.titleColor,
     this.elevation = 0,
     this.bottom,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

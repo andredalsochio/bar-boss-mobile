@@ -9,11 +9,11 @@ class ErrorMessageWidget extends StatelessWidget {
   final VoidCallback? onRetry;
   
   const ErrorMessageWidget({
-    Key? key,
+    super.key,
     required this.message,
     this.showIcon = true,
     this.onRetry,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
@@ -77,9 +77,9 @@ class FormFieldErrorWidget extends StatelessWidget {
   final String? errorText;
   
   const FormFieldErrorWidget({
-    Key? key,
+    super.key,
     required this.errorText,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

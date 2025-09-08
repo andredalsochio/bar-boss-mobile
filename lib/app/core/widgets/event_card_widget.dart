@@ -15,14 +15,14 @@ class EventCardWidget extends StatelessWidget {
   final bool showActions;
   
   const EventCardWidget({
-    Key? key,
+    super.key,
     required this.event,
     this.onViewDetails,
     this.onEdit,
 
     this.onTap,
     this.showActions = true,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

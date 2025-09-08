@@ -16,7 +16,7 @@ class ButtonWidget extends StatelessWidget {
   final IconData? icon;
   
   const ButtonWidget({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.isLoading = false,
@@ -27,7 +27,7 @@ class ButtonWidget extends StatelessWidget {
     this.height,
     this.width,
     this.icon,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

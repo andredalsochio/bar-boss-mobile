@@ -12,12 +12,12 @@ class ErrorDisplayWidget extends StatelessWidget {
   final IconData icon;
   
   const ErrorDisplayWidget({
-    Key? key,
+    super.key,
     this.message,
     this.onRetry,
     this.isFullScreen = false,
     this.icon = Icons.error_outline,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
@@ -88,12 +88,12 @@ class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
   
   const EmptyStateWidget({
-    Key? key,
+    super.key,
     this.message,
     this.onAction,
     this.actionLabel,
     this.icon = Icons.inbox_outlined,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

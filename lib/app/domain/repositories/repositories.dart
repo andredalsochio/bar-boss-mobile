@@ -3,3 +3,6 @@ export 'auth_repository.dart';
 export 'user_repository.dart';
 export 'bar_repository_domain.dart';
 export 'event_repository_domain.dart';
+
+// Exporta interfaces de cache
+export '../cache/cache_interfaces.dart';

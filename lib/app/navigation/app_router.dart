@@ -185,7 +185,7 @@ class AppRouter {
     return null;
   }
 
-  /// Guard para verificar completude do perfil conforme PROJECT_RULES.md
+  /// Guard para verificar completude do perfil conforme BUSINESS_RULES.md
   /// Não bloqueia navegação, apenas exibe banner na Home
   static String? _handleProfileCompletenessGuard(
     BuildContext context,

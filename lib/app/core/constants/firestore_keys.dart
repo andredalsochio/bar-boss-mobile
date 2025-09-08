@@ -84,26 +84,26 @@ class FirestoreKeys {
   static const String statusPending = 'pending';
   
   // Backward compatibility aliases (deprecated - will be removed)
-  @deprecated
+  @Deprecated('Use id from BarKeys instead')
   static const String barId = 'id';
-  @deprecated
+  @Deprecated('Use email from BarKeys instead')
   static const String barEmail = 'email';
-  @deprecated
+  @Deprecated('Use phone from BarKeys instead')
   static const String barPhone = 'phone';
-  @deprecated
+  @Deprecated('Use cep from BarKeys instead')
   static const String barCep = 'cep';
-  @deprecated
+  @Deprecated('Use street from BarKeys instead')
   static const String barStreet = 'street';
-  @deprecated
+  @Deprecated('Use number from BarKeys instead')
   static const String barNumber = 'number';
-  @deprecated
+  @Deprecated('Use complement from BarKeys instead')
   static const String barComplement = 'complement';
-  @deprecated
+  @Deprecated('Use state from BarKeys instead')
   static const String barState = 'state';
-  @deprecated
+  @Deprecated('Use city from BarKeys instead')
   static const String barCity = 'city';
-  @deprecated
+  @Deprecated('Use date from EventKeys instead')
   static const String eventDate = 'date';
-  @deprecated
+  @Deprecated('Use eventAttractions instead')
   static const String attractions = eventAttractions;
 }

@@ -128,7 +128,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.shade200.withOpacity(0.3),
+                                color: Colors.blue.shade200.withValues(alpha: 0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),

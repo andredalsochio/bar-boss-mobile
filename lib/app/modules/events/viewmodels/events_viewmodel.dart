@@ -3,7 +3,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/event_repository_domain.dart';
@@ -224,7 +223,7 @@ class EventsViewModel extends ChangeNotifier {
       
       debugPrint('✅ DEBUG loadEvent: Evento carregado - Data: ${event.startAt}, Atrações: ${event.attractions?.length ?? 0}, Imagens: ${event.promoImages?.length ?? 0}, Detalhes: ${event.promoDetails?.isNotEmpty == true ? "Sim" : "Não"}');
       debugPrint('🖼️ DEBUG loadEvent: URLs das imagens: ${event.promoImages}');
-      debugPrint('🖼️ DEBUG loadEvent: existingPromotionImages getter: ${existingPromotionImages}');
+      debugPrint('🖼️ DEBUG loadEvent: existingPromotionImages getter: $existingPromotionImages');
 
       _validateDate();
       _validateAttractions();

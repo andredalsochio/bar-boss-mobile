@@ -25,7 +25,7 @@ class _EventFormPageState extends State<EventFormPage> {
   final TextEditingController _attractionController = TextEditingController();
   
   // Lista de controllers para as atrações
-  List<TextEditingController> _attractionControllers = [];
+  final List<TextEditingController> _attractionControllers = [];
 
   @override
   void initState() {

@@ -132,7 +132,6 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     });
   }
 
-  @override
   Future<List<BarModel>> getUserBars(String uid) async {
     debugPrint('👥 [FirebaseBarRepository] Buscando bares do usuário: $uid');
     try {
@@ -199,7 +198,6 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     }
   }
 
-  @override
   Future<BarModel?> getById(String barId) async {
     debugPrint('🔍 [FirebaseBarRepository] Buscando bar por ID: $barId');
     try {
@@ -268,7 +266,6 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     );
   }
 
-  @override
   Future<void> removeMember(String barId, String uid) async {
     debugPrint('🗑️ [FirebaseBarRepository] Removendo membro: uid=$uid, barId=$barId');
     try {

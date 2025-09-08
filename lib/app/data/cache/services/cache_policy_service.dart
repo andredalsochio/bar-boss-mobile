@@ -237,7 +237,7 @@ class CachePolicyService {
       _lastCleanup = DateTime.now();
       
       // 1. Remove entradas expiradas
-      final expiredCount = await invalidateExpired();
+      await invalidateExpired();
       
       // 2. Verifica se precisa aplicar política de substituição
       final stats = await getCacheStats();

@@ -72,7 +72,6 @@ class CachedBars extends Table {
   IntColumn get version => integer().withDefault(const Constant(1))();
   TextColumn get etag => text().nullable()();
 
-  @override
   Set<Column> get primaryKey => {id};
 
   @override
@@ -162,7 +161,6 @@ class SyncQueue extends Table {
   @override
   Set<Column> get primaryKey => {id};
 
-  @override
   List<Index> get indexes => [
     Index('idx_sync_queue_entity', entityType.name),
     Index('idx_sync_queue_next_attempt', nextAttemptAt.name),
@@ -183,7 +181,6 @@ class CachedData extends Table {
   @override
   Set<Column> get primaryKey => {key};
 
-  @override
   List<Index> get indexes => [
     Index('idx_cached_data_last_updated', lastUpdated.name),
     Index('idx_cached_data_expires_at', expiresAt.name),

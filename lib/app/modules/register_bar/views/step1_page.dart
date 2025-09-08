@@ -11,7 +11,7 @@ import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/error_message_widget.dart';
+
 import 'package:bar_boss_mobile/app/core/widgets/step_progress_widget.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';

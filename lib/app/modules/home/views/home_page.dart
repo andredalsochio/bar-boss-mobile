@@ -62,9 +62,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _loadUpcomingEvents() async {
-    await _eventsViewModel.loadUpcomingEvents();
-  }
 
   void _showNoBarModal(BuildContext context) {
     showDialog(

@@ -199,26 +199,11 @@ class Validators {
     return null;
   }
   
-  /// Validação assíncrona de email (formato + unicidade via Firebase Auth)
+  /// Validação de email (apenas formato)
+  /// Nota: Verificação de unicidade foi removida seguindo as recomendações de segurança do Firebase
   static Future<String?> emailWithUniqueness(String? value) async {
-    // Primeiro valida o formato
-    final formatError = email(value);
-    if (formatError != null) {
-      return formatError;
-    }
-    
-    try {
-      // Verifica se o email já está em uso
-      final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(value!);
-      if (methods.isNotEmpty) {
-        return AppStrings.emailInUseErrorMessage;
-      }
-      
-      return null;
-    } catch (e) {
-      // Em caso de erro na verificação, permite continuar
-      return null;
-    }
+    // Valida apenas o formato do email
+    return email(value);
   }
   
   /// Validação assíncrona de CNPJ (formato + unicidade via Firestore)

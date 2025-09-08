@@ -9,9 +9,9 @@ import 'package:bar_boss_mobile/app/data/firebase/firebase_repositories.dart';
 
 // Legacy services and repositories (for backward compatibility)
 import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
-import 'package:bar_boss_mobile/app/modules/auth/repositories/user_repository.dart' as AuthUserRepo;
-import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart' as LegacyBarRepo;
-import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository.dart' as LegacyEventRepo;
+import 'package:bar_boss_mobile/app/modules/auth/repositories/user_repository.dart' as auth_user_repo;
+import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart' as legacy_bar_repo;
+import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository.dart' as legacy_event_repo;
 
 // ViewModels
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
@@ -46,14 +46,14 @@ class DependencyInjection {
     Provider<AuthService>(
       create: (_) => AuthService(),
     ),
-    Provider<AuthUserRepo.UserRepository>(
-      create: (_) => AuthUserRepo.UserRepository(),
+    Provider<auth_user_repo.UserRepository>(
+      create: (_) => auth_user_repo.UserRepository(),
     ),
-    Provider<LegacyBarRepo.BarRepository>(
-      create: (_) => LegacyBarRepo.BarRepository(),
+    Provider<legacy_bar_repo.BarRepository>(
+      create: (_) => legacy_bar_repo.BarRepository(),
     ),
-    Provider<LegacyEventRepo.EventRepository>(
-      create: (_) => LegacyEventRepo.EventRepository(),
+    Provider<legacy_event_repo.EventRepository>(
+      create: (_) => legacy_event_repo.EventRepository(),
     ),
     
     // ViewModels usando interfaces de domínio
@@ -89,7 +89,7 @@ class DependencyInjection {
     ),
     ChangeNotifierProvider<BarProfileViewModel>(
       create: (context) => BarProfileViewModel(
-        barRepository: context.read<LegacyBarRepo.BarRepository>(),
+        barRepository: context.read<legacy_bar_repo.BarRepository>(),
         authViewModel: context.read<AuthViewModel>(),
       ),
     ),

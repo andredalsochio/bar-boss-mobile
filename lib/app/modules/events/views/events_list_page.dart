@@ -62,6 +62,11 @@ class _EventsListPageState extends State<EventsListPage> {
   }
 
   void _goToNewEvent() {
+    debugPrint('🎯 DEBUG EventsList: _goToNewEvent chamado');
+    debugPrint('🎯 DEBUG EventsList: _homeViewModel.hasBar = ${_homeViewModel.hasBar}');
+    debugPrint('🎯 DEBUG EventsList: _homeViewModel.userBars.length = ${_homeViewModel.userBars.length}');
+    debugPrint('🎯 DEBUG EventsList: _homeViewModel.currentBar = ${_homeViewModel.currentBar?.id}');
+    
     if (_homeViewModel.hasBar) {
       debugPrint('🎯 DEBUG EventsList: Navegando para criação de evento (hasBar=true)');
       context.pushNamed('eventForm');

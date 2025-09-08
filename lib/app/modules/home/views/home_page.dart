@@ -44,11 +44,22 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadData() async {
-    await Future.wait([
-      _eventsViewModel.loadUpcomingEvents(),
-      _homeViewModel.loadUserProfile(), // Carrega UserProfile primeiro
-      _homeViewModel.loadCurrentBar(),
-    ]);
+    debugPrint('🏠 DEBUG HomePage: Iniciando _loadData()');
+    
+    try {
+      debugPrint('🏠 DEBUG HomePage: Carregando UserProfile...');
+      await _homeViewModel.loadUserProfile();
+      
+      debugPrint('🏠 DEBUG HomePage: Carregando CurrentBar...');
+      await _homeViewModel.loadCurrentBar();
+      
+      debugPrint('🏠 DEBUG HomePage: Carregando UpcomingEvents...');
+      await _eventsViewModel.loadUpcomingEvents();
+      
+      debugPrint('🏠 DEBUG HomePage: _loadData() concluído com sucesso');
+    } catch (e) {
+      debugPrint('❌ DEBUG HomePage: Erro em _loadData(): $e');
+    }
   }
 
   Future<void> _loadUpcomingEvents() async {
@@ -217,15 +228,20 @@ class _HomePageState extends State<HomePage> {
                           builder: (context, homeViewModel, _) {
                             return ButtonWidget(
                               text: AppStrings.createFirstEventMessage,
-                              onPressed: homeViewModel.hasBar 
-                                  ? () {
-                                      debugPrint('🎯 DEBUG Home: Navegando para criação de evento (hasBar=true)');
-                                      context.pushNamed('eventForm');
-                                    }
-                                  : () {
-                                      debugPrint('🚫 DEBUG Home: Usuário sem bar - exibindo modal');
-                                      _showNoBarModal(context);
-                                    },
+                              onPressed: () {
+                                debugPrint('🎯 DEBUG Home: Botão criar evento pressionado');
+                                debugPrint('🎯 DEBUG Home: homeViewModel.hasBar = ${homeViewModel.hasBar}');
+                                debugPrint('🎯 DEBUG Home: homeViewModel.userBars.length = ${homeViewModel.userBars.length}');
+                                debugPrint('🎯 DEBUG Home: homeViewModel.currentBar = ${homeViewModel.currentBar?.id}');
+                                
+                                if (homeViewModel.hasBar) {
+                                  debugPrint('🎯 DEBUG Home: Navegando para criação de evento (hasBar=true)');
+                                  context.pushNamed('eventForm');
+                                } else {
+                                  debugPrint('🚫 DEBUG Home: Usuário sem bar - exibindo modal');
+                                  _showNoBarModal(context);
+                                }
+                              },
                               icon: Icons.add_circle,
                             );
                           },

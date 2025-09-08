@@ -69,7 +69,14 @@ class HomeViewModel extends ChangeNotifier {
   List<EventModel> get upcomingEvents => _upcomingEvents;
   EventModel? get nextEvent => _nextEvent;
   // Verifica se o usuário tem pelo menos um bar
-  bool get hasBar => _userBars.isNotEmpty;
+  bool get hasBar {
+    final result = _userBars.isNotEmpty;
+    debugPrint('🏠 DEBUG hasBar: _userBars.length=${_userBars.length}, result=$result');
+    if (_userBars.isNotEmpty) {
+      debugPrint('🏠 DEBUG hasBar: Primeiro bar - id=${_userBars.first.id}, name=${_userBars.first.name}');
+    }
+    return result;
+  }
   
   // Retorna o ID do bar atual (se houver)
   String? get currentBarId => _currentBar?.id;
@@ -239,8 +246,13 @@ class HomeViewModel extends ChangeNotifier {
       // Escuta mudanças nos bares do usuário
       _barsSubscription = _barRepository.listMyBars(currentUser.uid).listen(
         (bars) {
+          debugPrint('🏠 DEBUG Home: Stream recebido com ${bars.length} bares');
+          for (int i = 0; i < bars.length; i++) {
+            debugPrint('🏠 DEBUG Home: Bar $i: id=${bars[i].id}, name=${bars[i].name}, cnpj=${bars[i].cnpj}');
+          }
+          
           _userBars = bars;
-          debugPrint('🏠 DEBUG Home: Encontrados ${_userBars.length} bares');
+          debugPrint('🏠 DEBUG Home: _userBars atualizado com ${_userBars.length} bares');
           
           if (_userBars.isNotEmpty) {
             _currentBar = _userBars.first; // Seleciona o primeiro bar

@@ -99,14 +99,9 @@ class AuthService {
     }
   }
 
-  static Future<bool> isEmailInUse(String email) async {
-    try {
-      final methods = await _auth.fetchSignInMethodsForEmail(email);
-      return methods.isNotEmpty;
-    } catch (e) {
-      throw Exception('Erro ao verificar email: $e');
-    }
-  }
+  // Método removido por usar API deprecated (fetchSignInMethodsForEmail)
+  // Para verificar se email existe, use tentativa de criação de conta
+  // e trate o erro FirebaseAuthException com código 'email-already-in-use'
 
   static Future<UserCredential> signUpWithEmailAndPassword(
     String email,

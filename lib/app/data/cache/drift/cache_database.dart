@@ -35,7 +35,6 @@ class CachedEvents extends Table {
   @override
   Set<Column> get primaryKey => {id};
 
-  @override
   List<Index> get indexes => [
     Index('idx_cached_events_bar_id', barId.name),
     Index('idx_cached_events_start_at', startAt.name),
@@ -72,9 +71,9 @@ class CachedBars extends Table {
   IntColumn get version => integer().withDefault(const Constant(1))();
   TextColumn get etag => text().nullable()();
 
+  @override
   Set<Column> get primaryKey => {id};
 
-  @override
   List<Index> get indexes => [
     Index('idx_cached_bars_owner_uid', ownerUid.name),
     Index('idx_cached_bars_cnpj', cnpj.name),
@@ -105,7 +104,6 @@ class CachedUsers extends Table {
   @override
   Set<Column> get primaryKey => {uid};
 
-  @override
   List<Index> get indexes => [
     Index('idx_cached_users_email', email.name),
     Index('idx_cached_users_needs_sync', needsSync.name),
@@ -135,7 +133,6 @@ class CachedImages extends Table {
   @override
   Set<Column> get primaryKey => {id};
 
-  @override
   List<Index> get indexes => [
     Index('idx_cached_images_remote_url', remoteUrl.name),
     Index('idx_cached_images_size', size.name),
@@ -200,7 +197,6 @@ class CacheMetrics extends Table {
   @override
   Set<Column> get primaryKey => {id};
 
-  @override
   List<Index> get indexes => [
     Index('idx_cache_metrics_entity_type', entityType.name),
     Index('idx_cache_metrics_operation', operation.name),

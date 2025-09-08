@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Implementação concreta do ImageStorageRepository usando Firebase Storage
@@ -21,7 +21,7 @@ class FirebaseImageStorageRepository {
     Map<String, String>? metadata,
   }) async {
     try {
-      print('Iniciando upload de imagem: $path');
+      debugPrint('Iniciando upload de imagem: $path');
       
       // Verifica autenticação
       final user = _auth.currentUser;
@@ -60,14 +60,14 @@ class FirebaseImageStorageRepository {
       // Obtém URL de download
       final downloadUrl = await snapshot.ref.getDownloadURL();
       
-      print('Upload concluído com sucesso: $downloadUrl');
+      debugPrint('Upload concluído com sucesso: $downloadUrl');
       return downloadUrl;
       
     } on FirebaseException catch (e) {
-      print('Erro do Firebase no upload: ${e.message}');
+      debugPrint('Erro do Firebase no upload: ${e.message}');
       throw Exception('Erro no upload: ${e.message}');
     } catch (e) {
-      print('Erro inesperado no upload: $e');
+      debugPrint('Erro inesperado no upload: $e');
       throw Exception('Erro inesperado no upload');
     }
   }
@@ -78,7 +78,7 @@ class FirebaseImageStorageRepository {
     Map<String, String>? metadata,
   }) async {
     try {
-      print('Iniciando upload de imagem por bytes: $path');
+      debugPrint('Iniciando upload de imagem por bytes: $path');
       
       // Verifica autenticação
       final user = _auth.currentUser;
@@ -112,14 +112,14 @@ class FirebaseImageStorageRepository {
       // Obtém URL
       final downloadUrl = await snapshot.ref.getDownloadURL();
       
-      print('Upload por bytes concluído: $downloadUrl');
+      debugPrint('Upload por bytes concluído: $downloadUrl');
       return downloadUrl;
       
     } on FirebaseException catch (e) {
-      print('Erro do Firebase no upload por bytes: ${e.message}');
+      debugPrint('Erro do Firebase no upload por bytes: ${e.message}');
       throw Exception('Erro no upload: ${e.message}');
     } catch (e) {
-      print('Erro inesperado no upload por bytes: $e');
+      debugPrint('Erro inesperado no upload por bytes: $e');
       throw Exception('Erro inesperado no upload');
     }
   }
@@ -142,7 +142,7 @@ class FirebaseImageStorageRepository {
           results.add(url);
         }
       } catch (e) {
-        print('Erro no upload da imagem $i: $e');
+        debugPrint('Erro no upload da imagem $i: $e');
         // Continua com as outras imagens
       }
     }
@@ -152,25 +152,25 @@ class FirebaseImageStorageRepository {
 
   Future<bool> deleteImage(String path) async {
     try {
-      print('Deletando imagem: $path');
+      debugPrint('Deletando imagem: $path');
       
       // Extrai o caminho da URL
       final ref = _storage.refFromURL(path);
       await ref.delete();
       
-      print('Imagem deletada com sucesso');
+      debugPrint('Imagem deletada com sucesso');
       return true;
       
     } on FirebaseException catch (e) {
       if (e.code == 'object-not-found') {
-        print('Imagem não encontrada para deletar: $path');
+        debugPrint('Imagem não encontrada para deletar: $path');
         return true; // Considera sucesso se já não existe
       }
       
-      print('Erro do Firebase ao deletar: ${e.message}');
+      debugPrint('Erro do Firebase ao deletar: ${e.message}');
       return false;
     } catch (e) {
-      print('Erro inesperado ao deletar: $e');
+      debugPrint('Erro inesperado ao deletar: $e');
       return false;
     }
   }
@@ -185,7 +185,7 @@ class FirebaseImageStorageRepository {
           deletedUrls.add(url);
         }
       } catch (e) {
-        print('Erro ao deletar imagem $url: $e');
+        debugPrint('Erro ao deletar imagem $url: $e');
       }
     }
     
@@ -197,14 +197,14 @@ class FirebaseImageStorageRepository {
       final ref = _storage.ref().child(path);
       return await ref.getDownloadURL();
     } catch (e) {
-      print('Erro ao obter URL da imagem: $e');
+      debugPrint('Erro ao obter URL da imagem: $e');
       return null;
     }
   }
 
   Future<String?> migrateImage(String sourceUrl, String destinationPath) async {
     try {
-      print('Migrando imagem de $sourceUrl para $destinationPath');
+      debugPrint('Migrando imagem de $sourceUrl para $destinationPath');
       
       // Baixa a imagem da URL original
       final response = await http.get(Uri.parse(sourceUrl));
@@ -222,11 +222,11 @@ class FirebaseImageStorageRepository {
         },
       );
       
-      print('Migração concluída: $newUrl');
+      debugPrint('Migração concluída: $newUrl');
       return newUrl;
       
     } catch (e) {
-      print('Erro na migração de imagem: $e');
+      debugPrint('Erro na migração de imagem: $e');
       return null;
     }
   }
@@ -257,7 +257,7 @@ class FirebaseImageStorageRepository {
         'customMetadata': metadata.customMetadata,
       };
     } catch (e) {
-      print('Erro ao obter metadados: $e');
+      debugPrint('Erro ao obter metadados: $e');
       return null;
     }
   }
@@ -272,7 +272,7 @@ class FirebaseImageStorageRepository {
       // Nota: Firebase Storage URLs não expiram por padrão
       // Para URLs temporárias, seria necessário usar Firebase Functions
     } catch (e) {
-      print('Erro ao gerar URL temporária: $e');
+      debugPrint('Erro ao gerar URL temporária: $e');
       return null;
     }
   }
@@ -288,13 +288,13 @@ class FirebaseImageStorageRepository {
           final url = await item.getDownloadURL();
           urls.add(url);
         } catch (e) {
-          print('Erro ao obter URL do item ${item.fullPath}: $e');
+          debugPrint('Erro ao obter URL do item ${item.fullPath}: $e');
         }
       }
       
       return urls;
     } catch (e) {
-      print('Erro ao listar imagens: $e');
+      debugPrint('Erro ao listar imagens: $e');
       return [];
     }
   }
@@ -312,7 +312,7 @@ class FirebaseImageStorageRepository {
       
       return await uploadImageBytes(data, destinationPath);
     } catch (e) {
-      print('Erro ao copiar imagem: $e');
+      debugPrint('Erro ao copiar imagem: $e');
       return null;
     }
   }

@@ -85,18 +85,19 @@ class _EmailVerificationPageState extends State<EmailVerificationPage>
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
               onPressed: () {
-                print('🔙 [EmailVerificationPage] Botão voltar pressionado');
-                print('🔙 [EmailVerificationPage] context.canPop(): ${context.canPop()}');
-                
-                if (context.canPop()) {
-                  print('🔙 [EmailVerificationPage] Usando context.pop()');
-                  context.pop();
-                } else {
-                  print('🔙 [EmailVerificationPage] Usando context.go(AppRoutes.login)');
-                  print('🔙 [EmailVerificationPage] AppRoutes.login = ${AppRoutes.login}');
-                  context.go(AppRoutes.login);
-                }
-                print('✅ [EmailVerificationPage] Navegação executada com sucesso');
+                debugPrint('🔙 [EmailVerificationPage] Botão voltar pressionado');
+        debugPrint('🔙 [EmailVerificationPage] context.canPop(): ${context.canPop()}');
+        
+        if (context.canPop()) {
+          debugPrint('🔙 [EmailVerificationPage] Usando context.pop()');
+          context.pop();
+        } else {
+          debugPrint('🔙 [EmailVerificationPage] Usando context.go(AppRoutes.login)');
+          debugPrint('🔙 [EmailVerificationPage] AppRoutes.login = ${AppRoutes.login}');
+          context.go(AppRoutes.login);
+        }
+        
+        debugPrint('✅ [EmailVerificationPage] Navegação executada com sucesso');
               },
             ),
           ),

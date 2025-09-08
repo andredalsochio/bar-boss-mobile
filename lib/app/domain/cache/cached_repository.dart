@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'cache_store.dart';
 import 'remote_store.dart';
 
@@ -116,7 +117,7 @@ abstract class CachedRepository<T> {
         }
       } catch (e) {
         // Log do erro mas não propaga
-        print('Background revalidation failed for $id: $e');
+        debugPrint('Background revalidation failed for $id: $e');
       }
     });
   }

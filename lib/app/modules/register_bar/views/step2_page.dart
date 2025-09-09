@@ -49,8 +49,7 @@ class _Step2PageState extends State<Step2Page> {
     _viewModel = context.read<BarRegistrationViewModel>();
     _authViewModel = context.read<AuthViewModel>();
 
-    // Carrega rascunhos salvos
-    _loadDrafts();
+
 
     // Adiciona listeners para atualizar o ViewModel quando os valores mudarem
     _cepController.addListener(_updateCep);
@@ -60,18 +59,7 @@ class _Step2PageState extends State<Step2Page> {
     _cityController.addListener(_updateCity);
   }
 
-  /// Carrega rascunhos salvos e atualiza os controladores
-  Future<void> _loadDrafts() async {
-    await _viewModel.loadDrafts();
-    
-    // Atualiza os controladores com os valores carregados
-    _cepController.text = _viewModel.cep;
-    _streetController.text = _viewModel.street;
-    _numberController.text = _viewModel.number;
-    _complementController.text = _viewModel.complement;
-    _stateController.text = _viewModel.state;
-    _cityController.text = _viewModel.city;
-  }
+
 
   @override
   void dispose() {

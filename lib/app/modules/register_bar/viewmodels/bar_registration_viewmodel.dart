@@ -7,7 +7,6 @@ import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.da
 import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
-import 'package:bar_boss_mobile/app/core/storage/draft_storage.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 
 /// Estados possíveis do cadastro de bar
@@ -128,35 +127,30 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setEmail(String value) {
     _email = value;
     _validateEmail();
-    _saveDraftStep1();
     notifyListeners();
   }
 
   void setCnpj(String value) {
     _cnpj = value;
     _validateCnpj();
-    _saveDraftStep1();
     notifyListeners();
   }
 
   void setName(String value) {
     _name = value;
     _validateName();
-    _saveDraftStep1();
     notifyListeners();
   }
 
   void setResponsibleName(String value) {
     _responsibleName = value;
     _validateResponsibleName();
-    _saveDraftStep1();
     notifyListeners();
   }
 
   void setPhone(String value) {
     _phone = value;
     _validatePhone();
-    _saveDraftStep1();
     notifyListeners();
   }
 
@@ -164,7 +158,6 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setCep(String value) {
     _cep = value;
     _validateCep();
-    _saveDraftStep2();
     notifyListeners();
 
     // Se o CEP for válido, busca o endereço
@@ -176,34 +169,29 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setStreet(String value) {
     _street = value;
     _validateStreet();
-    _saveDraftStep2();
     notifyListeners();
   }
 
   void setNumber(String value) {
     _number = value;
     _validateNumber();
-    _saveDraftStep2();
     notifyListeners();
   }
 
   void setComplement(String value) {
     _complement = value;
-    _saveDraftStep2();
     notifyListeners();
   }
 
   void setState(String value) {
     _stateUf = value;
     _validateState();
-    _saveDraftStep2();
     notifyListeners();
   }
 
   void setCity(String value) {
     _city = value;
     _validateCity();
-    _saveDraftStep2();
     notifyListeners();
   }
 
@@ -212,14 +200,12 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _password = value;
     _validatePassword();
     _validateConfirmPassword(); // Valida novamente a confirmação de senha
-    _saveDraftStep3();
     notifyListeners();
   }
 
   void setConfirmPassword(String value) {
     _confirmPassword = value;
     _validateConfirmPassword();
-    _saveDraftStep3();
     notifyListeners();
   }
 
@@ -538,8 +524,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🎉 DEBUG Login Social: Profile completo - contactsComplete=true, addressComplete=true');
       debugPrint('🎉 DEBUG Login Social: UserProfile atualizado com currentBarId=$barId');
 
-      // Limpa os rascunhos após sucesso
-      await clearDrafts();
+
 
       ToastService.instance.showSuccess(message: 'Bar cadastrado com sucesso!');
       _setRegistrationState(RegistrationState.success);
@@ -661,10 +646,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🎉 DEBUG Cadastro finalizado: Profile completo - contactsComplete=true, addressComplete=true');
       debugPrint('🎉 DEBUG Cadastro finalizado: UserProfile criado com completedFullRegistration=true');
 
-      // Limpa os rascunhos após sucesso
-      debugPrint('🧹 [BarRegistrationViewModel] Limpando rascunhos...');
-      await clearDrafts();
-      debugPrint('✅ [BarRegistrationViewModel] Rascunhos limpos com sucesso!');
+
       
       debugPrint('🎉 [BarRegistrationViewModel] Registro completo finalizado com sucesso!');
 
@@ -700,30 +682,13 @@ class BarRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Métodos para salvar rascunhos
-   void _saveDraftStep1() {
-     DraftStorage.saveStep1Draft(
-       email: _email,
-       cnpj: _cnpj,
-       name: _name,
-       responsibleName: _responsibleName,
-       phone: _phone,
-     );
-   }
 
-  /// Salva o rascunho do Passo 1 (método público)
-  void saveDraftStep1() {
-    _saveDraftStep1();
-  }
 
   /// Salva o Passo 1 e atualiza a completude do perfil
   Future<void> saveStep1(String barId) async {
     try {
       _setLoading(true);
       _clearError();
-      
-      // Salva o rascunho
-      _saveDraftStep1();
       
       // Atualiza a completude do perfil
       await _updateContactsCompleteness(barId);
@@ -738,21 +703,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
     }
   }
  
-   void _saveDraftStep2() {
-     DraftStorage.saveStep2Draft(
-       cep: _cep,
-       street: _street,
-       number: _number,
-       complement: _complement,
-       state: _stateUf,
-       city: _city,
-     );
-   }
 
-  /// Salva o rascunho do Passo 2 (método público)
-  void saveDraftStep2() {
-    _saveDraftStep2();
-  }
 
   /// Salva o Passo 2 e atualiza a completude do perfil
   Future<void> saveStep2(String barId) async {
@@ -764,10 +715,6 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🔍 [VIEWMODEL] saveStep2: Definindo loading = true');
       _setLoading(true);
       _clearError();
-      
-      debugPrint('🔍 [VIEWMODEL] saveStep2: Salvando rascunho do Passo 2');
-      // Salva o rascunho
-      _saveDraftStep2();
       
       debugPrint('🔍 [VIEWMODEL] saveStep2: Atualizando completude do endereço no Firestore');
       // Atualiza a completude do perfil
@@ -787,107 +734,13 @@ class BarRegistrationViewModel extends ChangeNotifier {
     }
   }
  
-   void _saveDraftStep3() {
-     // Senhas não são salvas em rascunho por questões de segurança
-     // O Step3 não possui persistência de rascunho
-   }
 
-  // Métodos para carregar rascunhos
-   Future<void> loadDrafts() async {
-     await _loadDraftStep1();
-     await _loadDraftStep2();
-     // Step3 não possui rascunho (senhas não são persistidas)
-     
-     // Se o email ainda estiver vazio após carregar rascunhos,
-     // preenche com o email do usuário autenticado (login social)
-     await _initializeEmailFromCurrentUser();
-     
-     notifyListeners();
-   }
+
+  
    
-   /// Inicializa o email com dados do usuário autenticado se estiver vazio
-   Future<void> _initializeEmailFromCurrentUser() async {
-     if (_email.isEmpty) {
-       final currentUser = _authRepository.currentUser;
-       if (currentUser != null && currentUser.email != null && currentUser.email!.isNotEmpty) {
-         debugPrint('🔄 [BarRegistrationViewModel] Preenchendo email automaticamente: ${currentUser.email}');
-         _email = currentUser.email!;
-         _validateEmail();
-         // Não salva no rascunho ainda, apenas preenche o campo
-       }
-     }
-   }
+
  
-   Future<void> _loadDraftStep1() async {
-     debugPrint('🔍 [VIEWMODEL] _loadDraftStep1: Carregando rascunho do Passo 1');
-     
-     final draft = await DraftStorage.readStep1Draft();
-     if (draft != null) {
-       debugPrint('✅ [VIEWMODEL] _loadDraftStep1: Rascunho encontrado, carregando dados');
-       
-       _email = draft['email'] ?? '';
-       _cnpj = draft['cnpj'] ?? '';
-       _name = draft['name'] ?? '';
-       _responsibleName = draft['responsibleName'] ?? '';
-       _phone = draft['phone'] ?? '';
- 
-       debugPrint('🔍 [VIEWMODEL] _loadDraftStep1: Email carregado: ${_email.isNotEmpty ? "${_email.substring(0, 3)}***" : "(vazio)"}');
-       debugPrint('🔍 [VIEWMODEL] _loadDraftStep1: CNPJ carregado: ${_cnpj.isNotEmpty ? "${_cnpj.substring(0, 3)}***" : "(vazio)"}');
-       debugPrint('🔍 [VIEWMODEL] _loadDraftStep1: Nome carregado: ${_name.isNotEmpty ? _name : "(vazio)"}');
-       
-       // Valida os campos carregados
-       _validateEmail();
-       _validateCnpj();
-       _validateName();
-       _validateResponsibleName();
-       _validatePhone();
-       
-       debugPrint('✅ [VIEWMODEL] _loadDraftStep1: Rascunho carregado e validado com sucesso');
-     } else {
-       debugPrint('ℹ️ [VIEWMODEL] _loadDraftStep1: Nenhum rascunho encontrado');
-     }
-   }
- 
-   Future<void> _loadDraftStep2() async {
-     debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Carregando rascunho do Passo 2');
-     
-     final draft = await DraftStorage.readStep2Draft();
-     if (draft != null) {
-       debugPrint('✅ [VIEWMODEL] _loadDraftStep2: Rascunho encontrado, carregando dados');
-       
-       _cep = draft['cep'] ?? '';
-       _street = draft['street'] ?? '';
-       _number = draft['number'] ?? '';
-       _complement = draft['complement'] ?? '';
-       _stateUf = draft['state'] ?? '';
-       _city = draft['city'] ?? '';
- 
-       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: CEP carregado: ${_cep.isNotEmpty ? _cep : "(vazio)"}');
-       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Rua carregada: ${_street.isNotEmpty ? _street : "(vazio)"}');
-       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Número carregado: ${_number.isNotEmpty ? _number : "(vazio)"}');
-       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Estado carregado: ${_stateUf.isNotEmpty ? _stateUf : "(vazio)"}');
-       debugPrint('🔍 [VIEWMODEL] _loadDraftStep2: Cidade carregada: ${_city.isNotEmpty ? _city : "(vazio)"}');
-       
-       // Valida os campos carregados
-       _validateCep();
-       _validateStreet();
-       _validateNumber();
-       _validateState();
-       _validateCity();
-       
-       debugPrint('✅ [VIEWMODEL] _loadDraftStep2: Rascunho carregado e validado com sucesso');
-     } else {
-       debugPrint('ℹ️ [VIEWMODEL] _loadDraftStep2: Nenhum rascunho encontrado');
-     }
-   }
- 
-   // Step3 não possui carregamento de rascunho
-   // Senhas não são persistidas por questões de segurança
- 
-   // Limpa todos os rascunhos
-    Future<void> clearDrafts() async {
-      await DraftStorage.clearAllDrafts();
-    }
+
 
     // Atualiza apenas a completude de contatos
     Future<void> _updateContactsCompleteness(String barId) async {
@@ -1087,9 +940,6 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🎉 DEBUG Login Social Step 2: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true (senha já existia)');
       debugPrint('🎉 DEBUG Login Social Step 2: UserProfile atualizado com currentBarId=$barId e completedFullRegistration=true');
 
-      // Limpa os rascunhos após sucesso
-      await clearDrafts();
-
       ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
       _setRegistrationState(RegistrationState.success);
       
@@ -1190,8 +1040,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🎉 DEBUG Login Social Step 3: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true');
       debugPrint('🎉 DEBUG Login Social Step 3: UserProfile atualizado com currentBarId=$barId e completedFullRegistration=true');
 
-      // Limpa os rascunhos após sucesso
-      await clearDrafts();
+
 
       ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
       _setRegistrationState(RegistrationState.success);

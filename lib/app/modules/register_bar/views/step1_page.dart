@@ -42,8 +42,7 @@ class _Step1PageState extends State<Step1Page> {
     super.initState();
     _viewModel = context.read<BarRegistrationViewModel>();
 
-    // Carrega rascunhos salvos
-    _loadDrafts();
+
 
     // Adiciona listeners para atualizar o ViewModel quando os valores mudarem
     _emailController.addListener(_updateEmail);
@@ -53,17 +52,7 @@ class _Step1PageState extends State<Step1Page> {
     _phoneController.addListener(_updatePhone);
   }
 
-  /// Carrega rascunhos salvos e atualiza os controladores
-  Future<void> _loadDrafts() async {
-    await _viewModel.loadDrafts();
-    
-    // Atualiza os controladores com os valores carregados
-    _emailController.text = _viewModel.email;
-    _cnpjController.text = _viewModel.cnpj;
-    _nameController.text = _viewModel.name;
-    _responsibleNameController.text = _viewModel.responsibleName;
-    _phoneController.text = _viewModel.phone;
-  }
+
 
   @override
   void dispose() {
@@ -147,23 +136,20 @@ class _Step1PageState extends State<Step1Page> {
            debugPrint('🔍 [STEP1_PAGE] Usuário tem bar existente: $hasExistingBar (currentBarId: ${userProfile?.currentBarId})');
            
            // Se sim, salva no Firestore para atualizar o banner
-           // Se não, salva apenas como rascunho
+           // Verifica se usuário tem bar existente
            if (hasExistingBar) {
-             debugPrint('🏢 [STEP1_PAGE] Usuário tem bar existente, salvando no Firestore...');
-             await _viewModel.saveStep1(userProfile.currentBarId!);
-           } else {
-             debugPrint('📝 [STEP1_PAGE] Usuário sem bar, salvando como rascunho...');
-             _viewModel.saveDraftStep1();
-           }
-         } else {
-           debugPrint('📝 [STEP1_PAGE] Usuário não autenticado, salvando como rascunho...');
-           _viewModel.saveDraftStep1();
-         }
-      } catch (e) {
-        debugPrint('⚠️ [STEP1_PAGE] Erro ao verificar bar existente: $e');
-        // Em caso de erro, salva apenas como rascunho
-        _viewModel.saveDraftStep1();
-      }
+            debugPrint('🏢 [STEP1_PAGE] Usuário tem bar existente, salvando no Firestore...');
+            await _viewModel.saveStep1(userProfile.currentBarId!);
+          } else {
+            debugPrint('📝 [STEP1_PAGE] Usuário sem bar, dados validados.');
+          }
+        } else {
+          debugPrint('📝 [STEP1_PAGE] Usuário não autenticado, dados validados.');
+        }
+     } catch (e) {
+       debugPrint('⚠️ [STEP1_PAGE] Erro ao verificar bar existente: $e');
+       // Em caso de erro, apenas continua
+     }
       
       debugPrint('✅ [STEP1_PAGE] Dados salvos, navegando para Step2');
       if (mounted) {

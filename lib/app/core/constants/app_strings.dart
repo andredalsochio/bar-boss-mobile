@@ -149,7 +149,7 @@ class AppStrings {
   static const String eventNotFoundErrorMessage = 'Evento não encontrado';
   static const String loadEventErrorMessage = 'Erro ao carregar evento';
   static const String formValidationErrorMessage = 'Por favor, preencha todos os campos obrigatórios';
-  static const String dontHaveBarQuestion = 'Não tem um bar?';
+  static const String dontHaveBarQuestion = 'Cadastre-se';
   static const String loginSubtitle = 'Acesse sua conta para gerenciar seu bar';
   static const String orLoginWith = 'Ou entre com';
   

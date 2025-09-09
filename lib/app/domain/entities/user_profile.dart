@@ -10,7 +10,7 @@ class UserProfile {
   final String? currentBarId;
   final DateTime createdAt;
   final DateTime? lastLoginAt;
-  /// Flag para indicar se o usuário completou o cadastro completo via "Não tem um bar?"
+  /// Flag para indicar se o usuário completou o cadastro completo via "Cadastre-se?"
   /// true = usuário completou Passo 1 + Passo 2 + Criar Senha
   /// false = usuário fez login social e pode precisar completar perfil
   final bool completedFullRegistration;

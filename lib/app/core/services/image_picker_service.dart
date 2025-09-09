@@ -66,7 +66,10 @@ class ImagePickerService {
       // Verifica permissão da câmera
       final cameraPermission = await Permission.camera.request();
       if (!cameraPermission.isGranted) {
-        debugPrint('Permissão da câmera negada');
+        debugPrint('Permissão da câmera negada: ${cameraPermission.toString()}');
+        if (cameraPermission.isPermanentlyDenied) {
+          debugPrint('Permissão da câmera permanentemente negada - usuário deve ir às configurações');
+        }
         return null;
       }
 
@@ -90,12 +93,22 @@ class ImagePickerService {
   /// Seleciona imagem da galeria
   static Future<File?> pickImageFromGallery() async {
     try {
-      // Verifica permissão da galeria
-      final galleryPermission = await Permission.photos.request();
-      if (!galleryPermission.isGranted) {
-        debugPrint('Permissão da galeria negada');
-        return null;
+      // Verifica permissão da galeria (iOS 14+ usa photosAddOnly para seleção)
+      Permission galleryPermission;
+      if (Platform.isIOS) {
+        galleryPermission = Permission.photos;
+      } else {
+        galleryPermission = Permission.storage;
       }
+      
+      final permissionStatus = await galleryPermission.request();
+       if (!permissionStatus.isGranted) {
+         debugPrint('Permissão da galeria negada: ${permissionStatus.toString()}');
+         if (permissionStatus.isPermanentlyDenied) {
+           debugPrint('Permissão da galeria permanentemente negada - usuário deve ir às configurações');
+         }
+         return null;
+       }
 
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -117,17 +130,30 @@ class ImagePickerService {
   /// Verifica se as permissões necessárias estão concedidas
   static Future<bool> checkPermissions() async {
     final cameraStatus = await Permission.camera.status;
-    final photosStatus = await Permission.photos.status;
+    
+    Permission galleryPermission;
+    if (Platform.isIOS) {
+      galleryPermission = Permission.photos;
+    } else {
+      galleryPermission = Permission.storage;
+    }
+    
+    final photosStatus = await galleryPermission.status;
     
     return cameraStatus.isGranted && photosStatus.isGranted;
   }
 
   /// Solicita todas as permissões necessárias
   static Future<bool> requestPermissions() async {
-    final Map<Permission, PermissionStatus> permissions = await [
-      Permission.camera,
-      Permission.photos,
-    ].request();
+    List<Permission> permissionsToRequest = [Permission.camera];
+    
+    if (Platform.isIOS) {
+      permissionsToRequest.add(Permission.photos);
+    } else {
+      permissionsToRequest.add(Permission.storage);
+    }
+    
+    final Map<Permission, PermissionStatus> permissions = await permissionsToRequest.request();
 
     return permissions.values.every((status) => status.isGranted);
   }

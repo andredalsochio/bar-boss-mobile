@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Bar Boss Firestore Schema",
   "description": "Schema definition for Bar Boss Firestore collections",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "collections": {
     "users": {
       "path": "users/{uid}",

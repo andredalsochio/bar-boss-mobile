@@ -1,6 +1,6 @@
 {
   "name": "bar-boss-firestore-auditor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Auditor CLI para validar consistência entre schemas e dados do Firestore",
   "main": "auditor.js",
   "scripts": {

@@ -110,7 +110,7 @@ O auditor gera relatórios detalhados em JSON contendo:
 {
   "timestamp": "2025-01-15T10:30:00.000Z",
   "schema": {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "title": "Bar Boss Firestore Schema"
   },
   "statistics": {

@@ -173,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage> {
               color: Theme.of(context).colorScheme.primary,
             ),
             title: const Text('Sobre o App'),
-            subtitle: const Text('Versão 1.0.0'),
+            subtitle: const Text('Versão 1.0.1'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showAboutDialog(context),
           ),
@@ -238,7 +238,7 @@ class _SettingsPageState extends State<SettingsPage> {
     showAboutDialog(
       context: context,
       applicationName: 'Bar Boss',
-      applicationVersion: '1.0.0',
+      applicationVersion: '1.0.1',
       applicationIcon: const Icon(
         Icons.local_bar,
         size: 48,

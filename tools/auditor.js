@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name('firestore-auditor')
   .description('Auditor CLI para validar consistência entre schemas e dados do Firestore')
-  .version('1.0.0')
+  .version('1.0.1')
   .option('-f, --fix', 'Aplicar correções automáticas quando possível')
   .option('-r, --report-only', 'Apenas gerar relatório sem correções')
   .option('-o, --output <file>', 'Arquivo de saída para o relatório', 'audit-report.json')

@@ -228,4 +228,4 @@ Para dúvidas técnicas ou problemas:
 ---
 
 **Última atualização**: Janeiro 2025
-**Versão da documentação**: 1.0.0
+**Versão da documentação**: 1.0.1

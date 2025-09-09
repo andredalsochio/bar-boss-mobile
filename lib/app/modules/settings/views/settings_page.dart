@@ -260,8 +260,7 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('Ajuda e Suporte'),
         content: const Text(
           'Para dúvidas e suporte, entre em contato através do email: '
-          'suporte@barboss.com.br\n\n'
-          'Ou acesse nossa central de ajuda online.',
+          'dev.dalsochio@gmail.com\n\n'
         ),
         actions: [
           TextButton(

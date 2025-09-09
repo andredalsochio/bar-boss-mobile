@@ -5,6 +5,8 @@ import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/modules/bar_profile/viewmodels/bar_profile_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
+import 'package:bar_boss_mobile/app/core/services/image_picker_service.dart';
+import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 
 /// Tela de perfil do bar
 class BarProfilePage extends StatefulWidget {
@@ -109,7 +111,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header com ícone e nome do bar
+          // Header com avatar e nome do bar
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(AppSizes.spacing24),
@@ -123,17 +125,66 @@ class _BarProfilePageState extends State<BarProfilePage> {
             ),
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSizes.spacing16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary(context),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.store,
-                    size: 40,
-                    color: AppColors.white,
-                  ),
+                // Avatar circular com botão de edição
+                Stack(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary(context),
+                          width: 2,
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: Consumer<BarProfileViewModel>(
+                          builder: (context, viewModel, _) {
+                            if (bar.logoUrl != null && bar.logoUrl!.isNotEmpty) {
+                              return Image.network(
+                                bar.logoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildDefaultAvatar(bar.name);
+                                },
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  );
+                                },
+                              );
+                            }
+                            return _buildDefaultAvatar(bar.name);
+                          },
+                        ),
+                      ),
+                    ),
+                    // Botão de editar foto
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () => _showPhotoOptions(context.read<BarProfileViewModel>()),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary(context),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.camera_alt,
+                            color: AppColors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSizes.spacingMedium),
                 Text(
@@ -165,6 +216,40 @@ class _BarProfilePageState extends State<BarProfilePage> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                ),
+                // Indicador de upload
+                Consumer<BarProfileViewModel>(
+                  builder: (context, viewModel, _) {
+                    if (viewModel.isUploadingPhoto) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: AppSizes.spacingSmall),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary(context),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Atualizando foto...',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
                 ),
               ],
             ),
@@ -320,4 +405,111 @@ class _BarProfilePageState extends State<BarProfilePage> {
     if (cep.length != 8) return cep;
     return '${cep.substring(0, 5)}-${cep.substring(5, 8)}';
   }
+
+  Widget _buildDefaultAvatar(String name) {
+    return Container(
+      color: AppColors.primary(context).withValues(alpha: 0.1),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'B',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPhotoOptions(BarProfileViewModel viewModel) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Alterar foto do perfil',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Câmera'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImageFromCamera(viewModel);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galeria'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImageFromGallery(viewModel);
+              },
+            ),
+            if (viewModel.bar?.logoUrl != null && viewModel.bar!.logoUrl!.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Remover foto', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removePhoto(viewModel);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImageFromCamera(BarProfileViewModel viewModel) async {
+     try {
+       final imageFile = await ImagePickerService.pickImageFromCamera();
+       if (imageFile != null) {
+         await viewModel.uploadProfilePhoto(imageFile);
+         _showUploadResult(viewModel);
+       }
+     } catch (e) {
+       ToastService.instance.showError(message: 'Erro ao capturar foto: $e');
+     }
+   }
+ 
+   Future<void> _pickImageFromGallery(BarProfileViewModel viewModel) async {
+     try {
+       final imageFile = await ImagePickerService.pickImageFromGallery();
+       if (imageFile != null) {
+         await viewModel.uploadProfilePhoto(imageFile);
+         _showUploadResult(viewModel);
+       }
+     } catch (e) {
+       ToastService.instance.showError(message: 'Erro ao selecionar foto: $e');
+     }
+   }
+ 
+   Future<void> _removePhoto(BarProfileViewModel viewModel) async {
+     try {
+       final updatedBar = viewModel.bar!.copyWith(logoUrl: null);
+       await viewModel.updateBarProfile(updatedBar);
+       ToastService.instance.showSuccess(message: 'Foto removida com sucesso!');
+     } catch (e) {
+       ToastService.instance.showError(message: 'Erro ao remover foto: $e');
+     }
+   }
+ 
+   void _showUploadResult(BarProfileViewModel viewModel) {
+     if (viewModel.uploadMessage != null) {
+       if (viewModel.uploadMessage!.contains('sucesso')) {
+         ToastService.instance.showSuccess(message: viewModel.uploadMessage!);
+       } else {
+         ToastService.instance.showError(message: viewModel.uploadMessage!);
+       }
+     }
+   }
 }

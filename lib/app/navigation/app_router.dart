@@ -214,7 +214,7 @@ class AppRouter {
       
       if (!hasBar) {
         // Redireciona para cadastro de bar se não tiver
-        return '/register-bar/step1';
+        return AppRoutes.registerStep1;
       }
       
       return null; // Permite navegação

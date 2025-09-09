@@ -56,9 +56,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   Widget _buildFormView() {
     return Form(
       key: _formKey,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
           // Ícone de cadeado
           Container(
             width: 120,
@@ -181,6 +182,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

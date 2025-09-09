@@ -5,6 +5,13 @@ service cloud.firestore {
     // Helpers
     function isAuth() { return request.auth != null; }
     function isEmailVerified() { return request.auth != null && request.auth.token.email_verified == true; }
+    function isSocialUser() { 
+      return request.auth != null && 
+             (request.auth.token.firebase.sign_in_provider == 'google.com' ||
+              request.auth.token.firebase.sign_in_provider == 'facebook.com' ||
+              request.auth.token.firebase.sign_in_provider == 'apple.com');
+    }
+    function isEmailVerifiedOrSocial() { return isEmailVerified() || isSocialUser(); }
     function me() { return request.auth.uid; }
 
     function isMember(barId, uid) {
@@ -67,42 +74,42 @@ service cloud.firestore {
 
     // bars
     match /bars/{barId} {
-      // Somente membros (ou criador) leem
-      allow read: if isAuth() && (isMember(barId, me()) ||
+      // Somente membros (ou criador) leem, com email verificado ou usuário social
+      allow read: if isAuth() && isEmailVerifiedOrSocial() && (isMember(barId, me()) ||
                                   resource.data.createdByUid == me());
 
-      // Criar bar - permitir se o usuário é o criador e tem e-mail verificado
-      allow create: if isAuth() && isEmailVerified() && validBar(request.resource.data);
+      // Criar bar - permitir se o usuário é o criador e tem e-mail verificado ou é usuário social
+      allow create: if isAuth() && isEmailVerifiedOrSocial() && validBar(request.resource.data);
 
-      // Atualizar bar - somente membros com permissão e e-mail verificado
-      allow update: if isAuth() && isEmailVerified() && isMember(barId, me()) && canManageBar(barId) &&
+      // Atualizar bar - somente membros com permissão e e-mail verificado ou usuário social
+      allow update: if isAuth() && isEmailVerifiedOrSocial() && isMember(barId, me()) && canManageBar(barId) &&
                     validBar(request.resource.data);
 
-      // Deletar bar - requer e-mail verificado
-      allow delete: if isAuth() && isEmailVerified() && (isOwnerRole(barId) ||
+      // Deletar bar - requer e-mail verificado ou usuário social
+      allow delete: if isAuth() && isEmailVerifiedOrSocial() && (isOwnerRole(barId) ||
                     resource.data.createdByUid == me());
 
       // MEMBERS
       match /members/{memberUid} {
         allow read: if isAuth() && isMember(barId, me());
-        // Permitir criação se é o próprio usuário (criação inicial) ou se é owner - requer e-mail verificado
-        allow create: if isAuth() && isEmailVerified() && (memberUid == me() || isOwnerRole(barId));
-        allow update, delete: if isAuth() && isEmailVerified() && isOwnerRole(barId);
+        // Permitir criação se é o próprio usuário (criação inicial) ou se é owner - requer e-mail verificado ou usuário social
+        allow create: if isAuth() && isEmailVerifiedOrSocial() && (memberUid == me() || isOwnerRole(barId));
+        allow update, delete: if isAuth() && isEmailVerifiedOrSocial() && isOwnerRole(barId);
       }
 
       // EVENTS
       match /events/{eventId} {
         allow read: if isAuth() && isMember(barId, me());
-        allow create: if isAuth() && isEmailVerified() && isMember(barId, me()) &&
+        allow create: if isAuth() && isEmailVerifiedOrSocial() && isMember(barId, me()) &&
                       validEvent(request.resource.data);
-        allow update, delete: if isAuth() && isEmailVerified() && isMember(barId, me());
+        allow update, delete: if isAuth() && isEmailVerifiedOrSocial() && isMember(barId, me());
       }
     }
 
     // CNPJ REGISTRY
     match /cnpj_registry/{cnpj} {
       allow read: if true;               // permitir verificação de unicidade sem auth
-      allow create: if isAuth() && isEmailVerified();         // criado no batch - requer e-mail verificado
+      allow create: if isAuth() && isEmailVerifiedOrSocial();         // criado no batch - requer e-mail verificado ou usuário social
       allow update, delete: if false;    // imutável (ou política interna)
     }
 

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
+import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 
@@ -86,6 +88,11 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
               );
             },
             tooltip: 'Editar evento',
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.white),
+            tooltip: AppStrings.deleteEventTooltip,
+            onPressed: () => _showDeleteConfirmation(context),
           ),
         ],
       ),
@@ -477,6 +484,57 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar exclusão'),
+          content: const Text('Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.'),
+          actions: [
+            Consumer<EventsViewModel>(
+              builder: (context, viewModel, child) {
+                return ButtonWidget(
+                  text: 'Excluir',
+                  onPressed: viewModel.isLoading
+                       ? null
+                       : () async {
+                           try {
+                             // Carrega o evento antes de excluir
+                             await viewModel.loadEvent(widget.eventId);
+                             await viewModel.deleteEvent();
+                              if (mounted) {
+                                Navigator.of(context).pop(); // Fecha o dialog
+                                context.pop(); // Volta para a tela anterior
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                Navigator.of(context).pop(); // Fecha o dialog
+                                ToastService.instance.showError(
+                                  message: AppStrings.deleteEventErrorMessage,
+                                );
+                              }
+                            }
+                         },
+                  backgroundColor: AppColors.error,
+                  isLoading: viewModel.isLoading,
+                );
+              },
+            ),
+            const SizedBox(height: AppSizes.spacing8),
+             Align(
+               alignment: Alignment.center,
+               child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+                           ),
+             ),
+          ],
+        );
+      },
     );
   }
 }

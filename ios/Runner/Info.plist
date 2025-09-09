@@ -88,8 +88,10 @@
 
 	<!-- Permissões para câmera e galeria -->
 	<key>NSCameraUsageDescription</key>
-	<string>Este app precisa acessar a câmera para capturar fotos de promoções dos eventos.</string>
+	<string>Este app precisa acessar a câmera para capturar fotos do perfil do bar e promoções dos eventos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Este app precisa acessar a galeria de fotos para selecionar imagens de promoções dos eventos.</string>
+	<string>Este app precisa acessar a galeria de fotos para selecionar imagens do perfil do bar e promoções dos eventos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Este app pode salvar fotos na galeria após edição.</string>
 </dict>
 </plist>

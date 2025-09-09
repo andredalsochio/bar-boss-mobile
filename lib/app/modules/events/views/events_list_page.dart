@@ -56,6 +56,13 @@ class _EventsListPageState extends State<EventsListPage> {
 
   void _goToEventDetails(EventModel event) {
     context.pushNamed(
+      'eventDetails',
+      pathParameters: {'id': event.id},
+    );
+  }
+
+  void _goToEventEdit(EventModel event) {
+    context.pushNamed(
       'eventEdit',
       pathParameters: {'id': event.id},
     );
@@ -181,7 +188,8 @@ class _EventsListPageState extends State<EventsListPage> {
                   padding: const EdgeInsets.only(bottom: AppSizes.spacingMedium),
                   child: EventCardWidget(
                     event: event,
-                    onTap: () => _goToEventDetails(event),
+                    onViewDetails: () => _goToEventDetails(event),
+                    onEdit: () => _goToEventEdit(event),
                   ),
                 );
               },

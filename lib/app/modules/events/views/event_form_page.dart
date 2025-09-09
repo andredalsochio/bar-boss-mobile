@@ -561,7 +561,14 @@ class _EventFormPageState extends State<EventFormPage> {
       picked = await showCupertinoModalPopup<DateTime>(
         context: context,
         builder: (BuildContext context) {
-          DateTime tempDate = viewModel.eventDate ?? DateTime.now();
+          final DateTime minimumDate = DateTime.now();
+          DateTime tempDate = viewModel.eventDate ?? minimumDate;
+          
+          // Garante que a data inicial não seja anterior à data mínima
+          if (tempDate.isBefore(minimumDate)) {
+            tempDate = minimumDate;
+          }
+          
           return Container(
             height: 300,
             color: CupertinoColors.systemBackground.resolveFrom(context),
@@ -596,8 +603,8 @@ class _EventFormPageState extends State<EventFormPage> {
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.date,
                     initialDateTime: tempDate,
-                    minimumDate: DateTime.now(),
-                    maximumDate: DateTime.now().add(const Duration(days: 365)),
+                    minimumDate: minimumDate,
+                    maximumDate: minimumDate.add(const Duration(days: 365)),
                     onDateTimeChanged: (DateTime date) {
                       tempDate = date;
                     },
@@ -610,11 +617,19 @@ class _EventFormPageState extends State<EventFormPage> {
       );
     } else {
       // Material date picker para Android
+      final DateTime minimumDate = DateTime.now();
+      DateTime initialDate = viewModel.eventDate ?? minimumDate;
+      
+      // Garante que a data inicial não seja anterior à data mínima
+      if (initialDate.isBefore(minimumDate)) {
+        initialDate = minimumDate;
+      }
+      
       picked = await showDatePicker(
         context: context,
-        initialDate: viewModel.eventDate ?? DateTime.now(),
-        firstDate: DateTime.now(),
-        lastDate: DateTime.now().add(const Duration(days: 365)),
+        initialDate: initialDate,
+        firstDate: minimumDate,
+        lastDate: minimumDate.add(const Duration(days: 365)),
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(

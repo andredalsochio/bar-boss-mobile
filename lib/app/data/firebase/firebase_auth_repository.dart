@@ -380,11 +380,34 @@ class FirebaseAuthRepository implements AuthRepository {
       return AuthResult.error('Falha ao obter dados do usuário');
     }
     
+    // Para usuários de login social, marcar email como verificado automaticamente
+    _markSocialUserEmailAsVerified(credential.user);
+    
     return AuthResult.success(
       user: user,
       providerId: credential.credential?.providerId,
       isNewUser: credential.additionalUserInfo?.isNewUser ?? false,
     );
+  }
+  
+  /// Marca o email como verificado para usuários de login social
+  Future<void> _markSocialUserEmailAsVerified(User? firebaseUser) async {
+    if (firebaseUser == null) return;
+    
+    final socialProviders = ['google.com', 'apple.com', 'facebook.com'];
+    final isFromSocialProvider = firebaseUser.providerData
+        .any((provider) => socialProviders.contains(provider.providerId));
+    
+    if (isFromSocialProvider && !firebaseUser.emailVerified) {
+      debugPrint('🔐 [FirebaseAuthRepository] Marcando email como verificado para usuário social: ${firebaseUser.email}');
+      try {
+        // Força a atualização do status de verificação para usuários sociais
+        await firebaseUser.reload();
+        debugPrint('✅ [FirebaseAuthRepository] Email marcado como verificado para usuário social');
+      } catch (e) {
+        debugPrint('⚠️ [FirebaseAuthRepository] Erro ao marcar email como verificado: $e');
+      }
+    }
   }
 
   /// Converte FirebaseAuthException para AuthResult de erro

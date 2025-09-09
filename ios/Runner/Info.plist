@@ -58,31 +58,12 @@
 				<string>com.googleusercontent.apps.779191401505-nvntfl7i61ku97c38vr5aiv82j3tf828</string>
 			</array>
 		</dict>
-		<!-- Esquema para Facebook (fb<APP_ID>) -->
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>fbFACEBOOK_APP_ID</string>
-			</array>
-		</dict>
+
 	</array>
 
-	<!-- Permite consultas aos apps do Facebook -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>fbapi</string>
-		<string>fb-messenger-share-api</string>
-		<string>fbauth2</string>
-		<string>fbshareextension</string>
-	</array>
 
-	<!-- Configurações do Facebook (substituir com valores reais) -->
-	<key>FacebookAppID</key>
-	<string>FACEBOOK_APP_ID</string>
-	<key>FacebookDisplayName</key>
-	<string>Bar Boss Mobile</string>
+
+
 	<key>GIDClientID</key>
 	<string>779191401505-nvntfl7i61ku97c38vr5aiv82j3tf828.apps.googleusercontent.com</string>
 

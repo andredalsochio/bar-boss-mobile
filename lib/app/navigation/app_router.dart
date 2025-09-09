@@ -16,6 +16,7 @@ import 'package:bar_boss_mobile/app/modules/bar_profile/views/bar_profile_page.d
 import 'package:bar_boss_mobile/app/modules/settings/views/settings_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/events_list_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/event_form_page.dart';
+import 'package:bar_boss_mobile/app/modules/events/views/event_details_page.dart';
 
 /// Configuração centralizada de navegação com GoRouter
 class AppRouter {
@@ -115,7 +116,7 @@ class AppRouter {
                 body: Center(child: CircularProgressIndicator()),
               );
             }
-            return EventFormPage(eventId: eventId);
+            return EventDetailsPage(eventId: eventId);
           },
         ),
 

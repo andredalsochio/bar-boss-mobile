@@ -27,8 +27,6 @@ class EventCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isToday = _isToday(event.startAt);
-    final dateFormat = DateFormat('HH:mm');
-    final formattedTime = dateFormat.format(event.startAt);
     
     return GestureDetector(
       onTap: onTap,
@@ -54,27 +52,15 @@ class EventCardWidget extends StatelessWidget {
                 topRight: Radius.circular(AppSizes.borderRadius4),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isToday
-                      ? 'Hoje - ${_formatDateWithWeekday(event.startAt)}'
-                      : _formatDateWithWeekday(event.startAt),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: AppSizes.fontSize14,
-                  ),
-                ),
-                Text(
-                  formattedTime,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: AppSizes.fontSize14,
-                  ),
-                ),
-              ],
+            child: Text(
+              isToday
+                  ? 'Hoje - ${_formatDateWithWeekday(event.startAt)}'
+                  : _formatDateWithWeekday(event.startAt),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: AppSizes.fontSize14,
+              ),
             ),
           ),
           // Conteúdo do card

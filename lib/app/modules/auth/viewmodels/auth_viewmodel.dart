@@ -309,7 +309,9 @@ class AuthViewModel extends ChangeNotifier {
   bool get isFromSocialProvider {
     if (_currentUser == null) return false;
     
-    final socialProviders = ['google.com', 'apple.com', 'facebook.com'];
+    // Apenas Google está ativo no momento
+    // TODO: Adicionar 'apple.com' e 'facebook.com' quando implementados
+    final socialProviders = ['google.com'];
     return _currentUser!.providerIds.any((provider) => 
         socialProviders.contains(provider));
   }
@@ -415,6 +417,8 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// TODO: Implementar login com Apple posteriormente
+  /*
   /// Faz login com Apple
   Future<void> loginWithApple() async {
     debugPrint('🍎 [AuthViewModel] Iniciando login com Apple...');
@@ -454,7 +458,10 @@ class AuthViewModel extends ChangeNotifier {
       debugPrint('🍎 [AuthViewModel] Login com Apple finalizado (loading=false)');
     }
   }
+  */
 
+  /// TODO: Implementar login com Facebook posteriormente
+  /*
   /// Faz login com Facebook
   Future<void> loginWithFacebook() async {
     debugPrint('📘 [AuthViewModel] Iniciando login com Facebook...');
@@ -494,6 +501,7 @@ class AuthViewModel extends ChangeNotifier {
       debugPrint('📘 [AuthViewModel] Login com Facebook finalizado (loading=false)');
     }
   }
+  */
 
   /// Envia e-mail de verificação
   Future<bool> sendEmailVerification() async {

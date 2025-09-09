@@ -84,6 +84,8 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // TODO: Implementar login com Apple posteriormente
+  /* 
   Future<void> _loginWithApple() async {
     setState(() {
       _isLoading = true;
@@ -105,7 +107,10 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
   }
+  */
 
+  // TODO: Implementar login com Facebook posteriormente
+  /* 
   Future<void> _loginWithFacebook() async {
     setState(() {
       _isLoading = true;
@@ -127,6 +132,7 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
   }
+  */
 
   void _goToRegisterBar() {
     context.pushNamed('registerStep1');
@@ -249,6 +255,8 @@ class _LoginPageState extends State<LoginPage> {
                         color: AppColors.googleRed,
                         onPressed: _loginWithGoogle,
                       ),
+                      // TODO: Botões Apple e Facebook serão implementados posteriormente
+                      /* 
                       // Botão Apple só aparece no iOS
                       if (Platform.isIOS)
                         _buildSocialLoginButton(
@@ -261,6 +269,7 @@ class _LoginPageState extends State<LoginPage> {
                         color: AppColors.facebookBlue,
                         onPressed: _loginWithFacebook,
                       ),
+                      */
                     ],
                   ),
                   const SizedBox(height: AppSizes.spacingXLarge),

@@ -137,6 +137,10 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<AuthResult> signInWithApple() async {
+    // TODO: Implementar login com Apple posteriormente
+    throw UnimplementedError('Login com Apple será implementado posteriormente');
+    
+    /* Implementação comentada - será ativada posteriormente
     try {
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -157,10 +161,15 @@ class FirebaseAuthRepository implements AuthRepository {
     } catch (e) {
       return _fromGenericException(Exception(e.toString()));
     }
+    */
   }
 
   @override
   Future<AuthResult> signInWithFacebook() async {
+    // TODO: Implementar login com Facebook posteriormente
+    throw UnimplementedError('Login com Facebook será implementado posteriormente');
+    
+    /* Implementação comentada - será ativada posteriormente
     try {
       final LoginResult result = await FacebookAuth.instance.login();
       
@@ -178,6 +187,7 @@ class FirebaseAuthRepository implements AuthRepository {
     } catch (e) {
       return _fromGenericException(Exception(e.toString()));
     }
+    */
   }
 
   @override

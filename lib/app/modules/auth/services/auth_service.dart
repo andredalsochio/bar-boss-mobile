@@ -163,6 +163,8 @@ class AuthService {
     }
   }
 
+  // TODO: Implementar login com Facebook posteriormente
+  /*
   static Future<UserCredential> signInWithFacebook() async {
     try {
       final LoginResult result = await FacebookAuth.instance.login();
@@ -176,7 +178,10 @@ class AuthService {
       throw Exception('Erro ao fazer login com Facebook: $e');
     }
   }
+  */
 
+  // TODO: Implementar login com Apple posteriormente
+  /*
   static Future<UserCredential> signInWithApple() async {
     try {
       if (!Platform.isIOS) {
@@ -206,4 +211,5 @@ class AuthService {
       throw Exception('Erro ao fazer login com Apple: $e');
     }
   }
+  */
 }

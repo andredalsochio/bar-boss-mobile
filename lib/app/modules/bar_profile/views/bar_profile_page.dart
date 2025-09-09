@@ -475,6 +475,12 @@ class _BarProfilePageState extends State<BarProfilePage> {
        if (imageFile != null) {
          await viewModel.uploadProfilePhoto(imageFile);
          _showUploadResult(viewModel);
+       } else {
+         // Verifica se as permissões foram negadas
+         final hasPermissions = await ImagePickerService.checkPermissions();
+         if (!hasPermissions && mounted) {
+           await ImagePickerService.showPermissionDialog(context);
+         }
        }
      } catch (e) {
        ToastService.instance.showError(message: 'Erro ao capturar foto: $e');
@@ -487,6 +493,12 @@ class _BarProfilePageState extends State<BarProfilePage> {
        if (imageFile != null) {
          await viewModel.uploadProfilePhoto(imageFile);
          _showUploadResult(viewModel);
+       } else {
+         // Verifica se as permissões foram negadas
+         final hasPermissions = await ImagePickerService.checkPermissions();
+         if (!hasPermissions && mounted) {
+           await ImagePickerService.showPermissionDialog(context);
+         }
        }
      } catch (e) {
        ToastService.instance.showError(message: 'Erro ao selecionar foto: $e');

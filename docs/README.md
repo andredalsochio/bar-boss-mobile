@@ -20,6 +20,9 @@ O Bar Boss Mobile segue uma arquitetura MVVM (Model-View-ViewModel) com as segui
 lib/
 ├── app/
 │   ├── core/                 # Utilitários, constantes e widgets reutilizáveis
+│   │   ├── services/        # Serviços compartilhados (ImagePicker, etc.)
+│   │   ├── utils/           # Validadores e formatadores
+│   │   └── widgets/         # Componentes UI reutilizáveis
 │   ├── data/                 # Camada de dados
 │   │   ├── cache/           # Sistema de cache (Drift + serviços)
 │   │   ├── repositories/    # Implementações de repositórios
@@ -31,6 +34,7 @@ lib/
 │   ├── modules/             # Módulos da aplicação
 │   │   ├── auth/           # Autenticação
 │   │   ├── cadastro_bar/   # Cadastro de bares
+│   │   ├── bar_profile/    # Perfil do bar com upload de foto
 │   │   ├── eventos/        # Gestão de eventos
 │   │   └── home/           # Tela inicial
 │   └── app_widget.dart     # Widget raiz da aplicação
@@ -44,10 +48,29 @@ lib/
 - **Firebase**: Backend-as-a-Service
   - Authentication
   - Firestore
+  - Storage (upload de imagens)
   - Remote Config
   - Crashlytics
   - Analytics
 - **Clerk**: Autenticação avançada
+- **Image Picker**: Seleção de imagens da galeria/câmera
+- **Search CEP**: Busca automática de endereços
+
+## Funcionalidades Implementadas
+
+### Perfil do Bar
+- **Upload de Foto**: Seleção de imagem da galeria ou câmera
+- **Validação de Permissões**: Solicitação automática de acesso à galeria/câmera
+- **Compressão de Imagem**: Otimização automática para upload
+- **Avatar Circular**: Exibição da foto do bar em formato circular
+- **Fallback**: Ícone padrão quando não há foto
+- **Estados de Loading**: Indicadores visuais durante upload
+- **Tratamento de Erros**: Mensagens amigáveis para falhas
+
+### Sistema de Membros
+- **Controle de Acesso**: Baseado em membership do usuário
+- **Validação de Email**: Obrigatória para usuários não-sociais
+- **Permissões Granulares**: Diferentes níveis de acesso por membro
 - **Drift**: Banco de dados local (SQLite)
 - **GoRouter**: Navegação
 

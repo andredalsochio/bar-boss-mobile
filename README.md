@@ -15,8 +15,10 @@ Um aplicativo Flutter completo que permite aos proprietários de bares gerenciar
 ### 🏪 Gestão de Bares
 - Cadastro completo com validação de CNPJ
 - Busca automática de endereço por CEP
-- Perfil do estabelecimento
+- Perfil do estabelecimento com upload de foto
 - Informações de contato e responsável
+- Sistema de membros e permissões
+- Validação de email para usuários sociais
 
 ### 🎉 Gestão de Eventos
 - Criação e edição de eventos
@@ -24,12 +26,16 @@ Um aplicativo Flutter completo que permite aos proprietários de bares gerenciar
 - Gestão de atrações e lineup
 - Promoções e ofertas especiais
 - Calendário de eventos
+- Sistema de permissões baseado em membership
 
 ### 📱 Experiência Mobile
 - Interface responsiva para iOS e Android
 - Funcionamento offline-first
 - Sincronização automática em background
 - Cache inteligente para performance otimizada
+- Upload de imagens com seleção de galeria/câmera
+- Validação robusta de formulários
+- Tratamento de erros e estados de loading
 
 ## 🏗️ Arquitetura
 
@@ -42,9 +48,17 @@ Um aplicativo Flutter completo que permite aos proprietários de bares gerenciar
 - **Flutter**: Framework de desenvolvimento mobile
 - **Provider**: Gerenciamento de estado reativo
 - **Firebase**: Backend-as-a-Service completo
+  - Authentication
+  - Firestore
+  - Remote Config
+  - Crashlytics
+  - Analytics
 - **Clerk**: Autenticação avançada
 - **Drift**: Banco de dados local (SQLite)
 - **GoRouter**: Navegação declarativa
+- **Image Picker**: Seleção de imagens da galeria/câmera
+- **Search CEP**: Busca automática de endereços
+- **Font Awesome**: Ícones vetoriais
 
 ### Sistema de Cache Avançado
 - **Offline-First**: Funciona sem conexão

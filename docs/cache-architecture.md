@@ -69,6 +69,9 @@ abstract class Repository<T> {
 - Suporte a múltiplos tamanhos (original, thumbnail, medium)
 - Compressão automática
 - Limpeza baseada em LRU
+- **Integração**: Perfil do bar, fotos de eventos, avatars de usuários
+- **Invalidação**: Automática após upload de nova foto
+- **Fallback**: Placeholder durante carregamento, retry em falhas
 
 #### SyncService
 **Localização**: `lib/app/data/cache/services/sync_service.dart`
@@ -222,6 +225,22 @@ cache_metrics_retention_days: 7
 3. Processa fila em background
 4. Retry automático em caso de falha
 
+### Upload de Imagens (Perfil do Bar)
+
+```dart
+// 1. Upload para Firebase Storage
+final downloadUrl = await storageService.uploadImage(imageFile);
+
+// 2. Atualizar Firestore
+await firestoreService.updateBar(barId, {'photoUrl': downloadUrl});
+
+// 3. Invalidar cache da imagem anterior
+await imageCacheService.invalidate('bar_photo_$barId');
+
+// 4. Pré-carregar nova imagem no cache
+await imageCacheService.preload(downloadUrl, 'bar_photo_$barId');
+```
+
 ### Sincronização
 
 1. Monitora conectividade
@@ -259,6 +278,28 @@ class EventsViewModel extends ChangeNotifier {
     // Dados retornados do cache imediatamente
     // Atualização em background se necessário
     return await _eventsRepository.getAll();
+  }
+}
+
+class BarProfileViewModel extends ChangeNotifier {
+  final BarRepository _repository;
+  final ImageCacheService _imageCache;
+  
+  Future<void> uploadBarPhoto(File imageFile) async {
+    setLoading(true);
+    try {
+      // Upload e atualização com invalidação de cache
+      final photoUrl = await _repository.uploadBarPhoto(imageFile);
+      
+      // Cache da nova imagem
+      await _imageCache.cacheFromUrl(photoUrl, 'bar_photo_${bar.id}');
+      
+      notifyListeners();
+    } catch (e) {
+      setError(e.toString());
+    } finally {
+      setLoading(false);
+    }
   }
 }
 ```

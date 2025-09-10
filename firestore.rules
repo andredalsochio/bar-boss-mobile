@@ -11,7 +11,18 @@ service cloud.firestore {
               request.auth.token.firebase.sign_in_provider == 'facebook.com' ||
               request.auth.token.firebase.sign_in_provider == 'apple.com');
     }
+    function isRecentlyCreated() {
+      // Permite operações para usuários criados nos últimos 10 minutos
+      // auth_time está em segundos, então convertemos para milissegundos
+      return request.auth != null && 
+             (request.auth.token.auth_time * 1000) > (request.time.toMillis() - 600000); // 10 minutos em ms
+    }
     function isEmailVerifiedOrSocial() { return isEmailVerified() || isSocialUser(); }
+    function canCreateBar() { 
+      // Permite criação para usuários sociais (independente de email verificado),
+      // usuários com email verificado ou usuários criados recentemente
+      return isSocialUser() || isEmailVerified() || isRecentlyCreated(); 
+    }
     function me() { return request.auth.uid; }
 
     function isMember(barId, uid) {
@@ -74,12 +85,12 @@ service cloud.firestore {
 
     // bars
     match /bars/{barId} {
-      // Somente membros (ou criador) leem, com email verificado ou usuário social
-      allow read: if isAuth() && isEmailVerifiedOrSocial() && (isMember(barId, me()) ||
+      // Somente membros (ou criador) leem, com email verificado, usuário social ou recém-criado
+      allow read: if isAuth() && canCreateBar() && (isMember(barId, me()) ||
                                   resource.data.createdByUid == me());
 
-      // Criar bar - permitir se o usuário é o criador e tem e-mail verificado ou é usuário social
-      allow create: if isAuth() && isEmailVerifiedOrSocial() && validBar(request.resource.data);
+      // Criar bar - permitir se o usuário é o criador e tem e-mail verificado, é usuário social ou foi criado recentemente
+      allow create: if isAuth() && canCreateBar() && validBar(request.resource.data);
 
       // Atualizar bar - somente membros com permissão e e-mail verificado ou usuário social
       allow update: if isAuth() && isEmailVerifiedOrSocial() && isMember(barId, me()) && canManageBar(barId) &&
@@ -91,9 +102,9 @@ service cloud.firestore {
 
       // MEMBERS
       match /members/{memberUid} {
-        allow read: if isAuth() && isMember(barId, me());
-        // Permitir criação se é o próprio usuário (criação inicial) ou se é owner - requer e-mail verificado ou usuário social
-        allow create: if isAuth() && isEmailVerifiedOrSocial() && (memberUid == me() || isOwnerRole(barId));
+        allow read: if isAuth() && canCreateBar() && isMember(barId, me());
+        // Permitir criação se é o próprio usuário (criação inicial) ou se é owner - requer e-mail verificado, usuário social ou recém-criado
+        allow create: if isAuth() && canCreateBar() && (memberUid == me() || isOwnerRole(barId));
         allow update, delete: if isAuth() && isEmailVerifiedOrSocial() && isOwnerRole(barId);
       }
 
@@ -109,7 +120,7 @@ service cloud.firestore {
     // CNPJ REGISTRY
     match /cnpj_registry/{cnpj} {
       allow read: if true;               // permitir verificação de unicidade sem auth
-      allow create: if isAuth() && isEmailVerifiedOrSocial();         // criado no batch - requer e-mail verificado ou usuário social
+      allow create: if isAuth() && canCreateBar();         // criado no batch - requer e-mail verificado, usuário social ou recém-criado
       allow update, delete: if false;    // imutável (ou política interna)
     }
 

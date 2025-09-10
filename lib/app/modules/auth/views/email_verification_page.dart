@@ -84,20 +84,22 @@ class _EmailVerificationPageState extends State<EmailVerificationPage>
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () {
+              onPressed: () async {
                 debugPrint('🔙 [EmailVerificationPage] Botão voltar pressionado');
-        debugPrint('🔙 [EmailVerificationPage] context.canPop(): ${context.canPop()}');
-        
-        if (context.canPop()) {
-          debugPrint('🔙 [EmailVerificationPage] Usando context.pop()');
-          context.pop();
-        } else {
-          debugPrint('🔙 [EmailVerificationPage] Usando context.go(AppRoutes.login)');
-          debugPrint('🔙 [EmailVerificationPage] AppRoutes.login = ${AppRoutes.login}');
-          context.go(AppRoutes.login);
-        }
-        
-        debugPrint('✅ [EmailVerificationPage] Navegação executada com sucesso');
+                debugPrint('🔙 [EmailVerificationPage] context.canPop(): ${context.canPop()}');
+                
+                if (context.canPop()) {
+                  debugPrint('🔙 [EmailVerificationPage] Usando context.pop()');
+                  context.pop();
+                } else {
+                  debugPrint('🔙 [EmailVerificationPage] Fazendo logout e navegando para login');
+                  final authViewModel = context.read<AuthViewModel>();
+                  await authViewModel.logout();
+                  if (mounted) {
+                    debugPrint('🔙 [EmailVerificationPage] Navegação para login após logout');
+                    context.go(AppRoutes.login);
+                  }
+                }
               },
             ),
           ),
@@ -302,21 +304,21 @@ class _EmailVerificationPageState extends State<EmailVerificationPage>
                 
                 // Link para voltar ao login
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async {
                     debugPrint('🔙 [EmailVerificationPage] Botão voltar pressionado');
                     debugPrint('🔙 [EmailVerificationPage] context.canPop(): ${context.canPop()}');
                     
-                    try {
-                      if (context.canPop()) {
-                        debugPrint('🔙 [EmailVerificationPage] Usando context.pop()');
-                        context.pop();
-                      } else {
-                        debugPrint('🔙 [EmailVerificationPage] Usando context.go(AppRoutes.login)');
+                    if (context.canPop()) {
+                      debugPrint('🔙 [EmailVerificationPage] Usando context.pop()');
+                      context.pop();
+                    } else {
+                      debugPrint('🔙 [EmailVerificationPage] Fazendo logout e navegando para login');
+                      final authViewModel = context.read<AuthViewModel>();
+                      await authViewModel.logout();
+                      if (mounted) {
+                        debugPrint('🔙 [EmailVerificationPage] Navegação para login após logout');
                         context.go(AppRoutes.login);
                       }
-                      debugPrint('✅ [EmailVerificationPage] Navegação executada com sucesso');
-                    } catch (e) {
-                      debugPrint('❌ [EmailVerificationPage] Erro na navegação: $e');
                     }
                   },
                   child: const Text(

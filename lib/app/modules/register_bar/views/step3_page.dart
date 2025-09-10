@@ -9,6 +9,7 @@ import 'package:bar_boss_mobile/app/core/utils/validators.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/form_password_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 
 import 'package:bar_boss_mobile/app/core/widgets/step_progress_widget.dart';
@@ -135,19 +136,17 @@ class _Step3PageState extends State<Step3Page> {
                         ),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
-                  FormInputFieldWidget(
+                  FormPasswordFieldWidget(
                     label: AppStrings.passwordLabel,
                     hint: AppStrings.passwordHint,
                     controller: _passwordController,
-                    obscureText: true,
                     validator: Validators.password,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
-                  FormInputFieldWidget(
+                  FormPasswordFieldWidget(
                     label: AppStrings.confirmPasswordLabel,
                     hint: AppStrings.confirmPasswordHint,
                     controller: _confirmPasswordController,
-                    obscureText: true,
                     validator: Validators.confirmPassword(_passwordController.text),
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),

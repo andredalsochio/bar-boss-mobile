@@ -216,7 +216,42 @@ class BarRegistrationViewModel extends ChangeNotifier {
         RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_email);
   }
 
-  /// Valida o Passo 1 com verificações assíncronas de email e CNPJ
+  /// Valida os dados do Passo 1 (apenas formato, sem verificar duplicatas)
+  bool validateStep1Format() {
+    debugPrint('🔍 [VIEWMODEL] Validando formato dos dados do Passo 1...');
+    
+    // Validações básicas de formato
+    if (!isEmailValid) {
+      _setError('Email inválido');
+      return false;
+    }
+    
+    if (!isCnpjValid) {
+      _setError('CNPJ inválido');
+      return false;
+    }
+    
+    if (!isPhoneValid) {
+      _setError('Telefone inválido');
+      return false;
+    }
+    
+    if (_name.trim().isEmpty) {
+      _setError('Nome do bar é obrigatório');
+      return false;
+    }
+    
+    if (_responsibleName.trim().isEmpty) {
+      _setError('Nome do responsável é obrigatório');
+      return false;
+    }
+    
+    debugPrint('✅ [VIEWMODEL] Validação de formato do Passo 1 aprovada');
+    _clearError();
+    return true;
+  }
+  
+  /// Valida o Passo 1 com verificações assíncronas de email e CNPJ (usado apenas no Step 3)
   /// Retorna true se tudo estiver válido e não houver duplicatas
   Future<bool> validateStep1AndCheckEmail() async {
     debugPrint('🔍 [VIEWMODEL] validateStep1AndCheckEmail INICIADO');
@@ -224,23 +259,17 @@ class BarRegistrationViewModel extends ChangeNotifier {
     debugPrint('🔍 [VIEWMODEL] CNPJ a verificar: "$_cnpj"');
     debugPrint('🔍 [VIEWMODEL] isStep1Valid: $isStep1Valid');
     
-    if (!isStep1Valid) {
-      debugPrint('❌ [VIEWMODEL] Step 1 inválido - campos obrigatórios não preenchidos');
-      debugPrint('❌ [VIEWMODEL] Validações individuais:');
-      debugPrint('❌ [VIEWMODEL] - Email válido: $isEmailValid');
-      debugPrint('❌ [VIEWMODEL] - CNPJ válido: $isCnpjValid');
-      debugPrint('❌ [VIEWMODEL] - Nome válido: $isNameValid');
-      debugPrint('❌ [VIEWMODEL] - Nome responsável válido: $isResponsibleNameValid');
-      debugPrint('❌ [VIEWMODEL] - Telefone válido: $isPhoneValid');
-      _setError('Preencha todos os campos obrigatórios');
-      return false;
-    }
-
-    debugPrint('✅ [VIEWMODEL] Campos válidos, iniciando verificações assíncronas...');
     _setLoading(true);
     _clearError();
-
+    
     try {
+      // Primeiro valida formato
+      if (!validateStep1Format()) {
+        return false;
+      }
+      
+      debugPrint('✅ [VIEWMODEL] Campos válidos, iniciando verificações assíncronas...');
+
       // Verificar se o usuário está autenticado e se o email é o mesmo
       final currentUser = _authRepository.currentUser;
       final isCurrentUserEmail = currentUser != null && currentUser.email == _email;
@@ -544,113 +573,128 @@ class BarRegistrationViewModel extends ChangeNotifier {
     debugPrint('🚀 [BarRegistrationViewModel] Iniciando registerBarAndUser...');
     debugPrint('🚀 [BarRegistrationViewModel] Step3 válido: $isStep3Valid');
     
-    if (!isStep3Valid) {
-      debugPrint('❌ [BarRegistrationViewModel] Step3 inválido, cancelando registro');
-      return;
-    }
-
-    debugPrint('🔄 [BarRegistrationViewModel] Definindo loading = true');
-    _setLoading(true);
-    _clearError();
-
     try {
-      // Cria o usuário no Firebase Auth
-      final displayName = _responsibleName;
-      debugPrint('👤 [BarRegistrationViewModel] Criando usuário no Firebase Auth...');
-      debugPrint('👤 [BarRegistrationViewModel] Email: ${_email.substring(0, 3)}***');
-      debugPrint('👤 [BarRegistrationViewModel] DisplayName: $displayName');
-      
-      final authResult = await _authRepository.signUpWithEmail(
-        _email,
-        _password,
-        displayName: displayName,
-      );
+      debugPrint('🔄 [BarRegistrationViewModel] Definindo loading = true');
+      _setLoading(true);
+      _clearError();
 
-      if (!authResult.isSuccess) {
-        debugPrint('❌ [BarRegistrationViewModel] Falha na criação do usuário: ${authResult.errorMessage}');
-        _setError(authResult.errorMessage ?? 'Erro ao criar usuário');
+      // Validar todos os passos com verificação de duplicatas
+      debugPrint('🔍 [BarRegistrationViewModel] Validando Step 1 com verificação de duplicatas...');
+      final step1Valid = await validateStep1AndCheckEmail();
+      if (!step1Valid) {
+        debugPrint('❌ [BarRegistrationViewModel] Step 1 inválido ou dados duplicados');
         return;
       }
       
-      debugPrint('✅ [BarRegistrationViewModel] Usuário criado com sucesso no Firebase Auth!');
-
-      // Obtém o UID do usuário recém-criado
-      debugPrint('🔍 [BarRegistrationViewModel] Obtendo UID do usuário recém-criado...');
-      final currentUser = _authRepository.currentUser;
-      if (currentUser == null) {
-        debugPrint('❌ [BarRegistrationViewModel] Erro: usuário não encontrado após criação');
-        throw Exception('Erro ao obter ID do usuário');
+      // Validar Passo 2
+      if (!isStep2Valid) {
+        debugPrint('❌ [BarRegistrationViewModel] Passo 2 inválido');
+        _setError('Dados de endereço incompletos ou inválidos');
+        return;
       }
-      debugPrint('✅ [BarRegistrationViewModel] UID obtido: ${currentUser.uid}');
-
-      // Cria o bar no Firestore com perfil completo
-      // Como o usuário passou por todos os passos (1, 2 e 3), marca as flags como true
-      debugPrint('🏢 [BarRegistrationViewModel] Criando modelo do bar...');
-      final bar = BarModel.empty().copyWith(
-        contactEmail: _email,
-        cnpj: _cnpj,
-        name: _name,
-        responsibleName: _responsibleName,
-        contactPhone: _phone,
-        address: BarAddress(
-          cep: _cep,
-          street: _street,
-          number: _number,
-          complement: _complement,
-          state: _stateUf,
-          city: _city,
-        ),
-        profile: BarProfile(
-          contactsComplete: true, // Passo 1 completo
-          addressComplete: true,  // Passo 2 completo
-        ),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        createdByUid: currentUser.uid,
-        primaryOwnerUid: currentUser.uid, // Campo obrigatório para as regras do Firestore
-      );
-
-      // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
-      debugPrint('💾 [BarRegistrationViewModel] Criando bar no Firestore com operação atômica...');
-      debugPrint('💾 [BarRegistrationViewModel] CNPJ: ${_cnpj.substring(0, 5)}***');
-      debugPrint('💾 [BarRegistrationViewModel] Nome do bar: $_name');
       
-      final barId = await _barRepository.createBarWithReservation(
-        bar: bar,
-        ownerUid: currentUser.uid,
-      );
+      // Validar Passo 3 (senhas)
+      if (!isStep3Valid) {
+        debugPrint('❌ [BarRegistrationViewModel] Step3 inválido, cancelando registro');
+        _setError('Senhas não conferem ou são muito fracas');
+        return;
+      }
       
-      debugPrint('✅ [BarRegistrationViewModel] Bar criado com sucesso! ID: $barId');
+      // Cria o usuário no Firebase Auth
+       final displayName = _responsibleName;
+       debugPrint('👤 [BarRegistrationViewModel] Criando usuário no Firebase Auth...');
+       debugPrint('👤 [BarRegistrationViewModel] Email: ${_email.substring(0, 3)}***');
+       debugPrint('👤 [BarRegistrationViewModel] DisplayName: $displayName');
+       
+       final authResult = await _authRepository.signUpWithEmail(
+         _email,
+         _password,
+         displayName: displayName,
+       );
 
-      // Cria o UserProfile com completedFullRegistration = true e currentBarId
-      // Como o usuário passou por todos os passos (1, 2 e 3), marca a flag como true
-      debugPrint('👤 [BarRegistrationViewModel] Criando perfil do usuário...');
-      final userProfile = UserProfile(
-        uid: currentUser.uid,
-        email: _email,
-        displayName: _responsibleName,
-        photoUrl: null,
-        providers: ['email'], // Cadastro via email/senha
-        currentBarId: barId, // Define o bar recém-criado como atual
-        createdAt: DateTime.now(),
-        lastLoginAt: DateTime.now(),
-        completedFullRegistration: true, // Usuário completou cadastro completo
-      );
+       if (!authResult.isSuccess) {
+         debugPrint('❌ [BarRegistrationViewModel] Falha na criação do usuário: ${authResult.errorMessage}');
+         _setError(authResult.errorMessage ?? 'Erro ao criar usuário');
+         return;
+       }
+       
+       debugPrint('✅ [BarRegistrationViewModel] Usuário criado com sucesso no Firebase Auth!');
 
-      debugPrint('💾 [BarRegistrationViewModel] Salvando perfil do usuário no Firestore...');
-      await _userRepository.upsert(userProfile);
-      debugPrint('✅ [BarRegistrationViewModel] Perfil do usuário salvo com sucesso!');
+       // Obtém o UID do usuário recém-criado
+       debugPrint('🔍 [BarRegistrationViewModel] Obtendo UID do usuário recém-criado...');
+       final currentUser = _authRepository.currentUser;
+       if (currentUser == null) {
+         debugPrint('❌ [BarRegistrationViewModel] Erro: usuário não encontrado após criação');
+         throw Exception('Erro ao obter ID do usuário');
+       }
+       debugPrint('✅ [BarRegistrationViewModel] UID obtido: ${currentUser.uid}');
 
-      // Debug log conforme especificado
-      debugPrint('🎉 DEBUG Cadastro finalizado: Bar criado com sucesso para usuário ${currentUser.uid}');
-      debugPrint('🎉 DEBUG Cadastro finalizado: Profile completo - contactsComplete=true, addressComplete=true');
-      debugPrint('🎉 DEBUG Cadastro finalizado: UserProfile criado com completedFullRegistration=true');
+       // Cria o bar no Firestore com perfil completo
+       // Como o usuário passou por todos os passos (1, 2 e 3), marca as flags como true
+       debugPrint('🏢 [BarRegistrationViewModel] Criando modelo do bar...');
+       final bar = BarModel.empty().copyWith(
+         contactEmail: _email,
+         cnpj: _cnpj,
+         name: _name,
+         responsibleName: _responsibleName,
+         contactPhone: _phone,
+         address: BarAddress(
+           cep: _cep,
+           street: _street,
+           number: _number,
+           complement: _complement,
+           state: _stateUf,
+           city: _city,
+         ),
+         profile: BarProfile(
+           contactsComplete: true, // Passo 1 completo
+           addressComplete: true,  // Passo 2 completo
+         ),
+         createdAt: DateTime.now(),
+         updatedAt: DateTime.now(),
+         createdByUid: currentUser.uid,
+         primaryOwnerUid: currentUser.uid, // Campo obrigatório para as regras do Firestore
+       );
 
+       // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
+       debugPrint('💾 [BarRegistrationViewModel] Criando bar no Firestore com operação atômica...');
+       debugPrint('💾 [BarRegistrationViewModel] CNPJ: ${_cnpj.substring(0, 5)}***');
+       debugPrint('💾 [BarRegistrationViewModel] Nome do bar: $_name');
+       
+       final barId = await _barRepository.createBarWithReservation(
+         bar: bar,
+         ownerUid: currentUser.uid,
+       );
+       
+       debugPrint('✅ [BarRegistrationViewModel] Bar criado com sucesso! ID: $barId');
 
-      
-      debugPrint('🎉 [BarRegistrationViewModel] Registro completo finalizado com sucesso!');
+       // Cria o UserProfile com completedFullRegistration = true e currentBarId
+       // Como o usuário passou por todos os passos (1, 2 e 3), marca a flag como true
+       debugPrint('👤 [BarRegistrationViewModel] Criando perfil do usuário...');
+       final userProfile = UserProfile(
+         uid: currentUser.uid,
+         email: _email,
+         displayName: _responsibleName,
+         photoUrl: null,
+         providers: ['email'], // Cadastro via email/senha
+         currentBarId: barId, // Define o bar recém-criado como atual
+         createdAt: DateTime.now(),
+         lastLoginAt: DateTime.now(),
+         completedFullRegistration: true, // Usuário completou cadastro completo
+       );
 
-      _setRegistrationState(RegistrationState.success);
+       debugPrint('💾 [BarRegistrationViewModel] Salvando perfil do usuário no Firestore...');
+       await _userRepository.upsert(userProfile);
+       debugPrint('✅ [BarRegistrationViewModel] Perfil do usuário salvo com sucesso!');
+
+       // Debug log conforme especificado
+       debugPrint('🎉 DEBUG Cadastro finalizado: Bar criado com sucesso para usuário ${currentUser.uid}');
+       debugPrint('🎉 DEBUG Cadastro finalizado: Profile completo - contactsComplete=true, addressComplete=true');
+       debugPrint('🎉 DEBUG Cadastro finalizado: UserProfile criado com completedFullRegistration=true');
+
+       debugPrint('🎉 [BarRegistrationViewModel] Registro completo finalizado com sucesso!');
+
+       _setRegistrationState(RegistrationState.success);
     } catch (e) {
       _setError(e.toString());
       rethrow;

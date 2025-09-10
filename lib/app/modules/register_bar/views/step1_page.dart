@@ -14,6 +14,7 @@ import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 
 import 'package:bar_boss_mobile/app/core/widgets/step_progress_widget.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 
@@ -36,13 +37,22 @@ class _Step1PageState extends State<Step1Page> {
   final _phoneFormatter = Formatters.phoneFormatter;
 
   late final BarRegistrationViewModel _viewModel;
+  bool _isUserAuthenticated = false;
 
   @override
   void initState() {
     super.initState();
     _viewModel = context.read<BarRegistrationViewModel>();
 
-
+    // Verifica se o usuário está autenticado e preenche o email automaticamente
+    final authViewModel = context.read<AuthViewModel>();
+    final currentUserEmail = authViewModel.currentUser?.email;
+    _isUserAuthenticated = currentUserEmail != null && currentUserEmail.isNotEmpty;
+    
+    if (_isUserAuthenticated) {
+      _emailController.text = currentUserEmail!;
+      _viewModel.setEmail(currentUserEmail);
+    }
 
     // Adiciona listeners para atualizar o ViewModel quando os valores mudarem
     _emailController.addListener(_updateEmail);
@@ -199,7 +209,8 @@ class _Step1PageState extends State<Step1Page> {
                     hint: AppStrings.emailHint,
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) => Validators.email(value),
+                    validator: Validators.email,
+                    enabled: !_isUserAuthenticated, // Desabilitado apenas se usuário estiver autenticado
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormInputFieldWidget(

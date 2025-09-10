@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
-import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
-import 'package:bar_boss_mobile/app/core/utils/validators.dart';
-import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
+import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
+import 'package:bar_boss_mobile/app/core/constants/app_routes.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/form_password_field_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
+import 'package:bar_boss_mobile/app/core/utils/validators.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 
 /// Tela de login
@@ -187,11 +188,10 @@ class _LoginPageState extends State<LoginPage> {
                     validator: (value) => Validators.email(value),
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
-                  FormInputFieldWidget(
+                  FormPasswordFieldWidget(
                     label: AppStrings.passwordLabel,
                     hint: AppStrings.passwordHint,
                     controller: _passwordController,
-                    obscureText: true,
                     validator: (value) => Validators.password(value),
                   ),
                   const SizedBox(height: AppSizes.spacingSmall),

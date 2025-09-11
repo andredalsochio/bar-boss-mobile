@@ -1,5 +1,8 @@
 # Funcionalidade de Perfil do Bar - Bar Boss Mobile
 
+**Versão:** 1.0  
+**Última Atualização:** 10 de Setembro de 2025
+
 ## Visão Geral
 
 Este documento descreve a implementação da funcionalidade de perfil do bar, incluindo upload de fotos, validação de permissões e integração com o sistema de membros.

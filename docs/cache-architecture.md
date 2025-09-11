@@ -1,5 +1,8 @@
 # Arquitetura de Cache - Bar Boss Mobile
 
+**Versão:** 1.0  
+**Última Atualização:** 10 de Setembro de 2025
+
 ## Visão Geral
 
 Este documento descreve a arquitetura de cache implementada no aplicativo Bar Boss Mobile, projetada para oferecer uma experiência offline-first com sincronização inteligente e alta performance.

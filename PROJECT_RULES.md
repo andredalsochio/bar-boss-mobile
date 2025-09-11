@@ -250,6 +250,7 @@ if (!user.completedFullRegistration) {
 3. **Implementação:** Seguir padrões estabelecidos
 4. **Documentação:** Atualizar arquivos `.md` relevantes
 5. **Validação:** Testar fluxos críticos
+6. **Verificação Final:** Ao final de cada tarefa, verificar se correções de bugs, novas funcionalidades ou melhorias devem ser documentadas nos arquivos `.md` relevantes, atualizando versão e data apenas quando houver modificações reais
 
 ### Padrões de Resposta
 - **Idioma:** Português brasileiro

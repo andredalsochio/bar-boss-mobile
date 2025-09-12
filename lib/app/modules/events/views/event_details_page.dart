@@ -8,6 +8,7 @@ import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
+import 'package:bar_boss_mobile/app/core/widgets/image_viewer_page.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
@@ -378,25 +379,39 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         color: AppColors.border(context),
                       ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: AppColors.cardBackground(context),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                                color: AppColors.primary(context),
-                              ),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ImageViewerPage(
+                              imageUrls: _event!.promoImages!,
+                              initialIndex: index,
+                              heroTag: 'promo_image',
                             ),
-                          );
+                          ),
+                        );
+                      },
+                      child: Hero(
+                        tag: 'promo_image_$index',
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: AppColors.cardBackground(context),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    color: AppColors.primary(context),
+                                  ),
+                                ),
+                              );
                         },
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
@@ -424,7 +439,9 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         },
                       ),
                     ),
-                  );
+                  ),
+                ),
+              );
                 },
               ),
             ),

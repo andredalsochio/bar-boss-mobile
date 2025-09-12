@@ -7,6 +7,7 @@ import 'package:bar_boss_mobile/app/modules/bar_profile/viewmodels/bar_profile_v
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/services/image_picker_service.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
+import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 
 /// Tela de perfil do bar
 class BarProfilePage extends StatefulWidget {
@@ -407,6 +408,37 @@ class _BarProfilePageState extends State<BarProfilePage> {
   }
 
   Widget _buildDefaultAvatar(String name) {
+    return Consumer<BarProfileViewModel>(
+      builder: (context, viewModel, _) {
+        // Tenta usar a foto do usuário logado se disponível
+        final authViewModel = context.read<AuthViewModel>();
+        final userPhotoUrl = authViewModel.currentUser?.photoUrl;
+        
+        if (userPhotoUrl != null && userPhotoUrl.isNotEmpty) {
+          return Image.network(
+            userPhotoUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildInitialAvatar(name);
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                color: AppColors.primary(context).withValues(alpha: 0.1),
+                child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            },
+          );
+        }
+        
+        return _buildInitialAvatar(name);
+      },
+    );
+  }
+  
+  Widget _buildInitialAvatar(String name) {
     return Container(
       color: AppColors.primary(context).withValues(alpha: 0.1),
       child: Center(

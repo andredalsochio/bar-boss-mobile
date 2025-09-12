@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -38,6 +39,13 @@ class _Step1PageState extends State<Step1Page> {
 
   late final BarRegistrationViewModel _viewModel;
   bool _isUserAuthenticated = false;
+  
+  // Controle de exibição de erros
+  bool _showEmailError = false;
+  bool _showCnpjError = false;
+  bool _showNameError = false;
+  bool _showResponsibleNameError = false;
+  bool _showPhoneError = false;
 
   @override
   void initState() {
@@ -102,6 +110,16 @@ class _Step1PageState extends State<Step1Page> {
   void _updatePhone() {
     _viewModel.setPhone(_phoneController.text);
   }
+  
+  void _validateAndShowErrors() {
+    setState(() {
+      _showEmailError = Validators.email(_emailController.text) != null;
+      _showCnpjError = Validators.cnpj(_cnpjController.text) != null;
+      _showNameError = Validators.required(_nameController.text) != null;
+      _showResponsibleNameError = Validators.required(_responsibleNameController.text) != null;
+      _showPhoneError = Validators.phone(_phoneController.text) != null;
+    });
+  }
 
   Future<void> _goToNextStep() async {
     debugPrint('🔘 [STEP1_PAGE] Botão Continuar pressionado');
@@ -120,8 +138,12 @@ class _Step1PageState extends State<Step1Page> {
       debugPrint('❌ [STEP1_PAGE] - Nome válido: ${_viewModel.isNameValid}');
       debugPrint('❌ [STEP1_PAGE] - Nome responsável válido: ${_viewModel.isResponsibleNameValid}');
       debugPrint('❌ [STEP1_PAGE] - Telefone válido: ${_viewModel.isPhoneValid}');
+      _validateAndShowErrors();
       return;
     }
+
+    // Fechar o teclado
+    FocusScope.of(context).unfocus();
 
     debugPrint('✅ [STEP1_PAGE] Step1 válido, iniciando validação assíncrona...');
     final isValid = await _viewModel.validateStep1AndCheckEmail();
@@ -211,6 +233,8 @@ class _Step1PageState extends State<Step1Page> {
                     keyboardType: TextInputType.emailAddress,
                     validator: Validators.email,
                     enabled: !_isUserAuthenticated, // Desabilitado apenas se usuário estiver autenticado
+                    inputFormatters: [LowerCaseTextFormatter()],
+                    showError: _showEmailError,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormInputFieldWidget(
@@ -220,6 +244,7 @@ class _Step1PageState extends State<Step1Page> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [_cnpjFormatter],
                     validator: (value) => Validators.cnpj(value),
+                    showError: _showCnpjError,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormInputFieldWidget(
@@ -227,6 +252,7 @@ class _Step1PageState extends State<Step1Page> {
                     hint: AppStrings.barNameHint,
                     controller: _nameController,
                     validator: (value) => Validators.required(value),
+                    showError: _showNameError,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormInputFieldWidget(
@@ -234,6 +260,7 @@ class _Step1PageState extends State<Step1Page> {
                     hint: AppStrings.responsibleNameHint,
                     controller: _responsibleNameController,
                     validator: (value) => Validators.required(value),
+                    showError: _showResponsibleNameError,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormInputFieldWidget(
@@ -243,6 +270,7 @@ class _Step1PageState extends State<Step1Page> {
                     keyboardType: TextInputType.phone,
                     inputFormatters: [_phoneFormatter],
                     validator: (value) => Validators.phone(value),
+                    showError: _showPhoneError,
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
 
@@ -257,6 +285,20 @@ class _Step1PageState extends State<Step1Page> {
           );
         },
       ),
+    );
+  }
+}
+
+// Formatter para converter texto para minúsculas
+class LowerCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toLowerCase(),
+      selection: newValue.selection,
     );
   }
 }

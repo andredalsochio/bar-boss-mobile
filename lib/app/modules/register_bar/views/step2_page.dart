@@ -42,6 +42,13 @@ class _Step2PageState extends State<Step2Page> {
 
   late final BarRegistrationViewModel _viewModel;
   late final AuthViewModel _authViewModel;
+  
+  // Variáveis para controlar exibição de erros
+  bool _showCepError = false;
+  bool _showStreetError = false;
+  bool _showNumberError = false;
+  bool _showStateError = false;
+  bool _showCityError = false;
 
   @override
   void initState() {
@@ -104,10 +111,21 @@ class _Step2PageState extends State<Step2Page> {
   void _updateCity() {
     _viewModel.setCity(_cityController.text);
   }
+  
+  void _validateAndShowErrors() {
+    setState(() {
+      _showCepError = Validators.cep(_cepController.text) != null;
+      _showStreetError = Validators.required(_streetController.text) != null;
+      _showNumberError = Validators.required(_numberController.text) != null;
+      _showStateError = _stateController.text.isEmpty;
+      _showCityError = Validators.required(_cityController.text) != null;
+    });
+  }
 
   void _goToNextStep() async {
     // Valida o Step 2 antes de prosseguir
     if (!_viewModel.isStep2Valid) {
+      _validateAndShowErrors();
       return;
     }
 
@@ -222,6 +240,7 @@ class _Step2PageState extends State<Step2Page> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [_cepFormatter],
                     validator: (value) => Validators.cep(value),
+                    showError: _showCepError,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormInputFieldWidget(
@@ -229,6 +248,7 @@ class _Step2PageState extends State<Step2Page> {
                     hint: AppStrings.streetHint,
                     controller: _streetController,
                     validator: (value) => Validators.required(value),
+                    showError: _showStreetError,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormInputFieldWidget(
@@ -237,6 +257,7 @@ class _Step2PageState extends State<Step2Page> {
                     controller: _numberController,
                     keyboardType: TextInputType.number,
                     validator: (value) => Validators.required(value),
+                    showError: _showNumberError,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormInputFieldWidget(
@@ -262,14 +283,14 @@ class _Step2PageState extends State<Step2Page> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
                         borderSide: BorderSide(
-                            color: AppColors.border(context),
+                            color: _showStateError ? AppColors.error : AppColors.border(context),
                             width: AppSizes.borderWidth,
                           ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppSizes.borderRadius),
                         borderSide: BorderSide(
-                            color: AppColors.primary(context),
+                            color: _showStateError ? AppColors.error : AppColors.primary(context),
                             width: AppSizes.borderWidth,
                           ),
                       ),
@@ -313,6 +334,7 @@ class _Step2PageState extends State<Step2Page> {
                     hint: AppStrings.cityHint,
                     controller: _cityController,
                     validator: (value) => Validators.required(value),
+                    showError: _showCityError,
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
                   ButtonWidget(

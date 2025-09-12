@@ -23,6 +23,7 @@ class FormInputFieldWidget extends StatelessWidget {
   final TextInputAction? textInputAction;
   final void Function()? onTap;
   final bool readOnly;
+  final bool showError;
   
   const FormInputFieldWidget({
     super.key,
@@ -44,6 +45,7 @@ class FormInputFieldWidget extends StatelessWidget {
     this.textInputAction,
     this.onTap,
     this.readOnly = false,
+    this.showError = false,
   });
   
   @override
@@ -106,14 +108,14 @@ class FormInputFieldWidget extends StatelessWidget {
             enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
                 borderSide: BorderSide(
-                  color: AppColors.border(context),
+                  color: showError ? AppColors.error : AppColors.border(context),
                   width: AppSizes.borderWidth,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                  borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
                  borderSide: BorderSide(
-                   color: AppColors.primary(context),
+                   color: showError ? AppColors.error : AppColors.primary(context),
                    width: AppSizes.borderWidth,
                  ),
                ),

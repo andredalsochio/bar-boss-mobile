@@ -521,7 +521,7 @@ class _EventFormPageState extends State<EventFormPage> {
     return Column(
       children: [
         ButtonWidget(
-          text: widget.event != null ? 'Salvar alterações' : 'Criar evento',
+          text: widget.event != null ? 'Salvar' : 'Criar evento',
           onPressed: viewModel.isLoading ? null : () async {
             await viewModel.saveEvent();
             if (mounted && viewModel.state == EventsState.success) {

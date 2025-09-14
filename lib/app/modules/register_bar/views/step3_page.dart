@@ -8,7 +8,6 @@ import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/utils/validators.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
-import 'package:bar_boss_mobile/app/core/widgets/form_input_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/form_password_field_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 

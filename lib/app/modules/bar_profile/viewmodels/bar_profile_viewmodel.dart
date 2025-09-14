@@ -87,7 +87,7 @@ class BarProfileViewModel extends ChangeNotifier {
         imageFile,
         imagePath,
         metadata: {
-          'barId': _bar!.id!,
+          'barId': _bar!.id,
           'type': 'profile_photo',
         },
       );

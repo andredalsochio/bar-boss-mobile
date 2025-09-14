@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
 
 /// Página para visualização de imagens em tela cheia com zoom e pan

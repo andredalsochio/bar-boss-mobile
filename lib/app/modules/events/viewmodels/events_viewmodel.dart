@@ -101,7 +101,7 @@ class EventsViewModel extends ChangeNotifier {
   bool get areAttractionsValid => _areAttractionsValid;
 
   /// Verifica se o formulário está válido
-  bool get isFormValid => _isDateValid && _areAttractionsValid;
+  bool get isFormValid => _isDateValid;
 
   /// Inicializa o ViewModel carregando os eventos
   Future<void> init() async {
@@ -414,10 +414,8 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Valida as atrações
   void _validateAttractions() {
-    // Deve ter pelo menos uma atração não vazia
-    _areAttractionsValid = _attractions.any(
-      (attraction) => attraction.trim().isNotEmpty,
-    );
+    // Atrações são opcionais, sempre válido
+    _areAttractionsValid = true;
   }
 
   /// Salva o evento (cria ou atualiza)
@@ -675,5 +673,10 @@ class EventsViewModel extends ChangeNotifier {
   void _clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Define o estado de erro (método público para validação inline)
+  void setErrorState(String message) {
+    _setError(message);
   }
 }

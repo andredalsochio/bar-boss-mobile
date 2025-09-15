@@ -22,16 +22,10 @@ import 'package:bar_boss_mobile/app/modules/events/views/event_details_page.dart
 class AppRouter {
   static GoRouter createRouter(AuthViewModel authViewModel) {
     return GoRouter(
-      initialLocation: '/',
+      initialLocation: AppRoutes.login,
       refreshListenable: authViewModel,
       redirect: (context, state) => _handleRedirect(context, state, authViewModel),
       routes: [
-        // Rota inicial para redirecionamento
-        GoRoute(
-          path: '/',
-          name: 'initial',
-          builder: (context, state) => const SizedBox.shrink(), // Widget vazio, nunca será exibido
-        ),
         // Rotas de autenticação
         GoRoute(
           path: AppRoutes.login,
@@ -154,25 +148,6 @@ class AppRouter {
     final isRegistering = state.matchedLocation.startsWith('/register');
     final isEmailVerificationFlow = state.matchedLocation == AppRoutes.emailVerification ||
         state.matchedLocation == AppRoutes.forgotPassword;
-    final isInitialRoute = state.matchedLocation == '/';
-
-    // Rota inicial: redireciona baseado no estado de autenticação
-    if (isInitialRoute) {
-      if (isLoggedIn) {
-        final emailVerified = authViewModel.isCurrentUserEmailVerified;
-        final isFromSocialProvider = authViewModel.isFromSocialProvider;
-        
-        // Se email verificado OU é de provedor social, vai para home
-        if (emailVerified || isFromSocialProvider) {
-          return AppRoutes.home;
-        } else {
-          // Email não verificado para usuário de email/senha
-          return AppRoutes.emailVerification;
-        }
-      } else {
-        return AppRoutes.login;
-      }
-    }
 
     // Se o usuário não está logado e não está na tela de login, cadastro ou verificação
     if (!isLoggedIn && !isLoggingIn && !isRegistering && !isEmailVerificationFlow) {

@@ -18,6 +18,7 @@ class FormPasswordFieldWidget extends StatefulWidget {
   final TextInputAction? textInputAction;
   final void Function()? onTap;
   final bool readOnly;
+  final bool showError;
   
   const FormPasswordFieldWidget({
     super.key,
@@ -34,6 +35,7 @@ class FormPasswordFieldWidget extends StatefulWidget {
     this.textInputAction,
     this.onTap,
     this.readOnly = false,
+    this.showError = false,
   });
 
   @override
@@ -113,14 +115,14 @@ class _FormPasswordFieldWidgetState extends State<FormPasswordFieldWidget> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
               borderSide: BorderSide(
-                color: AppColors.border(context),
+                color: widget.showError ? AppColors.error : AppColors.border(context),
                 width: AppSizes.borderWidth,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
               borderSide: BorderSide(
-                color: AppColors.primary(context),
+                color: widget.showError ? AppColors.error : AppColors.primary(context),
                 width: AppSizes.borderWidth,
               ),
             ),

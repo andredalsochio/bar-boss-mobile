@@ -22,6 +22,10 @@ abstract class BarRepositoryDomain {
   /// Utiliza collectionGroup('members') para buscar por uid
   Stream<List<BarModel>> listMyBars(String uid);
 
+  /// Busca os bares do usuário (versão Future)
+  /// Utiliza collectionGroup('members') para buscar por uid
+  Future<List<BarModel>> getUserBars(String uid);
+
   /// Adiciona um membro ao bar com a role especificada
   Future<void> addMember(String barId, String uid, String role);
 

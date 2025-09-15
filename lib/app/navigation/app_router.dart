@@ -160,8 +160,8 @@ class AppRouter {
       final emailVerified = authViewModel.isCurrentUserEmailVerified;
       final isFromSocialProvider = authViewModel.isFromSocialProvider;
       
-      // Se está na tela de login e e-mail verificado, vai para home
-      if (isLoggingIn && emailVerified) {
+      // Se está na tela de login e (e-mail verificado OU é de provedor social), vai para home
+      if (isLoggingIn && (emailVerified || isFromSocialProvider)) {
         return AppRoutes.home;
       }
       

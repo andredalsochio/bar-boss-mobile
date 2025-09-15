@@ -16,6 +16,9 @@ Esta pasta contém documentação específica de implementações e funcionalida
 - **[cache-architecture.md](./cache-architecture.md)** - Arquitetura de cache local
 - **[app-drawer-refactor.md](./app-drawer-refactor.md)** - Refatoração do menu lateral
 
+### Arquitetura e Migrações
+- **[repository-architecture-migration.md](./repository-architecture-migration.md)** - Migração para arquitetura unificada de repositórios
+
 ### Melhorias e Correções
 - **[auth-flow-improvements.md](./auth-flow-improvements.md)** - Melhorias no fluxo de autenticação
 - **[firestore-permission-fix.md](./firestore-permission-fix.md)** - Correção de permissões

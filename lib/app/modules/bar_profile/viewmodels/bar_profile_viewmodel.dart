@@ -2,18 +2,18 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
-import 'package:bar_boss_mobile/app/modules/register_bar/repositories/bar_repository.dart';
+import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/data/firebase/firebase_image_storage_repository.dart';
 
 /// ViewModel para gerenciar o perfil do bar
 class BarProfileViewModel extends ChangeNotifier {
-  final BarRepository _barRepository;
+  final BarRepositoryDomain _barRepository;
   final AuthViewModel _authViewModel;
   final FirebaseImageStorageRepository _imageStorageRepository;
 
   BarProfileViewModel({
-    required BarRepository barRepository,
+    required BarRepositoryDomain barRepository,
     required AuthViewModel authViewModel,
     FirebaseImageStorageRepository? imageStorageRepository,
   })  : _barRepository = barRepository,
@@ -51,7 +51,7 @@ class BarProfileViewModel extends ChangeNotifier {
       debugPrint('🔍 [BarProfileViewModel] Email: ${currentUser.email}');
       
       // Busca o bar do usuário atual via membership (método recomendado)
-      final userBars = await _barRepository.listBarsByMembership(currentUser.uid);
+      final userBars = await _barRepository.getUserBars(currentUser.uid);
       if (userBars.isNotEmpty) {
         _bar = userBars.first;
         debugPrint('✅ [BarProfileViewModel] Perfil carregado: ${_bar?.name ?? "Nenhum bar encontrado"}');
@@ -120,7 +120,7 @@ class BarProfileViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      await _barRepository.updateBar(updatedBar);
+      await _barRepository.update(updatedBar);
       _bar = updatedBar;
       notifyListeners();
     } catch (e) {

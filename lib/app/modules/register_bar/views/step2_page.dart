@@ -153,6 +153,7 @@ class _Step2PageState extends State<Step2Page> {
   /// Salva o Passo 2 para usuários de login social
   Future<void> _saveSocialLoginStep2() async {
     if (!_viewModel.isStep2Valid) {
+      _validateAndShowErrors();
       return;
     }
 
@@ -341,11 +342,9 @@ class _Step2PageState extends State<Step2Page> {
                     text: _authViewModel.isFromSocialProvider 
                         ? 'Salvar' 
                         : AppStrings.continueButton,
-                    onPressed: viewModel.isStep2Valid 
-                        ? (_authViewModel.isFromSocialProvider 
-                            ? _saveSocialLoginStep2 
-                            : _goToNextStep) 
-                        : null,
+                    onPressed: _authViewModel.isFromSocialProvider 
+                        ? _saveSocialLoginStep2 
+                        : _goToNextStep,
                     isLoading: viewModel.isLoading,
                   ),
                 ],

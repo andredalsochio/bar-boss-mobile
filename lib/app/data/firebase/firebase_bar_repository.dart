@@ -132,6 +132,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     });
   }
 
+  @override
   Future<List<BarModel>> getUserBars(String uid) async {
     debugPrint('👥 [FirebaseBarRepository] Buscando bares do usuário: $uid');
     try {

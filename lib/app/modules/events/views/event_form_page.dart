@@ -119,24 +119,7 @@ class _EventFormPageState extends State<EventFormPage> {
             );
           }
 
-          if (viewModel.state == EventsState.error) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    viewModel.errorMessage ?? 'Erro desconhecido',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: AppSizes.spacing16),
-                  ButtonWidget(
-                    text: 'Tentar novamente',
-                    onPressed: _initializeForm,
-                  ),
-                ],
-              ),
-            );
-          }
+          // Removido: tela de erro - agora usa validação inline
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppSizes.spacing16),
@@ -203,7 +186,11 @@ class _EventFormPageState extends State<EventFormPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSizes.spacing16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.border(context)),
+                  border: Border.all(
+                    color: viewModel.state == EventsState.error && viewModel.eventDate == null
+                        ? Colors.red
+                        : AppColors.border(context),
+                  ),
                   borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
                 ),
                 child: Row(
@@ -228,6 +215,18 @@ class _EventFormPageState extends State<EventFormPage> {
                 ),
               ),
             ),
+            // Mensagem de erro para data obrigatória
+            if (viewModel.state == EventsState.error && viewModel.eventDate == null)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSizes.spacing8),
+                child: Text(
+                  'Por favor, selecione a data do evento',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: AppSizes.fontSize12,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -523,6 +522,13 @@ class _EventFormPageState extends State<EventFormPage> {
         ButtonWidget(
           text: widget.event != null ? 'Salvar' : 'Criar evento',
           onPressed: viewModel.isLoading ? null : () async {
+            // Valida se a data foi selecionada antes de tentar salvar
+            if (viewModel.eventDate == null) {
+              // Força o estado de erro para mostrar a mensagem inline
+              viewModel.setErrorState('Por favor, selecione a data do evento');
+              return;
+            }
+            
             await viewModel.saveEvent();
             if (mounted && viewModel.state == EventsState.success) {
               Navigator.of(context).pop();

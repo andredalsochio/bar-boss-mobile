@@ -27,6 +27,10 @@ class _Step3PageState extends State<Step3Page> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  // Controle de exibição de erros
+  bool _showPasswordError = false;
+  bool _showConfirmPasswordError = false;
+
   late final BarRegistrationViewModel _viewModel;
   late final AuthViewModel _authViewModel;
 
@@ -66,6 +70,13 @@ class _Step3PageState extends State<Step3Page> {
     _viewModel.setConfirmPassword(_confirmPasswordController.text);
   }
 
+  void _validateAndShowErrors() {
+    setState(() {
+      _showPasswordError = Validators.password(_passwordController.text) != null;
+      _showConfirmPasswordError = Validators.confirmPassword(_passwordController.text)(_confirmPasswordController.text) != null;
+    });
+  }
+
   void _goToPreviousStep() {
     // Verifica se há algo na pilha de navegação para fazer pop
     if (context.canPop()) {
@@ -77,7 +88,10 @@ class _Step3PageState extends State<Step3Page> {
   }
 
   Future<void> _submitRegistration() async {
-    if (!_viewModel.isStep3Valid) return;
+    if (!_viewModel.isStep3Valid) {
+      _validateAndShowErrors();
+      return;
+    }
 
     try {
       // Verifica se é usuário de login social
@@ -140,6 +154,7 @@ class _Step3PageState extends State<Step3Page> {
                     hint: AppStrings.passwordHint,
                     controller: _passwordController,
                     validator: Validators.password,
+                    showError: _showPasswordError,
                   ),
                   const SizedBox(height: AppSizes.spacingMedium),
                   FormPasswordFieldWidget(
@@ -147,12 +162,13 @@ class _Step3PageState extends State<Step3Page> {
                     hint: AppStrings.confirmPasswordHint,
                     controller: _confirmPasswordController,
                     validator: Validators.confirmPassword(_passwordController.text),
+                    showError: _showConfirmPasswordError,
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
 
                   ButtonWidget(
                     text: AppStrings.submitRegistrationButton,
-                    onPressed: viewModel.isStep3Valid ? _submitRegistration : null,
+                    onPressed: _submitRegistration,
                     isLoading: viewModel.isLoading,
                   ),
                 ],

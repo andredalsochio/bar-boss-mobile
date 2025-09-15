@@ -94,7 +94,7 @@ Estas diretrizes devem ser seguidas em todas as interações com o desenvolvedor
 
 ### Banner de Cadastro Incompleto
 **Regra crítica:** Após login social (Google/Apple/Facebook):
-- Exibir banner na Home: "Complete seu cadastro (0/2)"
+- Exibir banner na Home: "Complete seu cadastro (0/3)"
 - CTA: "Completar agora" → navegar para `/cadastro/passo1`
 - **NÃO exibir** após cadastro completo via "Não tem um bar?"
 

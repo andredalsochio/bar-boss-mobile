@@ -158,10 +158,7 @@ firestore/
 │   │   │   └── {uid}/      # Documento de membro
 │   │   └── events/         # Subcoleção de eventos
 │   │       └── {eventId}/  # Documento de evento
-├── cnpj_registry/          # Registro de CNPJs (unicidade)
-│   └── {cnpj}/             # Documento de CNPJ
-└── email_registry/         # Registro de emails (unicidade)
-    └── {email}/            # Documento de email
+
 ```
 
 ### **B. Esquema de Documentos**
@@ -241,30 +238,13 @@ firestore/
 }
 ```
 
-#### **cnpj_registry**
-```javascript
-{
-  cnpj: string,                  // CNPJ (apenas dígitos)
-  barId: string,                 // ID do bar associado
-  createdAt: timestamp           // Data de criação
-}
-```
 
-#### **email_registry**
-```javascript
-{
-  email: string,                 // Email normalizado
-  barId: string,                 // ID do bar associado
-  createdAt: timestamp           // Data de criação
-}
-```
 
 ### **C. Índices**
 
 | Coleção | Campo | Ordem | Finalidade |
 |---------|-------|-------|------------|
-| **bars** | email | ASC | Verificação de unicidade de email |
-| **bars** | cnpj | ASC | Verificação de unicidade de CNPJ |
+
 | **bars** | createdByUid | ASC | Listar bares do usuário |
 | **bars/{barId}/events** | startAt | DESC | Listar eventos por data |
 | **bars/{barId}/events** | published | ASC | Filtrar eventos publicados |
@@ -275,96 +255,28 @@ firestore/
 
 ### **A. Funções Callable**
 
-#### **createBarWithUniqueValidation**
+#### **createBar**
 ```javascript
-// Função para criar bar com validação transacional de unicidade
-exports.createBarWithUniqueValidation = functions.https.onCall(async (data, context) => {
+// Função para criar bar
+exports.createBar = functions.https.onCall(async (data, context) => {
   // Verificar autenticação
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
   }
   
-  const { email, cnpj, barData } = data;
+  const { barData } = data;
   
-  // Normalizar dados
-  const normalizedEmail = email.toLowerCase().trim();
-  const cleanCnpj = cnpj.replace(/[^\d]/g, '');
+  // Criar bar no Firestore
+  const barRef = admin.firestore().collection('bars').doc();
   
-  return await admin.firestore().runTransaction(async (transaction) => {
-    // 1. Verificar unicidade de CNPJ
-    const cnpjRef = admin.firestore().collection('cnpj_registry').doc(cleanCnpj);
-    const cnpjDoc = await transaction.get(cnpjRef);
-    
-    if (cnpjDoc.exists) {
-      throw new functions.https.HttpsError('already-exists', 'CNPJ já está em uso');
-    }
-    
-    // 2. Verificar unicidade de email na coleção bars
-    const emailQuery = admin.firestore().collection('bars').where('email', '==', normalizedEmail).limit(1);
-    const emailDocs = await transaction.get(emailQuery);
-    
-    if (!emailDocs.empty) {
-      throw new functions.https.HttpsError('already-exists', 'Email já está em uso');
-    }
-    
-    // 3. Criar registros atomicamente
-    const barRef = admin.firestore().collection('bars').doc();
-    
-    transaction.set(cnpjRef, {
-      barId: barRef.id,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    transaction.set(barRef, {
-      ...barData,
-      cnpj: cleanCnpj,
-      email: normalizedEmail,
-      createdByUid: context.auth.uid,
-      primaryOwnerUid: context.auth.uid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    return { barId: barRef.id };
+  await barRef.set({
+    ...barData,
+    createdByUid: context.auth.uid,
+    primaryOwnerUid: context.auth.uid,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
   });
-});
-```
-
-#### **checkEmailUniqueness**
-```javascript
-// Função para verificar unicidade de email
-exports.checkEmailUniqueness = functions.https.onCall(async (data, context) => {
-  const { email } = data;
   
-  // Normalizar email
-  const normalizedEmail = email.toLowerCase().trim();
-  
-  // Verificar na coleção bars
-  const emailQuery = await admin.firestore()
-    .collection('bars')
-    .where('email', '==', normalizedEmail)
-    .limit(1)
-    .get();
-  
-  return { isUnique: emailQuery.empty };
-});
-```
-
-#### **checkCnpjUniqueness**
-```javascript
-// Função para verificar unicidade de CNPJ
-exports.checkCnpjUniqueness = functions.https.onCall(async (data, context) => {
-  const { cnpj } = data;
-  
-  // Normalizar CNPJ
-  const cleanCnpj = cnpj.replace(/[^\d]/g, '');
-  
-  // Verificar na coleção cnpj_registry
-  const cnpjDoc = await admin.firestore()
-    .collection('cnpj_registry')
-    .doc(cleanCnpj)
-    .get();
-  
-  return { isUnique: !cnpjDoc.exists };
+  return { barId: barRef.id };
 });
 ```
 
@@ -386,25 +298,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
 });
 ```
 
-#### **onBarDeleted**
-```javascript
-// Trigger quando um bar é excluído
-exports.onBarDeleted = functions.firestore
-  .document('bars/{barId}')
-  .onDelete(async (snapshot, context) => {
-    const barData = snapshot.data();
-    const barId = context.params.barId;
-    
-    // Remover CNPJ do registro
-    await admin.firestore()
-      .collection('cnpj_registry')
-      .doc(barData.cnpj)
-      .delete();
-    
-    // Remover membros e eventos (opcional, depende da regra de negócio)
-    // Neste caso, mantemos para histórico
-  });
-```
+
 
 ---
 
@@ -533,19 +427,7 @@ service cloud.firestore {
       }
     }
 
-    // CNPJ REGISTRY
-    match /cnpj_registry/{cnpj} {
-      allow read: if true;               // permitir verificação de unicidade sem auth
-      allow create: if isAuth() && canCreateBar();         // criado no batch - requer e-mail verificado, usuário social ou recém-criado
-      allow update, delete: if false;    // imutável (ou política interna)
-    }
 
-    // EMAIL REGISTRY
-    match /email_registry/{email} {
-      allow read: if true;               // permitir verificação de unicidade sem auth
-      allow create: if isAuth() && canCreateBar();         // criado no batch - requer e-mail verificado, usuário social ou recém-criado
-      allow update, delete: if false;    // imutável (ou política interna)
-    }
 
     // Collection group query para members
     match /{path=**}/members/{memberUid} {

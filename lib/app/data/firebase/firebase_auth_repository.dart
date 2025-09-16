@@ -340,47 +340,7 @@ class FirebaseAuthRepository implements AuthRepository {
     }
   }
 
-  /// Verifica se um email já está em uso no Firebase Auth
-  /// Usa tentativa de criação de conta para verificar disponibilidade
-  @override
-  Future<bool> isEmailInUse(String email) async {
-    debugPrint('🔍 [AUTH_REPO] isEmailInUse INICIADO para: "$email"');
-    
-    try {
-      // Tenta criar uma conta temporária para verificar se o email está disponível
-      debugPrint('🔍 [AUTH_REPO] Tentando createUserWithEmailAndPassword com senha temporária...');
-      
-      final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: 'temp_password_123456789', // Senha temporária
-      );
-      
-      // Se chegou aqui, o email estava disponível
-      // Deletar a conta temporária imediatamente
-      debugPrint('🔍 [AUTH_REPO] Email disponível, deletando conta temporária...');
-      await credential.user?.delete();
-      
-      debugPrint('✅ [AUTH_REPO] Email DISPONÍVEL');
-      return false;
-      
-    } catch (e) {
-      final errorStr = e.toString();
-      debugPrint('🔍 [AUTH_REPO] Erro capturado: $errorStr');
-      
-      if (errorStr.contains('email-already-in-use')) {
-        debugPrint('✅ [AUTH_REPO] Email EM USO (email-already-in-use)');
-        return true;
-      } else if (errorStr.contains('invalid-email')) {
-        debugPrint('❌ [AUTH_REPO] Email inválido');
-        throw Exception('Email inválido');
-      } else {
-        debugPrint('❌ [AUTH_REPO] ERRO CRÍTICO: $e');
-        // Para erros críticos, assume que o email está em uso por segurança
-        debugPrint('⚠️ [AUTH_REPO] Assumindo email EM USO por segurança devido a erro crítico');
-        return true;
-      }
-    }
-  }
+
 
   // Métodos privados de conversão (anteriormente no AuthAdapter)
   

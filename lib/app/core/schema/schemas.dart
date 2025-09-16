@@ -191,37 +191,7 @@ class EventSchema with _$EventSchema {
   }
 }
 
-/// Schema para registro de CNPJ (/cnpj_registry/{cnpj})
-@freezed
-class CnpjRegistrySchema with _$CnpjRegistrySchema {
-  const factory CnpjRegistrySchema({
-    required String barId,
-    required String reservedByUid,
-    @TimestampConverter() required DateTime createdAt,
-  }) = _CnpjRegistrySchema;
 
-  factory CnpjRegistrySchema.fromJson(Map<String, dynamic> json) => _$CnpjRegistrySchemaFromJson(json);
-
-  /// Converter para usar com Firestore
-  static DocumentReference<CnpjRegistrySchema> docRef(String cnpj) {
-    return FirebaseFirestore.instance
-        .collection(FirestoreKeys.cnpjRegistryCollection)
-        .doc(cnpj)
-        .withConverter<CnpjRegistrySchema>(
-          fromFirestore: (snapshot, _) => CnpjRegistrySchema.fromJson(snapshot.data()!),
-          toFirestore: (registry, _) => registry.toJson(),
-        );
-  }
-
-  static CollectionReference<CnpjRegistrySchema> collection() {
-    return FirebaseFirestore.instance
-        .collection(FirestoreKeys.cnpjRegistryCollection)
-        .withConverter<CnpjRegistrySchema>(
-          fromFirestore: (snapshot, _) => CnpjRegistrySchema.fromJson(snapshot.data()!),
-          toFirestore: (registry, _) => registry.toJson(),
-        );
-  }
-}
 
 /// Converter personalizado para Timestamp do Firestore
 class TimestampConverter implements JsonConverter<DateTime, Object> {

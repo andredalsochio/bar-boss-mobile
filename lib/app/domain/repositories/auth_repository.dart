@@ -42,7 +42,4 @@ abstract class AuthRepository {
 
   /// Faz logout do usuário atual
   Future<void> signOut();
-
-  /// Verifica se um email já está em uso
-  Future<bool> isEmailInUse(String email);
 }

@@ -251,73 +251,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
     return true;
   }
   
-  /// Valida o Passo 1 com verificações assíncronas de email e CNPJ (usado apenas no Step 3)
-  /// Retorna true se tudo estiver válido e não houver duplicatas
-  Future<bool> validateStep1AndCheckEmail() async {
-    debugPrint('🔍 [VIEWMODEL] validateStep1AndCheckEmail INICIADO');
-    debugPrint('🔍 [VIEWMODEL] Email a verificar: "$_email"');
-    debugPrint('🔍 [VIEWMODEL] CNPJ a verificar: "$_cnpj"');
-    debugPrint('🔍 [VIEWMODEL] isStep1Valid: $isStep1Valid');
-    
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      // Primeiro valida formato
-      if (!validateStep1Format()) {
-        return false;
-      }
-      
-      debugPrint('✅ [VIEWMODEL] Campos válidos, iniciando verificações assíncronas...');
 
-      // Verificar se o usuário está autenticado e se o email é o mesmo
-      final currentUser = _authRepository.currentUser;
-      final isCurrentUserEmail = currentUser != null && currentUser.email == _email;
-      
-      debugPrint('🔍 [VIEWMODEL] ETAPA 1: Verificando email "$_email"...');
-      debugPrint('🔍 [VIEWMODEL] ETAPA 1: Usuário autenticado: ${currentUser?.email}');
-      debugPrint('🔍 [VIEWMODEL] ETAPA 1: É o email do usuário atual: $isCurrentUserEmail');
-      
-      if (isCurrentUserEmail) {
-        debugPrint('✅ [VIEWMODEL] ETAPA 1: Email é do usuário autenticado, PERMITINDO avanço');
-      } else {
-        // Validação assíncrona de email usando fetchSignInMethodsForEmail
-        debugPrint('🔍 [VIEWMODEL] ETAPA 1: Verificando se email "$_email" já está em uso...');
-        final emailInUse = await _authRepository.isEmailInUse(_email);
-        debugPrint('🔍 [VIEWMODEL] ETAPA 1: Resultado - Email em uso: $emailInUse');
-        
-        if (emailInUse) {
-          debugPrint('❌ [VIEWMODEL] ETAPA 1: Email já está cadastrado, BLOQUEANDO avanço');
-          _setError('Este email já está cadastrado');
-          return false;
-        }
-        debugPrint('✅ [VIEWMODEL] ETAPA 1: Email disponível, prosseguindo...');
-      }
-
-      // Validação assíncrona de CNPJ via /cnpj_registry
-      debugPrint('🔍 [VIEWMODEL] ETAPA 2: Verificando unicidade do CNPJ "$_cnpj"...');
-      final cnpjInUse = await _barRepository.isCnpjInUse(_cnpj);
-      debugPrint('🔍 [VIEWMODEL] ETAPA 2: Resultado - CNPJ em uso: $cnpjInUse');
-      
-      if (cnpjInUse) {
-        debugPrint('❌ [VIEWMODEL] ETAPA 2: CNPJ já está cadastrado, BLOQUEANDO avanço');
-        _setError('Este CNPJ já está cadastrado');
-        return false;
-      }
-      debugPrint('✅ [VIEWMODEL] ETAPA 2: CNPJ disponível, prosseguindo...');
-
-      debugPrint('✅ [VIEWMODEL] SUCESSO: Email e CNPJ disponíveis, PERMITINDO avanço');
-      return true;
-    } catch (e) {
-      debugPrint('❌ [VIEWMODEL] ERRO CRÍTICO ao verificar email/CNPJ: $e');
-      debugPrint('❌ [VIEWMODEL] Stack trace: ${StackTrace.current}');
-      _setError('Erro ao verificar dados: $e');
-      return false;
-    } finally {
-      debugPrint('🔍 [VIEWMODEL] validateStep1AndCheckEmail FINALIZADO');
-      _setLoading(false);
-    }
-  }
 
   void _validateCnpj() {
     // Remove caracteres não numéricos
@@ -578,11 +512,10 @@ class BarRegistrationViewModel extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      // Validar todos os passos com verificação de duplicatas
-      debugPrint('🔍 [BarRegistrationViewModel] Validando Step 1 com verificação de duplicatas...');
-      final step1Valid = await validateStep1AndCheckEmail();
-      if (!step1Valid) {
-        debugPrint('❌ [BarRegistrationViewModel] Step 1 inválido ou dados duplicados');
+      // Validar formato do Passo 1
+      debugPrint('🔍 [BarRegistrationViewModel] Validando formato do Step 1...');
+      if (!validateStep1Format()) {
+        debugPrint('❌ [BarRegistrationViewModel] Step 1 inválido');
         return;
       }
       

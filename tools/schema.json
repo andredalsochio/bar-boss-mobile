@@ -246,26 +246,6 @@
           "condition": "endAt >= startAt"
         }
       }
-    },
-    "cnpj_registry": {
-      "path": "cnpj_registry/{cnpj}",
-      "description": "CNPJ registry for uniqueness enforcement",
-      "required": ["cnpj", "barId", "createdAt"],
-      "properties": {
-        "cnpj": {
-          "type": "string",
-          "pattern": "^\\d{14}$",
-          "description": "CNPJ (14 digits only)"
-        },
-        "barId": {
-          "type": "string",
-          "description": "Associated bar ID"
-        },
-        "createdAt": {
-          "type": "timestamp",
-          "description": "Registration timestamp"
-        }
-      }
     }
   },
   "types": {
@@ -291,10 +271,6 @@
       "events": {
         "read": "request.auth != null && (resource.data.published == true || exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid)))",
         "write": "request.auth != null && exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid))"
-      },
-      "cnpj_registry": {
-        "read": "false",
-        "write": "request.auth != null"
       }
     }
   }

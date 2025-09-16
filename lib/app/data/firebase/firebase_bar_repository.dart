@@ -13,9 +13,6 @@ class FirebaseBarRepository implements BarRepositoryDomain {
 
   CollectionReference<Map<String, dynamic>> get _barsCol =>
       _firestore.collection(FirestoreKeys.barsCollection);
-  
-  CollectionReference<Map<String, dynamic>> get _cnpjRegCol =>
-      _firestore.collection(FirestoreKeys.cnpjRegistryCollection);
 
   /// Normaliza CNPJ removendo caracteres não numéricos
   String _normalizeCnpj(String cnpj) => cnpj.replaceAll(RegExp(r'[^0-9]'), '');
@@ -45,19 +42,10 @@ class FirebaseBarRepository implements BarRepositoryDomain {
 
     final batch = _firestore.batch();
 
-    final cnpjRef = _cnpjRegCol.doc(normalizedCnpj);
     final barRef = _barsCol.doc(barId);
     final memberRef = barRef.collection(FirestoreKeys.membersSubcollection).doc(ownerUid);
 
-    // 1) Reserva CNPJ
-    debugPrint('🏢 [FirebaseBarRepository] Adicionando reserva de CNPJ ao batch...');
-    batch.set(cnpjRef, {
-      'barId': barId,
-      'reservedByUid': ownerUid,
-      'createdAt': _now,
-    });
-
-    // 2) Cria o bar
+    // 1) Cria o bar
     debugPrint('🏢 [FirebaseBarRepository] Preparando dados do bar...');
     final barWithIds = bar.copyWith(
       id: barId,
@@ -78,7 +66,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     debugPrint('🏢 [FirebaseBarRepository] Adicionando bar ao batch...');
     batch.set(barRef, barData);
 
-    // 3) Adiciona o criador como membro OWNER
+    // 2) Adiciona o criador como membro OWNER
     debugPrint('🏢 [FirebaseBarRepository] Adicionando membership OWNER ao batch...');
     batch.set(memberRef, {
       'uid': ownerUid,
@@ -215,29 +203,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     }
   }
 
-  @override
-  Future<bool> isCnpjInUse(String cnpj) async {
-    try {
-      debugPrint('🔍 [FirebaseBarRepository] Verificando se CNPJ está em uso: ${cnpj.substring(0, 3)}***');
-      final normalizedCnpj = _normalizeCnpj(cnpj);
-      debugPrint('🔍 [FirebaseBarRepository] CNPJ normalizado: $normalizedCnpj');
-      debugPrint('🔍 [FirebaseBarRepository] Consultando documento: ${FirestoreKeys.cnpjRegistryCollection}/$normalizedCnpj');
-      
-      final doc = await _cnpjRegCol.doc(normalizedCnpj).get();
-      final exists = doc.exists;
-      debugPrint('🔍 [FirebaseBarRepository] CNPJ em uso: $exists');
-      
-      if (doc.exists) {
-        final data = doc.data();
-        debugPrint('🔍 [FirebaseBarRepository] Dados do documento: $data');
-      }
-      
-      return exists;
-    } catch (e) {
-      debugPrint('❌ [FirebaseBarRepository] Erro ao verificar CNPJ: $e');
-      throw Exception('Erro ao verificar CNPJ. Tente novamente.');
-    }
-  }
+
 
   // Métodos privados de conversão (anteriormente no BarAdapter)
   

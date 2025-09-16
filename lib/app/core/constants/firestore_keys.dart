@@ -5,7 +5,7 @@ class FirestoreKeys {
   static const String barsCollection = 'bars';
   static const String membersSubcollection = 'members';
   static const String eventsSubcollection = 'events';
-  static const String cnpjRegistryCollection = 'cnpj_registry';
+
   
   // User document fields (/users/{uid})
   static const String userEmail = 'email';
@@ -64,10 +64,7 @@ class FirestoreKeys {
   static const String eventCreatedByUid = 'createdByUid';
   static const String eventUpdatedByUid = 'updatedByUid';
   
-  // CNPJ Registry document fields (/cnpj_registry/{cnpj})
-  static const String cnpjRegistryBarId = 'barId';
-  static const String cnpjRegistryReservedByUid = 'reservedByUid';
-  static const String cnpjRegistryCreatedAt = 'createdAt';
+
   
   // Generic fields
   static const String createdAt = 'createdAt';

@@ -72,8 +72,7 @@ service cloud.firestore {
       && (data.profile.addressComplete is bool)
       && (data.profile.passwordComplete is bool)
       && data.primaryOwnerUid == me()
-      && data.createdByUid == me()
-      && !exists(/databases/$(database)/documents/cnpj_registry/$(data.cnpj));
+      && data.createdByUid == me();
     }
 
     function validEvent(data) {
@@ -124,19 +123,7 @@ service cloud.firestore {
       }
     }
 
-    // CNPJ REGISTRY - Coleção para garantir unicidade de CNPJ
-    match /cnpj_registry/{cnpj} {
-      allow read: if true;               // permitir verificação de unicidade sem auth
-      allow create: if isAuth() && canCreateBar();         // criado no batch - requer e-mail verificado, usuário social ou recém-criado
-      allow update, delete: if false;    // imutável (ou política interna)
-    }
 
-    // EMAIL REGISTRY - Coleção para garantir unicidade de email
-    match /email_registry/{email} {
-      allow read: if true;               // permitir verificação de unicidade sem auth
-      allow create: if isAuth() && canCreateBar();         // criado no batch - requer e-mail verificado, usuário social ou recém-criado
-      allow update, delete: if false;    // imutável (ou política interna)
-    }
 
     // Collection group query para members
     match /{path=**}/members/{memberUid} {

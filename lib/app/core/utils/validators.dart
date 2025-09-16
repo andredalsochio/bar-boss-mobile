@@ -199,47 +199,5 @@ class Validators {
     return null;
   }
   
-  /// Validação de email (apenas formato)
-  /// Nota: Verificação de unicidade foi removida seguindo as recomendações de segurança do Firebase
-  static Future<String?> emailWithUniqueness(String? value) async {
-    // Valida apenas o formato do email
-    return email(value);
-  }
-  
-  /// Validação assíncrona de CNPJ (formato + unicidade via Firestore)
-  static Future<String?> cnpjWithUniqueness(String? value) async {
-    // Primeiro valida o formato
-    final formatError = cnpj(value);
-    if (formatError != null) {
-      return formatError;
-    }
-    
-    try {
-      // Verifica se o usuário está autenticado
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        // Se não estiver autenticado, apenas valida o formato
-        return null;
-      }
-      
-      // Remove caracteres não numéricos para consulta
-      final numericValue = value!.replaceAll(RegExp(r'\D'), '');
-      
-      // Verifica se o CNPJ já está cadastrado
-      final doc = await FirebaseFirestore.instance
-          .collection('cnpj_registry')
-          .doc(numericValue)
-          .get();
-      
-      if (doc.exists) {
-        return AppStrings.cnpjInUseErrorMessage;
-      }
-      
-      return null;
-    } catch (e) {
-      // Em caso de erro na verificação, permite continuar
-      debugPrint('❌ [DEBUG] Erro na verificação de CNPJ: $e');
-      return null;
-    }
-  }
+
 }

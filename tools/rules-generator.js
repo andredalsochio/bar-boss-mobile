@@ -197,12 +197,7 @@ function generateFirestoreRules(schema) {
   
   rules += `  }\n\n`;
   
-  // Regras para coleção cnpj_registry (apenas escrita pelo app)
-  rules += `  // Coleção cnpj_registry (apenas escrita pelo app)\n`;
-  rules += `  match /cnpj_registry/{cnpj} {\n`;
-  rules += `    allow read: if false; // Nunca permitir leitura\n`;
-  rules += `    allow write: if isAuthenticated(); // Apenas escrita autenticada\n`;
-  rules += `  }\n\n`;
+
   
   rules += `  }\n`;
   rules += `}\n`;

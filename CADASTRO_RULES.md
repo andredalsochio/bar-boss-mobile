@@ -34,15 +34,15 @@ Resultado: completedFullRegistration: true
 
 ### **Passo 1: Dados de Contato**
 **Campos Obrigatórios:**
-- Email (validação + verificação de unicidade)
-- CNPJ (validação + verificação de unicidade)
+- Email (validação de formato)
+- CNPJ (validação de formato)
 - Nome do bar
 - Nome do responsável
 - Telefone (DDD + 9 dígitos)
 
 **Validações:**
-- Email: formato + não existe no Firebase Auth
-- CNPJ: formato + dígitos verificadores + não existe na coleção `cnpj_registry`
+- Email: formato válido
+- CNPJ: formato + dígitos verificadores
 - Telefone: DDD válido + 9 dígitos
 
 ### **Passo 2: Endereço**
@@ -65,89 +65,43 @@ Resultado: completedFullRegistration: true
 
 ---
 
-## 🔒 3. REGRAS DE VALIDAÇÃO E UNICIDADE
+## 🔒 3. REGRAS DE VALIDAÇÃO
 
 ### **A. Validação de Email**
 
 #### **Cadastro Completo:**
 ```dart
-Future<bool> validateEmailUniqueness(String email) async {
+Future<bool> validateEmailFormat(String email) async {
   final normalizedEmail = email.toLowerCase().trim();
   
-  // 1. Verificar no Firebase Auth
-  try {
-    final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(normalizedEmail);
-    if (methods.isNotEmpty) {
-      throw ValidationException("Email já está em uso");
-    }
-  } catch (e) {
-    // Tratar erros de rede ou outros erros do Firebase Auth
-    if (e is! ValidationException) {
-      throw ValidationException("Erro ao verificar email. Tente novamente.");
-    }
-    rethrow;
+  // Validar formato do email
+  final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+  if (!emailRegex.hasMatch(normalizedEmail)) {
+    throw ValidationException("Email inválido");
   }
   
-  // 2. Verificar na coleção bars (caso de inconsistência)
-  try {
-    final query = await FirebaseFirestore.instance
-      .collection('bars')
-      .where('email', isEqualTo: normalizedEmail)
-      .limit(1)
-      .get();
-      
-    if (query.docs.isNotEmpty) {
-      throw ValidationException("Email já está em uso");
-    }
-    
-    return true;
-  } catch (e) {
-    // Tratar erros de rede ou outros erros do Firestore
-    if (e is! ValidationException) {
-      throw ValidationException("Erro ao verificar email. Tente novamente.");
-    }
-    rethrow;
-  }
+  return true;
 }
 ```
 
 #### **Login Social:**
 ```dart
 // Email vem do provedor (Google/Apple/Facebook)
-// Não precisa validar unicidade (já garantida pelo provedor)
 // Apenas normalizar: email.toLowerCase().trim()
 ```
 
 ### **B. Validação de CNPJ**
 
 ```dart
-Future<bool> validateCnpjUniqueness(String cnpj) async {
+Future<bool> validateCnpjFormat(String cnpj) async {
   final cleanCnpj = cnpj.replaceAll(RegExp(r'[^\d]'), '');
   
-  // 1. Validar formato e dígitos verificadores
+  // Validar formato e dígitos verificadores
   if (!isValidCnpj(cleanCnpj)) {
     throw ValidationException("CNPJ inválido");
   }
   
-  // 2. Verificar unicidade na coleção cnpj_registry
-  try {
-    final doc = await FirebaseFirestore.instance
-      .collection('cnpj_registry')
-      .doc(cleanCnpj)
-      .get();
-      
-    if (doc.exists) {
-      throw ValidationException("CNPJ já está em uso");
-    }
-    
-    return true;
-  } catch (e) {
-    // Tratar erros de rede ou outros erros do Firestore
-    if (e is! ValidationException) {
-      throw ValidationException("Erro ao verificar CNPJ. Tente novamente.");
-    }
-    rethrow;
-  }
+  return true;
 }
 
 // Algoritmo de validação de CNPJ
@@ -356,8 +310,7 @@ function validateBarData(data) {
          data.email is string &&
          data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$') &&
          data.cnpj is string &&
-         data.cnpj.matches('^[0-9]{14}$') && // CNPJ limpo
-         !exists(/databases/$(database)/documents/cnpj_registry/$(data.cnpj));
+         data.cnpj.matches('^[0-9]{14}$'); // CNPJ limpo
 }
 
 // Regra de criação
@@ -366,100 +319,34 @@ match /bars/{barId} {
 }
 ```
 
-### **B. Estratégia de Unicidade Transacional**
-
-```javascript
-// Cloud Function para garantir unicidade
-exports.createBarWithUniqueValidation = functions.https.onCall(async (data, context) => {
-  // Verificar autenticação
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
-  }
-  
-  const { email, cnpj, barData } = data;
-  
-  // Normalizar dados
-  const normalizedEmail = email.toLowerCase().trim();
-  const cleanCnpj = cnpj.replace(/[^\d]/g, '');
-  
-  return await admin.firestore().runTransaction(async (transaction) => {
-    // 1. Verificar unicidade de CNPJ
-    const cnpjRef = admin.firestore().collection('cnpj_registry').doc(cleanCnpj);
-    const cnpjDoc = await transaction.get(cnpjRef);
-    
-    if (cnpjDoc.exists) {
-      throw new functions.https.HttpsError('already-exists', 'CNPJ já está em uso');
-    }
-    
-    // 2. Verificar unicidade de email na coleção bars
-    const emailQuery = admin.firestore().collection('bars').where('email', '==', normalizedEmail).limit(1);
-    const emailDocs = await transaction.get(emailQuery);
-    
-    if (!emailDocs.empty) {
-      throw new functions.https.HttpsError('already-exists', 'Email já está em uso');
-    }
-    
-    // 3. Criar registros atomicamente
-    const barRef = admin.firestore().collection('bars').doc();
-    
-    transaction.set(cnpjRef, {
-      barId: barRef.id,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    transaction.set(barRef, {
-      ...barData,
-      cnpj: cleanCnpj,
-      email: normalizedEmail,
-      createdByUid: context.auth.uid,
-      primaryOwnerUid: context.auth.uid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    return { barId: barRef.id };
-  });
-});
-```
-
 ---
 
 ## 🧪 7. CENÁRIOS DE TESTE
 
-### **A. Testes de Unicidade**
+### **A. Testes de Validação**
 
 ```dart
-// Test: Email duplicado no cadastro completo
-testWidgets('should block duplicate email in full registration', (tester) async {
-  // Arrange: Email já existe no Firebase Auth
-  when(mockAuth.fetchSignInMethodsForEmail('test@example.com'))
-    .thenAnswer((_) async => ['password']);
-  
-  // Act: Tentar cadastrar com email duplicado
-  await tester.enterText(emailField, 'test@example.com');
+// Test: Validação de formato de email
+testWidgets('should validate email format', (tester) async {
+  // Act: Inserir email inválido
+  await tester.enterText(emailField, 'email-invalido');
   await tester.tap(continueButton);
   await tester.pumpAndSettle();
   
-  // Assert: Deve mostrar erro e não navegar
-  expect(find.text('Email já está em uso'), findsOneWidget);
+  // Assert: Deve mostrar erro de formato
+  expect(find.text('Email inválido'), findsOneWidget);
   expect(find.byType(Step2Page), findsNothing);
 });
 
-// Test: CNPJ duplicado com duplo-clique
-testWidgets('should prevent double-click on duplicate CNPJ', (tester) async {
-  // Arrange: CNPJ já existe
-  when(mockFirestore.collection('cnpj_registry').doc('12345678000195').get())
-    .thenAnswer((_) async => mockDocumentSnapshot(exists: true));
-  
-  // Act: Duplo-clique rápido
-  await tester.enterText(cnpjField, '12.345.678/0001-95');
+testWidgets('should validate CNPJ format', (tester) async {
+  // Act: Inserir CNPJ inválido
+  await tester.enterText(cnpjField, '12345678000100');
   await tester.tap(continueButton);
-  await tester.tap(continueButton); // Segundo clique
   await tester.pumpAndSettle();
   
-  // Assert: Deve mostrar erro e não navegar
-  expect(find.text('CNPJ já está em uso'), findsOneWidget);
+  // Assert: Deve mostrar erro de formato
+  expect(find.text('CNPJ inválido'), findsOneWidget);
   expect(find.byType(Step2Page), findsNothing);
-  verify(mockRepository.checkCnpjExists(any)).called(1); // Só uma chamada
 });
 ```
 
@@ -531,24 +418,22 @@ enum RegistrationSideEffect {
 ## ✅ 9. CHECKLIST DE IMPLEMENTAÇÃO
 
 ### **Frontend (Flutter)**
-- [ ] Implementar debounce nas validações (500ms)
-- [ ] Adicionar cancelamento de requisições anteriores
+- [ ] Implementar validações de formato
 - [ ] Bloquear botão durante validação
 - [ ] Persistir estado de erro até correção
 - [ ] Implementar banner 0/3 para login social
 - [ ] Validar CNPJ com dígitos verificadores
 
 ### **Backend (Firebase)**
-- [ ] Criar Cloud Function para criação transacional
-- [ ] Atualizar firestore.rules com validação de unicidade
-- [ ] Implementar coleção cnpj_registry
-- [ ] Adicionar índices para consultas de unicidade
+- [ ] Configurar regras básicas do Firestore
+- [ ] Implementar autenticação com Firebase Auth
+- [ ] Configurar estrutura de dados dos bares
 
 ### **Testes**
-- [ ] Testes unitários de validação
-- [ ] Testes de widget para anti-duplo-clique
+- [ ] Testes unitários de validação de formato
+- [ ] Testes de widget para formulários
 - [ ] Testes E2E de fluxos completos
-- [ ] Testes de race conditions
+- [ ] Testes de navegação entre passos
 
 ---
 

@@ -145,10 +145,10 @@ class _Step1PageState extends State<Step1Page> {
     // Fechar o teclado
     FocusScope.of(context).unfocus();
 
-    debugPrint('✅ [STEP1_PAGE] Step1 válido, iniciando validação assíncrona...');
-    final isValid = await _viewModel.validateStep1AndCheckEmail();
+    debugPrint('✅ [STEP1_PAGE] Step1 válido, validação de formato aprovada...');
+    final isValid = _viewModel.validateStep1Format();
     
-    debugPrint('🔍 [STEP1_PAGE] Resultado da validação assíncrona: $isValid');
+    debugPrint('🔍 [STEP1_PAGE] Resultado da validação de formato: $isValid');
     debugPrint('🔍 [STEP1_PAGE] Widget ainda montado: $mounted');
     
     if (isValid && mounted) {

@@ -307,14 +307,7 @@ if (!user.completedFullRegistration) {
 }
 ```
 
-### Coleção: `cnpj_registry`
-```javascript
-{
-  cnpj: string,                  // CNPJ (apenas dígitos)
-  barId: string,                 // ID do bar associado
-  createdAt: timestamp           // Data de criação
-}
-```
+
 
 ---
 

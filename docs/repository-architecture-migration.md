@@ -116,7 +116,6 @@ Provider<BarRepositoryDomain>(
 **Mudanças:**
 - ✅ Tipo atualizado para `BarRepositoryDomain`
 - ✅ Removido import não utilizado do `firebase_auth`
-- ✅ Mantida funcionalidade de validação de unicidade
 
 ### 4. Arquivo Removido
 **Arquivo:** `lib/app/modules/register_bar/repositories/bar_repository.dart`

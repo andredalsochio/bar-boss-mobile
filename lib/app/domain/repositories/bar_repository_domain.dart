@@ -28,7 +28,4 @@ abstract class BarRepositoryDomain {
 
   /// Adiciona um membro ao bar com a role especificada
   Future<void> addMember(String barId, String uid, String role);
-
-  /// Verifica se um CNPJ já está em uso via /cnpj_registry
-  Future<bool> isCnpjInUse(String cnpj);
 }

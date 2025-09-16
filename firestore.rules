@@ -9,7 +9,11 @@ service cloud.firestore {
       return request.auth != null && 
              (request.auth.token.firebase.sign_in_provider == 'google.com' ||
               request.auth.token.firebase.sign_in_provider == 'facebook.com' ||
-              request.auth.token.firebase.sign_in_provider == 'apple.com');
+              request.auth.token.firebase.sign_in_provider == 'apple.com' ||
+              ('identities' in request.auth.token.firebase && 
+               ('google.com' in request.auth.token.firebase.identities ||
+                'facebook.com' in request.auth.token.firebase.identities ||
+                'apple.com' in request.auth.token.firebase.identities)));
     }
     function isRecentlyCreated() {
       // Permite operações para usuários criados nos últimos 10 minutos
@@ -21,7 +25,7 @@ service cloud.firestore {
     function canCreateBar() { 
       // Permite criação para usuários sociais (independente de email verificado),
       // usuários com email verificado ou usuários criados recentemente
-      return isSocialUser() || isEmailVerified() || isRecentlyCreated(); 
+      return isAuth() && (isSocialUser() || isEmailVerified() || isRecentlyCreated()); 
     }
     function me() { return request.auth.uid; }
 
@@ -53,16 +57,16 @@ service cloud.firestore {
     // Validação mínima de bar no create/update
     function validBar(data) {
       return data.keys().hasAll([
-        'cnpj','name','responsibleName','email','phone',
+        'cnpj','name','responsibleName','contactEmail','contactPhone',
         'address','profile','primaryOwnerUid','createdByUid'
       ])
       && data.name is string && data.name.size() > 0
       && data.cnpj is string && data.cnpj.size() > 0
       && data.cnpj.matches('^[0-9]{14}$') // CNPJ limpo
       && data.responsibleName is string && data.responsibleName.size() > 0
-      && data.email is string && data.email.size() > 0
-      && data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
-      && data.phone is string && data.phone.size() > 0
+      && data.contactEmail is string && data.contactEmail.size() > 0
+      && data.contactEmail.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+      && data.contactPhone is string && data.contactPhone.size() > 0
       && validAddress(data.address)
       && (data.profile.contactsComplete is bool)
       && (data.profile.addressComplete is bool)
@@ -89,7 +93,8 @@ service cloud.firestore {
     match /bars/{barId} {
       // Somente membros (ou criador) leem, com email verificado, usuário social ou recém-criado
       allow read: if isAuth() && canCreateBar() && (isMember(barId, me()) ||
-                                  resource.data.createdByUid == me());
+                                  resource.data.createdByUid == me() ||
+                                  resource.data.primaryOwnerUid == me());
 
       // Criar bar - permitir se o usuário é o criador e tem e-mail verificado, é usuário social ou foi criado recentemente
       allow create: if isAuth() && canCreateBar() && validBar(request.resource.data);

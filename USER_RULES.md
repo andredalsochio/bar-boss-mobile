@@ -1,7 +1,7 @@
-# 👤 USER RULES - Bar Boss Mobile
+# 👤 USER_RULES.md - Bar Boss Mobile
 
-**Versão:** 2.0  
-**Última Atualização:** 10 de Setembro de 2025  
+**Versão:** 3.0  
+**Última Atualização:** 15 de Setembro de 2025  
 **Objetivo:** Diretrizes para interação com desenvolvedores e IA
 
 ---
@@ -99,9 +99,10 @@ Estas diretrizes devem ser seguidas em todas as interações com o desenvolvedor
 - **NÃO exibir** após cadastro completo via "Não tem um bar?"
 
 ### Fluxo de Cadastro
-- **Cadastro completo:** Passo 1 + Passo 2 + Passo 3 (criar senha)
-- **Login social + complemento:** Passo 1 + Passo 2 (sem senha)
+- **Cadastro completo:** Passo 1 + Passo 2 + Passo 3 (criar senha) + Verificação de Email Obrigatória
+- **Login social + complemento:** Passo 1 + Passo 2 + Passo 3 (criar senha)
 - Flags de completude devem estar corretas
+- **CRÍTICO:** Email deve ser verificado antes do acesso ao app (fluxo A)
 
 ### Criação de Eventos
 - **Não bloquear** criação por perfil incompleto
@@ -149,13 +150,15 @@ Estas diretrizes devem ser seguidas em todas as interações com o desenvolvedor
 
 Antes de qualquer implementação, verificar:
 
-- [ ] Consultou `PROJECT_RULES.md`?
+- [ ] Consultou `PROJECT_RULES.md` e `CADASTRO_RULES.md`?
 - [ ] Respeitou arquitetura MVVM + Provider?
 - [ ] Nomenclatura em inglês para código?
 - [ ] Comentários em pt-BR apenas quando necessário?
 - [ ] Seguiu convenções do Flutter/Dart?
 - [ ] Implementou tratamento de erros?
 - [ ] Considerou performance (const, lazy-load)?
+- [ ] Implementou debounce para validações (500ms)?
+- [ ] Bloqueou botões durante validações?
 - [ ] Testou em iOS e Android?
 - [ ] Atualizou documentação relevante?
 
@@ -175,6 +178,15 @@ Antes de qualquer implementação, verificar:
 
 ---
 
-**🔁 Consulte este documento sempre que necessário para manter consistência e atender expectativas do projeto.**
+## 📚 11. Documentação Relacionada
 
-**📝 Nota:** Para regras técnicas detalhadas, consulte [PROJECT_RULES.md](./PROJECT_RULES.md)
+Para informações mais detalhadas, consulte:
+
+- **[README.md](./README.md)**: Visão geral do projeto
+- **[PROJECT_RULES.md](./PROJECT_RULES.md)**: Regras globais do projeto
+- **[CADASTRO_RULES.md](./CADASTRO_RULES.md)**: Regras específicas de cadastro
+- **[FIREBASE_BACKEND_GUIDE.md](./FIREBASE_BACKEND_GUIDE.md)**: Guia de backend/infra
+
+---
+
+**🔁 Consulte este documento sempre que necessário para manter consistência e atender expectativas do projeto.**

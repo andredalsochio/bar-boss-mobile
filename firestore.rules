@@ -38,7 +38,7 @@ service cloud.firestore {
       return ['OWNER','ADMIN'].hasAny([myRole(barId)]);
     }
 
-    // address: complement é opcional
+    // Validação de endereço (complement é opcional)
     function validAddress(address) {
       return address is map
         && address.keys().hasAll(['cep','street','number','state','city'])
@@ -53,22 +53,24 @@ service cloud.firestore {
     // Validação mínima de bar no create/update
     function validBar(data) {
       return data.keys().hasAll([
-        'cnpj','name','responsibleName','contactEmail','contactPhone',
+        'cnpj','name','responsibleName','email','phone',
         'address','profile','primaryOwnerUid','createdByUid'
       ])
       && data.name is string && data.name.size() > 0
       && data.cnpj is string && data.cnpj.size() > 0
+      && data.cnpj.matches('^[0-9]{14}$') // CNPJ limpo
       && data.responsibleName is string && data.responsibleName.size() > 0
-      && data.contactEmail is string && data.contactEmail.size() > 0
-      && data.contactPhone is string && data.contactPhone.size() > 0
+      && data.email is string && data.email.size() > 0
+      && data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+      && data.phone is string && data.phone.size() > 0
       && validAddress(data.address)
       && (data.profile.contactsComplete is bool)
       && (data.profile.addressComplete is bool)
+      && (data.profile.passwordComplete is bool)
       && data.primaryOwnerUid == me()
-      && data.createdByUid == me();
+      && data.createdByUid == me()
+      && !exists(/databases/$(database)/documents/cnpj_registry/$(data.cnpj));
     }
-    
-
 
     function validEvent(data) {
       return data.keys().hasAll(['title','startAt','published','createdByUid'])
@@ -117,8 +119,15 @@ service cloud.firestore {
       }
     }
 
-    // CNPJ REGISTRY
+    // CNPJ REGISTRY - Coleção para garantir unicidade de CNPJ
     match /cnpj_registry/{cnpj} {
+      allow read: if true;               // permitir verificação de unicidade sem auth
+      allow create: if isAuth() && canCreateBar();         // criado no batch - requer e-mail verificado, usuário social ou recém-criado
+      allow update, delete: if false;    // imutável (ou política interna)
+    }
+
+    // EMAIL REGISTRY - Coleção para garantir unicidade de email
+    match /email_registry/{email} {
       allow read: if true;               // permitir verificação de unicidade sem auth
       allow create: if isAuth() && canCreateBar();         // criado no batch - requer e-mail verificado, usuário social ou recém-criado
       allow update, delete: if false;    // imutável (ou política interna)

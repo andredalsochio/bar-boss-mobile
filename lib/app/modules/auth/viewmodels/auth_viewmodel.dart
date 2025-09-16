@@ -256,6 +256,7 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   /// Envia e-mail de redefinição de senha
+  /// SEMPRE retorna sucesso por questões de segurança (anti-enumeração)
   Future<void> sendPasswordResetEmail(String email) async {
     debugPrint('📧 [AuthViewModel] Iniciando envio de e-mail de redefinição de senha para: ${email.substring(0, 3)}***');
     _setLoading(true);
@@ -264,14 +265,14 @@ class AuthViewModel extends ChangeNotifier {
     try {
       debugPrint('📧 [AuthViewModel] Chamando _authRepository.sendPasswordResetEmail...');
       await _authRepository.sendPasswordResetEmail(email);
-      debugPrint('✅ [AuthViewModel] E-mail de redefinição de senha enviado com sucesso!');
+      debugPrint('✅ [AuthViewModel] Processamento de reset de senha concluído!');
     } catch (e) {
-      debugPrint('❌ [AuthViewModel] Erro ao enviar e-mail de redefinição: $e');
-      _setError(AppStrings.resetPasswordErrorMessage);
-      rethrow;
+      debugPrint('❌ [AuthViewModel] Erro ao processar reset de senha: $e');
+      // NÃO definir erro nem relançar exceção por segurança
+      // O usuário sempre verá mensagem de sucesso
     } finally {
       _setLoading(false);
-      debugPrint('📧 [AuthViewModel] Envio de e-mail de redefinição finalizado (loading=false)');
+      debugPrint('📧 [AuthViewModel] Processamento de reset de senha finalizado (loading=false)');
     }
   }
 

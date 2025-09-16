@@ -91,9 +91,6 @@ GoogleService-Info.plist
 .env.*.local
 dart_defines.json
 
-# Clerk
-clerk_config.json
-
 # Local database
 *.db
 *.sqlite

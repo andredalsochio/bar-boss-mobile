@@ -1,7 +1,7 @@
-# 📋 PROJECT RULES - Bar Boss Mobile
+# 📋 PROJECT_RULES.md - Bar Boss Mobile
 
-**Versão:** 2.0  
-**Última Atualização:** 10 de Setembro de 2025  
+**Versão:** 3.0  
+**Última Atualização:** 15 de Setembro de 2025  
 **Objetivo:** Guia centralizado para desenvolvimento e IA antes de qualquer implementação
 
 ---
@@ -78,12 +78,15 @@ lib/
 1. **Passo 1:** Dados de contato (email, CNPJ, nome do bar, responsável, telefone)
 2. **Passo 2:** Endereço (CEP com auto-preenchimento)
 3. **Passo 3:** Criação de senha
-4. **Resultado:** `completedFullRegistration: true` + verificação de email
+4. **Tela de Verificação:** Email de verificação enviado automaticamente
+5. **Resultado:** `completedFullRegistration: true` + `emailVerified: true`
+
+**⚠️ IMPORTANTE:** O usuário NÃO pode acessar o aplicativo até verificar o email. O login é bloqueado para emails não verificados.
 
 #### Login Social + Complemento
 1. **Login:** Google/Apple/Facebook
-2. **Home:** Banner "Complete seu cadastro (0/2)"
-3. **Complemento:** Passo 1 + Passo 2 (sem senha)
+2. **Home:** Banner "Complete seu cadastro (0/3)"
+3. **Complemento:** Passo 1 + Passo 2 + Passo 3
 4. **Resultado:** `completedFullRegistration: true`
 
 ### Validações Obrigatórias
@@ -91,7 +94,7 @@ lib/
 - **CNPJ:** Formato e dígitos verificadores
 - **CEP:** Formato brasileiro + auto-preenchimento
 - **Telefone:** DDD + 9 dígitos
-- **Senha:** Mínimo 8 caracteres (apenas cadastro email)
+- **Senha:** Mínimo 8 caracteres (para todos os fluxos)
 
 ### Regras de Acesso
 - **Criação de eventos:** Permitida mesmo com perfil incompleto (apenas aviso)
@@ -161,7 +164,7 @@ MultiProvider(
 - **ListView.builder:** Para listas dinâmicas
 - **Lazy loading:** Carregar dados sob demanda
 - **Cache local:** Implementar para dados frequentes
-- **Debounce:** Para validações em tempo real
+- **Debounce:** Para validações em tempo real (500ms)
 
 ---
 
@@ -209,7 +212,7 @@ function canCreateBar() {
 // Exibir na Home após login social
 if (!user.completedFullRegistration) {
   return IncompleteBanner(
-    message: "Complete seu cadastro (0/2)",
+    message: "Complete seu cadastro (0/3)",
     action: "Completar agora",
     onTap: () => context.go('/cadastro/passo1'),
   );
@@ -262,56 +265,54 @@ if (!user.completedFullRegistration) {
 
 ## 📊 8. Schema do Firestore
 
+### Coleção: `users`
+```javascript
+{
+  uid: string,                   // UID do usuário (Firebase Auth)
+  email: string,                 // Email normalizado (lowercase, trim)
+  displayName: string,           // Nome de exibição
+  completedFullRegistration: boolean, // Cadastro completo?
+  emailVerified: boolean,        // Email verificado?
+  createdAt: timestamp,          // Data de criação
+  updatedAt: timestamp           // Data de atualização
+}
+```
+
 ### Coleção: `bars`
 ```javascript
 {
-  id: string,                    // Auto-gerado
+  id: string,                    // ID do bar (auto-gerado)
   name: string,                  // Nome do bar
-  email: string,                 // Email de contato
-  cnpj: string,                  // CNPJ formatado
+  email: string,                 // Email de contato (normalizado)
+  cnpj: string,                  // CNPJ (apenas dígitos)
   responsibleName: string,       // Nome do responsável
   phone: string,                 // Telefone formatado
   address: {
-    cep: string,
-    street: string,
-    number: string,
-    complement: string,
-    city: string,
-    state: string
+    cep: string,                 // CEP formatado
+    street: string,              // Rua
+    number: string,              // Número
+    complement: string,          // Complemento (opcional)
+    city: string,                // Cidade
+    state: string                // Estado (UF)
   },
-  ownerId: string,               // UID do proprietário
-  createdAt: timestamp,
-  updatedAt: timestamp
+  profile: {
+    contactsComplete: boolean,   // Dados de contato completos?
+    addressComplete: boolean,    // Endereço completo?
+    passwordComplete: boolean    // Senha definida?
+  },
+  primaryOwnerUid: string,       // UID do proprietário principal
+  createdByUid: string,          // UID do criador
+  createdAt: timestamp,          // Data de criação
+  updatedAt: timestamp           // Data de atualização
 }
 ```
 
-### Coleção: `events`
+### Coleção: `cnpj_registry`
 ```javascript
 {
-  id: string,                    // Auto-gerado
-  barId: string,                 // Referência ao bar
-  name: string,                  // Nome do evento
-  date: timestamp,               // Data do evento
-  attractions: string[],         // Lista de atrações
-  promotions: {
-    imageUrl: string,
-    description: string
-  }[],                          // Até 3 promoções
-  createdAt: timestamp,
-  updatedAt: timestamp
-}
-```
-
-### Coleção: `userProfiles`
-```javascript
-{
-  uid: string,                   // UID do usuário
-  email: string,
-  displayName: string,
-  completedFullRegistration: boolean,
-  emailVerified: boolean,
-  createdAt: timestamp,
-  updatedAt: timestamp
+  cnpj: string,                  // CNPJ (apenas dígitos)
+  barId: string,                 // ID do bar associado
+  createdAt: timestamp           // Data de criação
 }
 ```
 
@@ -348,10 +349,26 @@ if (!user.completedFullRegistration) {
 - **Solução:** Tela dedicada de verificação + banner na Home
 - **Status:** ✅ Implementado
 
+### Duplo-Clique em Validações
+- **Problema:** Botão permite múltiplos cliques durante validação
+- **Solução:** Implementar estado de loading + debounce
+- **Status:** 🔄 Em implementação
+
 ### Cache Local
 - **Problema:** Dados recarregados a cada abertura
 - **Solução:** Implementar Drift para persistência local
 - **Status:** 🔄 Planejado
+
+---
+
+## 📚 11. Documentação Relacionada
+
+Para informações mais detalhadas, consulte:
+
+- **[README.md](./README.md)**: Visão geral do projeto
+- **[USER_RULES.md](./USER_RULES.md)**: Diretrizes de interação com a IA
+- **[CADASTRO_RULES.md](./CADASTRO_RULES.md)**: Regras específicas de cadastro
+- **[FIREBASE_BACKEND_GUIDE.md](./FIREBASE_BACKEND_GUIDE.md)**: Guia de backend/infra
 
 ---
 

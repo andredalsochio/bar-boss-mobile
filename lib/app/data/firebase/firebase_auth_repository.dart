@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
@@ -290,18 +291,37 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> sendPasswordResetEmail(String email) async {
     debugPrint('📧 [FirebaseAuthRepository] Iniciando sendPasswordResetEmail para: ${email.substring(0, 3)}***');
+    final normalizedEmail = email.toLowerCase().trim();
+    
     try {
-      debugPrint('📧 [FirebaseAuthRepository] Chamando _auth.sendPasswordResetEmail...');
+      // 1. Verificar se email existe na coleção bars (segurança contra enumeração)
+      debugPrint('🔍 [FirebaseAuthRepository] Verificando se email existe na base de dados...');
+      final barQuery = await FirebaseFirestore.instance
+        .collection('bars')
+        .where('email', isEqualTo: normalizedEmail)
+        .limit(1)
+        .get();
       
-      // Configurar idioma para português
-      await _auth.setLanguageCode('pt');
+      if (barQuery.docs.isNotEmpty) {
+        debugPrint('✅ [FirebaseAuthRepository] Email encontrado na base, enviando reset...');
+        
+        // 2. Configurar idioma para português
+        await _auth.setLanguageCode('pt');
+        
+        // 3. Enviar e-mail de reset
+        await _auth.sendPasswordResetEmail(email: normalizedEmail);
+        debugPrint('✅ [FirebaseAuthRepository] E-mail de redefinição enviado com sucesso!');
+      } else {
+        debugPrint('⚠️ [FirebaseAuthRepository] Email não encontrado na base, simulando sucesso por segurança');
+        // Simular delay para não revelar que email não existe
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
       
-      // Enviar e-mail de reset sem ActionCodeSettings complexos
-      await _auth.sendPasswordResetEmail(email: email);
-      debugPrint('✅ [FirebaseAuthRepository] E-mail de redefinição enviado com sucesso!');
+      // SEMPRE retornar sucesso (segurança contra enumeração de usuários)
     } catch (e) {
-      debugPrint('❌ [FirebaseAuthRepository] Erro ao enviar e-mail de redefinição: $e');
-      throw Exception('Erro ao enviar email de redefinição de senha: $e');
+      debugPrint('❌ [FirebaseAuthRepository] Erro ao processar reset de senha: $e');
+      // SEMPRE retornar sucesso mesmo em caso de erro (segurança)
+      // O usuário sempre verá a mensagem de sucesso
     }
   }
 

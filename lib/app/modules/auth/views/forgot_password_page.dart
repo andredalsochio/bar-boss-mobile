@@ -211,7 +211,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         
         // Título
         Text(
-          'E-mail enviado!',
+          'Solicitação processada!',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -224,7 +224,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         
         // Descrição
         Text(
-          'Enviamos um link de recuperação para\n${_emailController.text}\n\nVerifique sua caixa de entrada e spam.',
+          'Se o e-mail ${_emailController.text} estiver cadastrado,\nvocê receberá as instruções de recuperação.\n\nVerifique sua caixa de entrada e spam.',
           style: TextStyle(
             fontSize: 16,
             color: AppColors.textSecondary(context),
@@ -318,15 +318,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           _emailSent = true;
         });
         ToastService.instance.showSuccess(
-          message: 'E-mail de recuperação enviado com sucesso!',
-          title: 'Sucesso',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ToastService.instance.showError(
-          message: 'Erro ao enviar e-mail de recuperação: $e',
-          title: 'Erro',
+          message: 'Se o e-mail estiver cadastrado, você receberá as instruções de recuperação.',
+          title: 'Solicitação Processada',
         );
       }
     } finally {

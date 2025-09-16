@@ -8,9 +8,10 @@ Um aplicativo Flutter completo que permite aos proprietários de bares gerenciar
 
 ### 🔐 Autenticação
 - Login social (Google, Apple, Facebook)
-- Autenticação por email/senha com verificação
-- Integração Clerk + Firebase Authentication
+- Autenticação por email/senha com **verificação obrigatória**
+- Firebase Authentication completo
 - Fluxo de cadastro em 3 etapas para novos bares
+- **Bloqueio de acesso** até verificação de email (cadastro tradicional)
 
 ### 🏪 Gestão de Bares
 - Cadastro completo com validação de CNPJ
@@ -53,7 +54,6 @@ Um aplicativo Flutter completo que permite aos proprietários de bares gerenciar
   - Remote Config
   - Crashlytics
   - Analytics
-- **Clerk**: Autenticação avançada
 - **Drift**: Banco de dados local (SQLite)
 - **GoRouter**: Navegação declarativa
 - **Image Picker**: Seleção de imagens da galeria/câmera
@@ -131,138 +131,25 @@ lib/
 
 4. **Configure as variáveis de ambiente**
    - Crie arquivo `.env` na raiz do projeto
-   - Adicione as chaves do Clerk e outras configurações
+   - Adicione as configurações necessárias do Firebase
    
 5. **Execute o aplicativo**
    ```bash
    flutter run
    ```
 
-## 🧪 Testes
-
-### Executar todos os testes
-```bash
-flutter test
-```
-
-### Testes por categoria
-```bash
-# Testes unitários
-flutter test test/unit/
-
-# Testes de widgets
-flutter test test/widget/
-
-# Testes de integração
-flutter test test/integration/
-```
-
-### Cobertura de testes
-```bash
-flutter test --coverage
-genhtml coverage/lcov.info -o coverage/html
-```
-
-## 📦 Build e Deploy
-
-### Android
-```bash
-# Debug APK
-flutter build apk --debug
-
-# Release APK
-flutter build apk --release
-
-# App Bundle (recomendado para Play Store)
-flutter build appbundle --release
-```
-
-### iOS
-```bash
-# Debug
-flutter build ios --debug
-
-# Release
-flutter build ios --release
-```
-
-## 📊 Monitoramento
-
-### Firebase Analytics
-- Eventos customizados de uso
-- Funis de conversão
-- Métricas de engajamento
-- Segmentação de usuários
-
-### Firebase Crashlytics
-- Relatórios automáticos de crashes
-- Logs customizados para debugging
-- Alertas em tempo real
-- Stack traces detalhados
-
-### Cache Metrics
-- Hit/miss rates do cache
-- Latência de operações
-- Uso de memória e disco
-- Performance de sincronização
-
-## 🔒 Segurança
-
-### Práticas Implementadas
-- Validação rigorosa de entrada
-- Sanitização de dados
-- Criptografia de dados sensíveis
-- Logs sem informações pessoais
-- Verificação de integridade
-- Compliance com LGPD
-
 ## 📚 Documentação
 
-Documentação técnica detalhada disponível em [`/docs`](./docs/):
+Documentação técnica detalhada disponível nos seguintes arquivos:
 
-- **[Arquitetura de Cache](./docs/cache-architecture.md)**: Sistema completo de cache offline-first
-- **[README Geral](./docs/README.md)**: Visão geral da arquitetura e convenções
-
-## 🤝 Contribuição
-
-### Fluxo de Desenvolvimento
-1. Faça fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -am 'feat: adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
-
-### Convenções de Commit
-- `feat:` Nova funcionalidade
-- `fix:` Correção de bug
-- `docs:` Documentação
-- `style:` Formatação de código
-- `refactor:` Refatoração
-- `test:` Adição de testes
-- `chore:` Tarefas de manutenção
-
-### Code Review
-- Todos os PRs devem passar por code review
-- Testes obrigatórios para novas funcionalidades
-- Documentação atualizada quando necessário
-- Seguir convenções de código estabelecidas
+- **[PROJECT_RULES.md](./PROJECT_RULES.md)**: Regras globais do projeto
+- **[USER_RULES.md](./USER_RULES.md)**: Diretrizes de interação com a IA
+- **[CADASTRO_RULES.md](./CADASTRO_RULES.md)**: Regras específicas de cadastro
+- **[FIREBASE_BACKEND_GUIDE.md](./FIREBASE_BACKEND_GUIDE.md)**: Guia de backend/infra
 
 ## 📄 Licença
 
 Este projeto está licenciado sob a [MIT License](LICENSE).
-
-## 👥 Equipe
-
-- **Desenvolvimento**: [Seu Nome]
-- **Design**: [Designer]
-- **Product Owner**: [PO]
-
-## 📞 Suporte
-
-Para dúvidas, problemas ou sugestões:
-- 📧 Email: suporte@barboss.com
-- 🐛 Issues: [GitHub Issues](https://github.com/seu-usuario/bar-boss-mobile/issues)
-- 📖 Documentação: [Wiki do Projeto](https://github.com/seu-usuario/bar-boss-mobile/wiki)
 
 ---
 

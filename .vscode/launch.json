@@ -8,10 +8,6 @@
       "flutterMode": "debug",
       "args": [
         "--dart-define",
-        "CLERK_PUBLISHABLE_KEY=pk_test_YWdlbmRhLWRlLWJvdGVjby0xMC5jbGVyay5hY2NvdW50cy5kZXYk",
-        "--dart-define",
-        "CLERK_SECRET_KEY=sk_test_example",
-        "--dart-define",
         "ENVIRONMENT=development"
       ]
     },
@@ -22,10 +18,6 @@
       "flutterMode": "profile",
       "args": [
         "--dart-define",
-        "CLERK_PUBLISHABLE_KEY=pk_test_YWdlbmRhLWRlLWJvdGVjby0xMC5jbGVyay5hY2NvdW50cy5kZXYk",
-        "--dart-define",
-        "CLERK_SECRET_KEY=sk_test_example",
-        "--dart-define",
         "ENVIRONMENT=development"
       ]
     },
@@ -35,10 +27,6 @@
       "request": "launch",
       "flutterMode": "release",
       "args": [
-        "--dart-define",
-        "CLERK_PUBLISHABLE_KEY=pk_test_YWdlbmRhLWRlLWJvdGVjby0xMC5jbGVyay5hY2NvdW50cy5kZXYk",
-        "--dart-define",
-        "CLERK_SECRET_KEY=sk_test_example",
         "--dart-define",
         "ENVIRONMENT=development"
       ]

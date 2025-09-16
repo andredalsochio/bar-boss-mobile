@@ -28,4 +28,10 @@ abstract class BarRepositoryDomain {
 
   /// Adiciona um membro ao bar com a role especificada
   Future<void> addMember(String barId, String uid, String role);
+
+  /// Verifica se um email está disponível (único)
+  Future<bool> isEmailUnique(String email);
+
+  /// Verifica se um CNPJ está disponível (único)
+  Future<bool> isCnpjUnique(String cnpj);
 }

@@ -8,6 +8,7 @@ import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
+import 'package:bar_boss_mobile/app/core/utils/normalization_helpers.dart';
 
 /// Estados possíveis do cadastro de bar
 enum RegistrationState { initial, loading, success, error }
@@ -36,6 +37,12 @@ class BarRegistrationViewModel extends ChangeNotifier {
   bool _isNameValid = false;
   bool _isResponsibleNameValid = false;
   bool _isPhoneValid = false;
+
+  // Estados de validação de unicidade
+  bool _isValidatingUniqueness = false;
+  String? _uniquenessError;
+  bool _emailUnique = true;
+  bool _cnpjUnique = true;
 
   // Dados do bar - Passo 2 (Endereço)
   String _cep = '';
@@ -92,6 +99,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
       _isNameValid &&
       _isResponsibleNameValid &&
       _isPhoneValid;
+
+  // Getters para validação de unicidade
+  bool get isValidatingUniqueness => _isValidatingUniqueness;
+  String? get uniquenessError => _uniquenessError;
+  bool get emailUnique => _emailUnique;
+  bool get cnpjUnique => _cnpjUnique;
+  bool get hasUniquenessError => _uniquenessError != null;
+  bool get canProceedToStep2 => isStep1Valid && _emailUnique && _cnpjUnique && !_isValidatingUniqueness;
 
   // Getters para os dados do Passo 2
   String get cep => _cep;
@@ -250,8 +265,89 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _clearError();
     return true;
   }
-  
 
+  /// Valida unicidade de email e CNPJ no Step1 (Fluxo A/B)
+  Future<bool> validateStep1Uniqueness() async {
+    debugPrint('🔍 [VIEWMODEL] Iniciando validação de unicidade...');
+    
+    // Primeiro valida formato
+    if (!validateStep1Format()) {
+      debugPrint('❌ [VIEWMODEL] Formato inválido, cancelando validação de unicidade');
+      return false;
+    }
+
+    _setValidatingUniqueness(true);
+    _clearUniquenessError();
+
+    try {
+      // Normaliza os dados
+      final normalizedEmail = NormalizationHelpers.normalizeEmail(_email);
+      final normalizedCnpj = NormalizationHelpers.normalizeCnpj(_cnpj);
+
+      debugPrint('🔍 [VIEWMODEL] Verificando unicidade para email: $normalizedEmail, CNPJ: $normalizedCnpj');
+
+      // Verifica unicidade em paralelo
+      final results = await Future.wait([
+        _barRepository.isEmailUnique(normalizedEmail),
+        _barRepository.isCnpjUnique(normalizedCnpj),
+      ]);
+
+      final emailUnique = results[0];
+      final cnpjUnique = results[1];
+
+      _emailUnique = emailUnique;
+      _cnpjUnique = cnpjUnique;
+
+      // Determina o erro específico
+      if (!emailUnique && !cnpjUnique) {
+        _setUniquenessError('Email e CNPJ já estão em uso');
+        debugPrint('❌ [VIEWMODEL] Email e CNPJ já estão em uso');
+        return false;
+      } else if (!emailUnique) {
+        _setUniquenessError('Email já está em uso');
+        debugPrint('❌ [VIEWMODEL] Email já está em uso');
+        return false;
+      } else if (!cnpjUnique) {
+        _setUniquenessError('CNPJ já está em uso');
+        debugPrint('❌ [VIEWMODEL] CNPJ já está em uso');
+        return false;
+      }
+
+      debugPrint('✅ [VIEWMODEL] Validação de unicidade aprovada');
+      return true;
+
+    } catch (e) {
+      debugPrint('❌ [VIEWMODEL] Erro na validação de unicidade: $e');
+      _setUniquenessError('Erro ao verificar dados. Tente novamente.');
+      return false;
+    } finally {
+      _setValidatingUniqueness(false);
+    }
+  }
+
+  /// Limpa erros de unicidade quando o usuário edita os campos
+  void clearUniquenessValidation() {
+    _emailUnique = true;
+    _cnpjUnique = true;
+    _clearUniquenessError();
+    notifyListeners();
+  }
+
+  // Métodos auxiliares para controle de estado
+  void _setValidatingUniqueness(bool value) {
+    _isValidatingUniqueness = value;
+    notifyListeners();
+  }
+
+  void _setUniquenessError(String error) {
+    _uniquenessError = error;
+    notifyListeners();
+  }
+
+  void _clearUniquenessError() {
+    _uniquenessError = null;
+    notifyListeners();
+  }
 
   void _validateCnpj() {
     // Remove caracteres não numéricos

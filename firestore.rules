@@ -1,133 +1,16 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
+  match /databases/{db}/documents {
+    function isAuthed() { return request.auth != null; }
 
-    // Helpers
-    function isAuth() { return request.auth != null; }
-    function isEmailVerified() { return request.auth != null && request.auth.token.email_verified == true; }
-    function isSocialUser() { 
-      return request.auth != null && 
-             (request.auth.token.firebase.sign_in_provider == 'google.com' ||
-              request.auth.token.firebase.sign_in_provider == 'facebook.com' ||
-              request.auth.token.firebase.sign_in_provider == 'apple.com' ||
-              ('identities' in request.auth.token.firebase && 
-               ('google.com' in request.auth.token.firebase.identities ||
-                'facebook.com' in request.auth.token.firebase.identities ||
-                'apple.com' in request.auth.token.firebase.identities)));
-    }
-    function isRecentlyCreated() {
-      // Permite operações para usuários criados nos últimos 10 minutos
-      // auth_time está em segundos, então convertemos para milissegundos
-      return request.auth != null && 
-             (request.auth.token.auth_time * 1000) > (request.time.toMillis() - 600000); // 10 minutos em ms
-    }
-    function isEmailVerifiedOrSocial() { return isEmailVerified() || isSocialUser(); }
-    function canCreateBar() { 
-      // Permite criação para usuários sociais (independente de email verificado),
-      // usuários com email verificado ou usuários criados recentemente
-      return isAuth() && (isSocialUser() || isEmailVerified() || isRecentlyCreated()); 
-    }
-    function me() { return request.auth.uid; }
-
-    function isMember(barId, uid) {
-      return exists(/databases/$(database)/documents/bars/$(barId)/members/$(uid));
-    }
-    function myRole(barId) {
-      return get(/databases/$(database)/documents/bars/$(barId)/members/$(me())).data.role;
-    }
-    function isOwnerRole(barId) {
-      return myRole(barId) == 'OWNER';
-    }
-    function canManageBar(barId) {
-      return ['OWNER','ADMIN'].hasAny([myRole(barId)]);
-    }
-
-    // Validação de endereço (complement é opcional)
-    function validAddress(address) {
-      return address is map
-        && address.keys().hasAll(['cep','street','number','state','city'])
-        && address.cep is string && address.cep.size() > 0
-        && address.street is string && address.street.size() > 0
-        && address.number is string && address.number.size() > 0
-        && address.state is string && address.state.size() > 0
-        && address.city is string && address.city.size() > 0;
-        // complement opcional
-    }
-
-    // Validação mínima de bar no create/update
-    function validBar(data) {
-      return data.keys().hasAll([
-        'cnpj','name','responsibleName','contactEmail','contactPhone',
-        'address','profile','primaryOwnerUid','createdByUid'
-      ])
-      && data.name is string && data.name.size() > 0
-      && data.cnpj is string && data.cnpj.size() > 0
-      && data.cnpj.matches('^[0-9]{14}$') // CNPJ limpo
-      && data.responsibleName is string && data.responsibleName.size() > 0
-      && data.contactEmail is string && data.contactEmail.size() > 0
-      && data.contactEmail.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
-      && data.contactPhone is string && data.contactPhone.size() > 0
-      && validAddress(data.address)
-      && (data.profile.contactsComplete is bool)
-      && (data.profile.addressComplete is bool)
-      && (data.profile.passwordComplete is bool)
-      && data.primaryOwnerUid == me()
-      && data.createdByUid == me();
-    }
-
-    function validEvent(data) {
-      return data.keys().hasAll(['title','startAt','published','createdByUid'])
-        && data.title is string && data.title.size() > 0
-        && data.published is bool
-        && data.createdByUid == me()
-        && (!('endAt' in data) || data.endAt >= data.startAt);
-    }
-
-    // users
-    match /users/{uid} {
-      allow read, write: if isAuth() && uid == me();
-    }
-
-    // bars
     match /bars/{barId} {
-      // Somente membros (ou criador) leem, com email verificado, usuário social ou recém-criado
-      allow read: if isAuth() && canCreateBar() && (isMember(barId, me()) ||
-                                  resource.data.createdByUid == me() ||
-                                  resource.data.primaryOwnerUid == me());
+      // permitir leitura somente se autenticado (inclui anônimo)
+      allow read: if isAuthed();
 
-      // Criar bar - permitir se o usuário é o criador e tem e-mail verificado, é usuário social ou foi criado recentemente
-      allow create: if isAuth() && canCreateBar() && validBar(request.resource.data);
-
-      // Atualizar bar - somente membros com permissão e e-mail verificado ou usuário social
-      allow update: if isAuth() && isEmailVerifiedOrSocial() && isMember(barId, me()) && canManageBar(barId) &&
-                    validBar(request.resource.data);
-
-      // Deletar bar - requer e-mail verificado ou usuário social
-      allow delete: if isAuth() && isEmailVerifiedOrSocial() && (isOwnerRole(barId) ||
-                    resource.data.createdByUid == me());
-
-      // MEMBERS
-      match /members/{memberUid} {
-        allow read: if isAuth() && canCreateBar() && isMember(barId, me());
-        // Permitir criação se é o próprio usuário (criação inicial) ou se é owner - requer e-mail verificado, usuário social ou recém-criado
-        allow create: if isAuth() && canCreateBar() && (memberUid == me() || isOwnerRole(barId));
-        allow update, delete: if isAuth() && isEmailVerifiedOrSocial() && isOwnerRole(barId);
-      }
-
-      // EVENTS
-      match /events/{eventId} {
-        allow read: if isAuth() && isMember(barId, me());
-        allow create: if isAuth() && isEmailVerifiedOrSocial() && isMember(barId, me()) &&
-                      validEvent(request.resource.data);
-        allow update, delete: if isAuth() && isEmailVerifiedOrSocial() && isMember(barId, me());
-      }
-    }
-
-
-
-    // Collection group query para members
-    match /{path=**}/members/{memberUid} {
-      allow read: if isAuth() && resource.data.uid == me();
+      // só cria/edita quem é o dono do doc
+      allow create, update: if isAuthed() 
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if false;
     }
   }
 }

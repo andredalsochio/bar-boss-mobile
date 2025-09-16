@@ -130,68 +130,30 @@ class _Step1PageState extends State<Step1Page> {
     debugPrint('🔘 [STEP1_PAGE] Telefone: "${_viewModel.phone}"');
     debugPrint('🔘 [STEP1_PAGE] isStep1Valid: ${_viewModel.isStep1Valid}');
     
+    // Fechar o teclado
+    FocusScope.of(context).unfocus();
+
+    // Primeiro, valida o formato dos dados
     if (!_viewModel.isStep1Valid) {
-      debugPrint('❌ [STEP1_PAGE] Step1 inválido, não prosseguindo');
-      debugPrint('❌ [STEP1_PAGE] Validações individuais:');
-      debugPrint('❌ [STEP1_PAGE] - Email válido: ${_viewModel.isEmailValid}');
-      debugPrint('❌ [STEP1_PAGE] - CNPJ válido: ${_viewModel.isCnpjValid}');
-      debugPrint('❌ [STEP1_PAGE] - Nome válido: ${_viewModel.isNameValid}');
-      debugPrint('❌ [STEP1_PAGE] - Nome responsável válido: ${_viewModel.isResponsibleNameValid}');
-      debugPrint('❌ [STEP1_PAGE] - Telefone válido: ${_viewModel.isPhoneValid}');
+      debugPrint('❌ [STEP1_PAGE] Step1 inválido, exibindo erros');
       _validateAndShowErrors();
       return;
     }
 
-    // Fechar o teclado
-    FocusScope.of(context).unfocus();
+    debugPrint('✅ [STEP1_PAGE] Step1 válido, iniciando validação de unicidade...');
+    
+    // Executa validação de unicidade (fluxo A/B)
+    await _viewModel.validateStep1Uniqueness();
+    
+    // Verifica se pode prosseguir após validação de unicidade
+    if (!_viewModel.canProceedToStep2) {
+      debugPrint('❌ [STEP1_PAGE] Não pode prosseguir - erro de unicidade: ${_viewModel.uniquenessError}');
+      return;
+    }
 
-    debugPrint('✅ [STEP1_PAGE] Step1 válido, validação de formato aprovada...');
-    final isValid = _viewModel.validateStep1Format();
-    
-    debugPrint('🔍 [STEP1_PAGE] Resultado da validação de formato: $isValid');
-    debugPrint('🔍 [STEP1_PAGE] Widget ainda montado: $mounted');
-    
-    if (isValid && mounted) {
-      debugPrint('💾 [STEP1_PAGE] Salvando dados do Passo 1...');
-      
-      try {
-        // Verifica se o usuário já tem um bar cadastrado (login social)
-        // através do AuthRepository e UserRepository
-        final authRepository = context.read<AuthRepository>();
-        final userRepository = context.read<UserRepository>();
-        final currentUser = authRepository.currentUser;
-        
-        if (currentUser != null) {
-           final userProfile = await userRepository.getMe();
-           final hasExistingBar = userProfile?.currentBarId != null && userProfile!.currentBarId!.isNotEmpty;
-           
-           debugPrint('🔍 [STEP1_PAGE] Usuário tem bar existente: $hasExistingBar (currentBarId: ${userProfile?.currentBarId})');
-           
-           // Se sim, salva no Firestore para atualizar o banner
-           // Verifica se usuário tem bar existente
-           if (hasExistingBar) {
-            debugPrint('🏢 [STEP1_PAGE] Usuário tem bar existente, salvando no Firestore...');
-            await _viewModel.saveStep1(userProfile.currentBarId!);
-          } else {
-            debugPrint('📝 [STEP1_PAGE] Usuário sem bar, dados validados.');
-          }
-        } else {
-          debugPrint('📝 [STEP1_PAGE] Usuário não autenticado, dados validados.');
-        }
-     } catch (e) {
-       debugPrint('⚠️ [STEP1_PAGE] Erro ao verificar bar existente: $e');
-       // Em caso de erro, apenas continua
-     }
-      
-      debugPrint('✅ [STEP1_PAGE] Dados salvos, navegando para Step2');
-      if (mounted) {
-        context.pushNamed('registerStep2');
-      }
-    } else {
-      debugPrint('❌ [STEP1_PAGE] Validação falhou ou widget desmontado');
-      if (!isValid) {
-        debugPrint('❌ [STEP1_PAGE] Erro na validação: ${_viewModel.errorMessage}');
-      }
+    debugPrint('✅ [STEP1_PAGE] Validação de unicidade aprovada, navegando para Step2');
+    if (mounted) {
+      context.pushNamed('registerStep2');
     }
   }
 
@@ -274,10 +236,41 @@ class _Step1PageState extends State<Step1Page> {
                   ),
                   const SizedBox(height: AppSizes.spacingLarge),
 
+                  // Exibe erro de unicidade se houver
+                  if (viewModel.hasUniquenessError) ...[
+                    Container(
+                      padding: const EdgeInsets.all(AppSizes.spacingMedium),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+                        border: Border.all(color: AppColors.error),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                            size: 20,
+                          ),
+                          const SizedBox(width: AppSizes.spacingSmall),
+                          Expanded(
+                            child: Text(
+                              viewModel.uniquenessError!,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacingMedium),
+                  ],
+
                   ButtonWidget(
                     text: AppStrings.continueButton,
-                    onPressed: viewModel.isStep1Valid ? _goToNextStep : null,
-                    isLoading: viewModel.isLoading,
+                    onPressed: _goToNextStep, // Sempre habilitado
+                    isLoading: viewModel.isLoading || viewModel.isValidatingUniqueness,
                   ),
                 ],
               ),

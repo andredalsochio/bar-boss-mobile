@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
+import 'package:bar_boss_mobile/app/core/utils/normalization_helpers.dart';
 
 /// Implementação Firebase da interface BarRepositoryDomain
 class FirebaseBarRepository implements BarRepositoryDomain {
@@ -36,9 +37,10 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     debugPrint('🏢 [FirebaseBarRepository] CNPJ: ${bar.cnpj.substring(0, 3)}***, Nome: ${bar.name}, Owner: $ownerUid');
     
     final normalizedCnpj = _normalizeCnpj(bar.cnpj);
-    final barId = forcedBarId ?? _barsCol.doc().id;
+    // Usar CNPJ normalizado como docId para garantir unicidade
+    final barId = forcedBarId ?? normalizedCnpj;
     
-    debugPrint('🏢 [FirebaseBarRepository] CNPJ normalizado: $normalizedCnpj, BarId: $barId');
+    debugPrint('🏢 [FirebaseBarRepository] CNPJ normalizado: $normalizedCnpj, BarId (usando CNPJ): $barId');
 
     final batch = _firestore.batch();
 
@@ -281,5 +283,37 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     // Retorna data atual se timestamp for null (primeiro snapshot)
     // ou se for de tipo inesperado
     return DateTime.now();
+  }
+
+  @override
+  Future<bool> isEmailUnique(String email) async {
+    try {
+      final normalizedEmail = NormalizationHelpers.normalizeEmail(email);
+      final query = await _barsCol
+          .where('contactEmail', isEqualTo: normalizedEmail)
+          .limit(1)
+          .get();
+      
+      return query.docs.isEmpty;
+    } catch (e) {
+      debugPrint('❌ [FirebaseBarRepository] Erro ao verificar unicidade do email: $e');
+      throw Exception('Erro ao verificar email. Tente novamente.');
+    }
+  }
+
+  @override
+  Future<bool> isCnpjUnique(String cnpj) async {
+    try {
+      final normalizedCnpj = NormalizationHelpers.normalizeCnpj(cnpj);
+      final query = await _barsCol
+          .where('cnpj', isEqualTo: normalizedCnpj)
+          .limit(1)
+          .get();
+      
+      return query.docs.isEmpty;
+    } catch (e) {
+      debugPrint('❌ [FirebaseBarRepository] Erro ao verificar unicidade do CNPJ: $e');
+      throw Exception('Erro ao verificar CNPJ. Tente novamente.');
+    }
   }
 }

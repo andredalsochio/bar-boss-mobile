@@ -1,8 +1,33 @@
 # 🔥 FIREBASE_BACKEND_GUIDE.md - Guia de Backend e Infraestrutura
 
-**Versão:** 2.0  
+**Versão:** 2.1  
 **Data:** 15 de Setembro de 2025  
 **Objetivo:** Documentação técnica da infraestrutura Firebase do Bar Boss Mobile
+
+---
+
+## 🚀 ESTADO ATUAL DA IMPLEMENTAÇÃO
+
+### **✅ Funcionalidades Implementadas**
+- **Autenticação completa**: Email/senha + login social (Google, Apple, Facebook)
+- **Cadastro de bares**: 3 passos com validações robustas
+- **Validação de email único**: Verificação no Firestore antes do cadastro
+- **Validação de CNPJ único**: Verificação no Firestore antes do cadastro
+- **Busca de CEP**: Integração com ViaCEP API para auto-preenchimento
+- **Firestore Security Rules**: Regras de segurança implementadas
+- **Estados de loading**: Feedback visual durante operações
+- **Tratamento de erros**: Mensagens de erro apropriadas
+
+### **🔄 Em Desenvolvimento**
+- Testes automatizados (unitários e E2E)
+- Cache local para melhor performance
+- Funcionalidades de eventos avançadas
+
+### **📋 Próximos Passos**
+- Implementar Cloud Functions para validações server-side
+- Configurar Firebase Analytics e Crashlytics
+- Implementar notificações push
+- Otimizações de performance
 
 ---
 

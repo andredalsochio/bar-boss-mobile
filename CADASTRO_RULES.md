@@ -45,14 +45,22 @@ Resultado: completedFullRegistration: true
 - CNPJ: formato + dígitos verificadores
 - Telefone: DDD válido + 9 dígitos
 
-### **Passo 2: Endereço**
+### **Passo 2: Endereço** ✅ IMPLEMENTADO
 **Campos Obrigatórios:**
-- CEP (auto-preenchimento via API)
+- CEP (auto-preenchimento via ViaCEP API)
 - Estado (dropdown)
 - Cidade
 - Rua
 - Número
 - Complemento (opcional)
+
+**Funcionalidades Implementadas:**
+- ✅ Busca automática de CEP via ViaCEP
+- ✅ Auto-preenchimento de rua, estado e cidade
+- ✅ Validações locais em tempo real
+- ✅ Estados de loading durante busca
+- ✅ Tratamento de erros robusto
+- ✅ Debounce para evitar múltiplas chamadas
 
 ### **Passo 3: Senha**
 **Campos Obrigatórios:**
@@ -418,18 +426,25 @@ enum RegistrationSideEffect {
 ## ✅ 9. CHECKLIST DE IMPLEMENTAÇÃO
 
 ### **Frontend (Flutter)**
-- [ ] Implementar validações de formato
-- [ ] Bloquear botão durante validação
-- [ ] Persistir estado de erro até correção
-- [ ] Implementar banner 0/3 para login social
-- [ ] Validar CNPJ com dígitos verificadores
+- [x] Implementar validações de formato
+- [x] Bloquear botão durante validação
+- [x] Persistir estado de erro até correção
+- [x] Implementar banner 0/3 para login social
+- [x] Validar CNPJ com dígitos verificadores
+- [x] Implementar Step2 com busca de CEP
+- [x] Auto-preenchimento via ViaCEP API
+- [x] Validações locais em tempo real
+- [x] Estados de loading e tratamento de erros
 
 ### **Backend (Firebase)**
-- [ ] Configurar regras básicas do Firestore
-- [ ] Implementar autenticação com Firebase Auth
-- [ ] Configurar estrutura de dados dos bares
+- [x] Configurar regras básicas do Firestore
+- [x] Implementar autenticação com Firebase Auth
+- [x] Configurar estrutura de dados dos bares
+- [x] Implementar validação de email único
+- [x] Implementar validação de CNPJ único
 
 ### **Testes**
+- [x] Testes manuais dos fluxos implementados
 - [ ] Testes unitários de validação de formato
 - [ ] Testes de widget para formulários
 - [ ] Testes E2E de fluxos completos

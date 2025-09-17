@@ -57,9 +57,21 @@ class _Step1PageState extends State<Step1Page> {
     final currentUserEmail = authViewModel.currentUser?.email;
     _isUserAuthenticated = currentUserEmail != null && currentUserEmail.isNotEmpty;
     
+    // Debug: Log de entrada do fluxo
+    final flowType = _isUserAuthenticated ? 'SOCIAL' : 'CLÁSSICO';
+    final uid = authViewModel.currentUser?.uid ?? 'null';
+    debugPrint('🚀 [STEP1_PAGE] === INICIANDO FLUXO $flowType ===');
+    debugPrint('📱 [STEP1_PAGE] Tela carregada | fluxo=$flowType | uid=$uid');
+    
     if (_isUserAuthenticated) {
       _emailController.text = currentUserEmail!;
-      _viewModel.setEmail(currentUserEmail);
+      // Usa addPostFrameCallback para evitar notifyListeners durante build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _viewModel.setEmailSilent(currentUserEmail);
+        debugPrint('🔐 [STEP1_PAGE] Fluxo Social - Email preenchido e travado | email=${currentUserEmail.substring(0, 3)}***');
+      });
+    } else {
+      debugPrint('📝 [STEP1_PAGE] Fluxo Clássico - Email livre para edição');
     }
 
     // Adiciona listeners para atualizar o ViewModel quando os valores mudarem
@@ -140,9 +152,11 @@ class _Step1PageState extends State<Step1Page> {
       return;
     }
 
+    final flowType = _isUserAuthenticated ? 'SOCIAL' : 'CLÁSSICO';
     debugPrint('✅ [STEP1_PAGE] Step1 válido, iniciando validação de unicidade...');
+    debugPrint('🔍 [STEP1_PAGE] Fluxo $flowType - Validando disponibilidade...');
     
-    // Executa validação de unicidade (fluxo A/B)
+    // Executa validação de unicidade (fluxo Social/Clássico)
     await _viewModel.validateStep1Uniqueness();
     
     // Verifica se pode prosseguir após validação de unicidade
@@ -152,6 +166,7 @@ class _Step1PageState extends State<Step1Page> {
     }
 
     debugPrint('✅ [STEP1_PAGE] Validação de unicidade aprovada, navegando para Step2');
+    debugPrint('🧭 [NAV] step1 -> step2');
     if (mounted) {
       context.pushNamed('registerStep2');
     }

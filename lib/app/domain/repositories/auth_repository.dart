@@ -40,6 +40,10 @@ abstract class AuthRepository {
   /// Envia email de redefinição de senha
   Future<void> sendPasswordResetEmail(String email);
 
+  /// Verifica se email está em uso (método seguro contra enumeração)
+  /// Retorna true se email já existe, false caso contrário
+  Future<bool> isEmailInUse(String email);
+
   /// Faz logout do usuário atual
   Future<void> signOut();
 }

@@ -129,25 +129,9 @@ class _Step2PageState extends State<Step2Page> {
       return;
     }
 
-    if (_authViewModel.isFromSocialProvider) {
-      // Verifica se o usuário já possui senha configurada
-      final hasPassword = await _viewModel.hasPasswordProvider();
-      
-      if (!mounted) return;
-      
-      if (hasPassword) {
-        // Se já tem senha, finaliza o cadastro sem mostrar o Step 3
-        debugPrint('🔍 [Step2Page] Usuário já possui senha, finalizando cadastro sem Step 3...');
-        await _viewModel.finalizeSocialLoginRegistrationWithoutPassword();
-      } else {
-        // Se não tem senha, vai para o Step 3 normalmente
-        debugPrint('🔍 [Step2Page] Usuário não possui senha, indo para Step 3...');
-        context.pushNamed('registerStep3');
-      }
-    } else {
-      // Para usuários de cadastro normal, vai para o Step 3
-      context.pushNamed('registerStep3');
-    }
+    // Sempre navegar para Step3, independente do tipo de login
+    debugPrint('🔍 [Step2Page] Navegando para Step3...');
+    context.pushNamed('registerStep3');
   }
 
   /// Salva o Passo 2 para usuários de login social
@@ -157,23 +141,9 @@ class _Step2PageState extends State<Step2Page> {
       return;
     }
 
-    // Verifica se o usuário já possui senha configurada
-    final hasPassword = await _viewModel.hasPasswordProvider();
-    
-    if (hasPassword) {
-      // Se já tem senha, finaliza o cadastro sem mostrar o Step 3
-      debugPrint('🔍 [Step2Page] Usuário já possui senha, finalizando cadastro sem Step 3...');
-      await _viewModel.finalizeSocialLoginRegistrationWithoutPassword();
-      
-      // Navega para a home após sucesso
-      if (mounted && _viewModel.registrationState == RegistrationState.success) {
-        context.goNamed('home');
-      }
-    } else {
-      // Se não tem senha, vai para o Step 3 normalmente
-      debugPrint('🔍 [Step2Page] Usuário não possui senha, indo para Step 3...');
-      if (mounted) context.pushNamed('registerStep3');
-    }
+    // Sempre navegar para Step3, independente de ter senha ou não
+    debugPrint('🔍 [Step2Page] Navegando para Step3...');
+    if (mounted) context.pushNamed('registerStep3');
   }
 
   void _goToPreviousStep() {

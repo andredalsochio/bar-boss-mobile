@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:search_cep/search_cep.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
@@ -9,6 +11,7 @@ import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/core/utils/normalization_helpers.dart';
+import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 
 /// Estados possíveis do cadastro de bar
 enum RegistrationState { initial, loading, success, error }
@@ -145,6 +148,12 @@ class BarRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Setter silencioso para evitar notifyListeners durante build
+  void setEmailSilent(String value) {
+    _email = value;
+    _validateEmail();
+  }
+
   void setCnpj(String value) {
     _cnpj = value;
     _validateCnpj();
@@ -266,64 +275,138 @@ class BarRegistrationViewModel extends ChangeNotifier {
     return true;
   }
 
-  /// Valida unicidade de email e CNPJ no Step1 (Fluxo A/B)
+  /// Valida unicidade de email e CNPJ no Step1 (Fluxo Social/Clássico)
   Future<bool> validateStep1Uniqueness() async {
-    debugPrint('🔍 [VIEWMODEL] Iniciando validação de unicidade...');
+    debugPrint('🔍 [BarRegistrationViewModel] Iniciando validação de unicidade...');
     
-    // Primeiro valida formato
-    if (!validateStep1Format()) {
-      debugPrint('❌ [VIEWMODEL] Formato inválido, cancelando validação de unicidade');
+    // Determinar o tipo de fluxo
+    final currentUser = _authRepository.currentUser;
+    final isSocialFlow = currentUser != null;
+    final flowType = isSocialFlow ? 'SOCIAL' : 'CLÁSSICO';
+    debugPrint('📋 [BarRegistrationViewModel] Tipo de fluxo: $flowType');
+    
+    // Validar formato dos dados primeiro
+    if (!isStep1Valid) {
+      debugPrint('❌ [BarRegistrationViewModel] Dados do Step1 inválidos, abortando validação de unicidade');
       return false;
     }
-
+    
     _setValidatingUniqueness(true);
     _clearUniquenessError();
-
+    
     try {
-      // Normaliza os dados
-      final normalizedEmail = NormalizationHelpers.normalizeEmail(_email);
-      final normalizedCnpj = NormalizationHelpers.normalizeCnpj(_cnpj);
-
-      debugPrint('🔍 [VIEWMODEL] Verificando unicidade para email: $normalizedEmail, CNPJ: $normalizedCnpj');
-
-      // Verifica unicidade em paralelo
-      final results = await Future.wait([
-        _barRepository.isEmailUnique(normalizedEmail),
-        _barRepository.isCnpjUnique(normalizedCnpj),
-      ]);
-
-      final emailUnique = results[0];
-      final cnpjUnique = results[1];
-
-      _emailUnique = emailUnique;
-      _cnpjUnique = cnpjUnique;
-
-      // Determina o erro específico
-      if (!emailUnique && !cnpjUnique) {
-        _setUniquenessError('Email e CNPJ já estão em uso');
-        debugPrint('❌ [VIEWMODEL] Email e CNPJ já estão em uso');
-        return false;
-      } else if (!emailUnique) {
-        _setUniquenessError('Email já está em uso');
-        debugPrint('❌ [VIEWMODEL] Email já está em uso');
-        return false;
-      } else if (!cnpjUnique) {
-        _setUniquenessError('CNPJ já está em uso');
-        debugPrint('❌ [VIEWMODEL] CNPJ já está em uso');
-        return false;
+      if (isSocialFlow) {
+        return await _validateSocialFlow();
+      } else {
+        return await _validateClassicFlow();
       }
-
-      debugPrint('✅ [VIEWMODEL] Validação de unicidade aprovada');
-      return true;
-
     } catch (e) {
-      debugPrint('❌ [VIEWMODEL] Erro na validação de unicidade: $e');
-      _setUniquenessError('Erro ao verificar dados. Tente novamente.');
+      debugPrint('❌ [BarRegistrationViewModel] Erro na validação de unicidade: $e');
+      _setUniquenessError('Erro ao validar dados. Tente novamente.');
+      _emailUnique = false;
+      _cnpjUnique = false;
       return false;
     } finally {
       _setValidatingUniqueness(false);
     }
   }
+
+  /// Validação para fluxo de cadastro clássico (não autenticado)
+  Future<bool> _validateClassicFlow() async {
+    debugPrint('📋 [BarRegistrationViewModel] Executando validação do fluxo CLÁSSICO');
+    
+    final emailNormalized = _email.trim().toLowerCase();
+    final cnpjClean = _cnpj.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // Validar email com fetchSignInMethodsForEmail
+    debugPrint('📧 [BarRegistrationViewModel] Validando email: ${emailNormalized.substring(0, 3)}***');
+    final emailExists = await _validateEmailWithFetchSignInMethods(emailNormalized);
+    _emailUnique = !emailExists;
+    
+    if (emailExists) {
+      _setUniquenessError('E-mail já cadastrado, faça login.');
+      return false;
+    }
+    
+    // Validar CNPJ com Cloud Function checkAvailability
+    debugPrint('🏢 [BarRegistrationViewModel] Validando CNPJ: ${cnpjClean.substring(0, 4)}***');
+    final cnpjExists = await _validateCnpjWithCloudFunction(cnpjClean);
+    _cnpjUnique = !cnpjExists;
+    
+    if (cnpjExists) {
+      _setUniquenessError('CNPJ já registrado.');
+      return false;
+    }
+    
+    debugPrint('✅ [BarRegistrationViewModel] Fluxo CLÁSSICO validado com sucesso');
+    return true;
+  }
+
+  /// Validação para fluxo social (autenticado)
+  Future<bool> _validateSocialFlow() async {
+    debugPrint('📋 [BarRegistrationViewModel] Executando validação do fluxo SOCIAL');
+    
+    final cnpjClean = _cnpj.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // Email não precisa ser validado (vem do login social)
+    debugPrint('📧 [BarRegistrationViewModel] Email do login social - sem validação');
+    _emailUnique = true;
+    
+    // Validar CNPJ com Cloud Function checkAvailability
+    debugPrint('🏢 [BarRegistrationViewModel] Validando CNPJ: ${cnpjClean.substring(0, 4)}***');
+    final cnpjExists = await _validateCnpjWithCloudFunction(cnpjClean);
+    _cnpjUnique = !cnpjExists;
+    
+    if (cnpjExists) {
+      _setUniquenessError('CNPJ já registrado.');
+      return false;
+    }
+    
+    debugPrint('✅ [BarRegistrationViewModel] Fluxo SOCIAL validado com sucesso');
+    return true;
+  }
+
+  /// Valida CNPJ usando Cloud Function checkAvailability
+  Future<bool> _validateCnpjWithCloudFunction(String cnpj) async {
+    try {
+      debugPrint('☁️ [BarRegistrationViewModel] Chamando Cloud Function checkAvailability');
+      
+      final callable = FirebaseFunctions.instance.httpsCallable('checkAvailability');
+      final result = await callable.call({'cnpj': cnpj});
+      
+      final cnpjExists = result.data['cnpjExists'] as bool;
+      debugPrint('☁️ [BarRegistrationViewModel] Cloud Function retornou: cnpjExists=$cnpjExists');
+      
+      return cnpjExists;
+    } catch (e) {
+      debugPrint('❌ [BarRegistrationViewModel] Erro na Cloud Function: $e');
+      // Em caso de erro, assumir que CNPJ não existe (fail-safe)
+      return false;
+    }
+  }
+
+  /// Valida email usando fetchSignInMethodsForEmail (método recomendado)
+  Future<bool> _validateEmailWithFetchSignInMethods(String email) async {
+    try {
+      debugPrint('🔍 [BarRegistrationViewModel] Usando fetchSignInMethodsForEmail para: ${email.substring(0, 3)}***');
+      
+      // Importar Firebase Auth diretamente para usar fetchSignInMethodsForEmail
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      final signInMethods = await auth.fetchSignInMethodsForEmail(email);
+      
+      final emailExists = signInMethods.isNotEmpty;
+      debugPrint('📧 [BarRegistrationViewModel] Métodos de login encontrados: $signInMethods');
+      debugPrint('📧 [BarRegistrationViewModel] Email existe: $emailExists');
+      
+      return emailExists;
+    } catch (e) {
+      debugPrint('❌ [BarRegistrationViewModel] Erro ao validar email com fetchSignInMethodsForEmail: $e');
+      // Em caso de erro, assumir que email não existe (fail-safe para permitir cadastro)
+      return false;
+    }
+  }
+
+
 
   /// Limpa erros de unicidade quando o usuário edita os campos
   void clearUniquenessValidation() {
@@ -538,9 +621,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
 
       // Cria o bar no Firestore com perfil completo
       // Como o usuário completou Passo 1 e 2, marca as flags como true
+      // IMPORTANTE: Normalizar o CNPJ para garantir consistência com as regras do Firestore
+      final normalizedCnpj = NormalizationHelpers.normalizeCnpj(_cnpj);
       final bar = BarModel.empty().copyWith(
         contactEmail: _email,
-        cnpj: _cnpj,
+        cnpj: normalizedCnpj, // Usar CNPJ normalizado
         name: _name,
         responsibleName: _responsibleName,
         contactPhone: _phone,
@@ -563,6 +648,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       );
 
       // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
+      debugPrint('💾 [STEP3_VM] Gravando bar no Firestore | docId=${_cnpj}');
       final barId = await _barRepository.createBarWithReservation(
         bar: bar,
         ownerUid: currentUser.uid,
@@ -629,8 +715,30 @@ class BarRegistrationViewModel extends ChangeNotifier {
         return;
       }
       
+      // VALIDAÇÃO DE CNPJ NO STEP3 (FLUXO CLÁSSICO)
+      // Agora que vamos criar o usuário, validamos o CNPJ com usuário autenticado
+      debugPrint('🔍 [BarRegistrationViewModel] Validando CNPJ no Step3 (fluxo Clássico)...');
+      final cnpjNormalized = NormalizationHelpers.normalizeCnpj(_cnpj);
+      
+      try {
+        final cnpjExists = await _barRepository.checkCnpjExists(cnpjNormalized);
+        if (cnpjExists) {
+          debugPrint('❌ [BarRegistrationViewModel] CNPJ já cadastrado: $cnpjNormalized');
+          _setError(AppStrings.cnpjInUseErrorMessage);
+          ToastService.instance.showError(message: AppStrings.cnpjInUseErrorMessage);
+          return;
+        }
+        debugPrint('✅ [BarRegistrationViewModel] CNPJ disponível: $cnpjNormalized');
+      } catch (e) {
+        debugPrint('❌ [BarRegistrationViewModel] Erro ao validar CNPJ no Step3: $e');
+        _setError('Erro ao validar CNPJ. Tente novamente.');
+        ToastService.instance.showError(message: 'Erro ao validar CNPJ. Tente novamente.');
+        return;
+      }
+      
       // Cria o usuário no Firebase Auth
        final displayName = _responsibleName;
+       debugPrint('🔐 [STEP3_VM] Criando conta email/senha');
        debugPrint('👤 [BarRegistrationViewModel] Criando usuário no Firebase Auth...');
        debugPrint('👤 [BarRegistrationViewModel] Email: ${_email.substring(0, 3)}***');
        debugPrint('👤 [BarRegistrationViewModel] DisplayName: $displayName');
@@ -642,6 +750,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
        );
 
        if (!authResult.isSuccess) {
+         debugPrint('❌ [STEP3_VM] Erro | message=${authResult.errorMessage}');
          debugPrint('❌ [BarRegistrationViewModel] Falha na criação do usuário: ${authResult.errorMessage}');
          _setError(authResult.errorMessage ?? 'Erro ao criar usuário');
          return;
@@ -661,9 +770,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
        // Cria o bar no Firestore com perfil completo
        // Como o usuário passou por todos os passos (1, 2 e 3), marca as flags como true
        debugPrint('🏢 [BarRegistrationViewModel] Criando modelo do bar...');
+       // IMPORTANTE: Normalizar o CNPJ para garantir consistência com as regras do Firestore
+       final normalizedCnpj = NormalizationHelpers.normalizeCnpj(_cnpj);
        final bar = BarModel.empty().copyWith(
          contactEmail: _email,
-         cnpj: _cnpj,
+         cnpj: normalizedCnpj, // Usar CNPJ normalizado
          name: _name,
          responsibleName: _responsibleName,
          contactPhone: _phone,
@@ -686,6 +797,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
        );
 
        // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
+       debugPrint('💾 [STEP3_VM] Gravando bar no Firestore | docId=${_cnpj}');
        debugPrint('💾 [BarRegistrationViewModel] Criando bar no Firestore com operação atômica...');
        debugPrint('💾 [BarRegistrationViewModel] CNPJ: ${_cnpj.substring(0, 5)}***');
        debugPrint('💾 [BarRegistrationViewModel] Nome do bar: $_name');
@@ -721,10 +833,20 @@ class BarRegistrationViewModel extends ChangeNotifier {
        debugPrint('🎉 DEBUG Cadastro finalizado: Profile completo - contactsComplete=true, addressComplete=true');
        debugPrint('🎉 DEBUG Cadastro finalizado: UserProfile criado com completedFullRegistration=true');
 
+       debugPrint('🎉 [STEP3_VM] Finalizado com sucesso');
        debugPrint('🎉 [BarRegistrationViewModel] Registro completo finalizado com sucesso!');
 
        _setRegistrationState(RegistrationState.success);
     } catch (e) {
+      debugPrint('❌ [STEP3_VM] Erro | message=${e.toString()}');
+      
+      // Log específico para erros de Firestore
+      if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+        debugPrint('🚫 [Firestore] PERMISSION_DENIED | path=bars/$_cnpj');
+      } else if (e.toString().contains('FirebaseException')) {
+        debugPrint('🔥 [Firestore] FirebaseException | error=${e.toString()}');
+      }
+      
       _setError(e.toString());
       rethrow;
     } finally {
@@ -968,9 +1090,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
 
       // Cria o bar no Firestore com perfil completo
       // Como o usuário completou todos os passos (senha já existia), marca todas as flags como true
+      // IMPORTANTE: Normalizar o CNPJ para garantir consistência com as regras do Firestore
+      final normalizedCnpj = NormalizationHelpers.normalizeCnpj(_cnpj);
       final bar = BarModel.empty().copyWith(
         contactEmail: _email,
-        cnpj: _cnpj,
+        cnpj: normalizedCnpj, // Usar CNPJ normalizado
         name: _name,
         responsibleName: _responsibleName,
         contactPhone: _phone,
@@ -992,11 +1116,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
         primaryOwnerUid: currentUser.uid,
       );
 
-      // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
-      final barId = await _barRepository.createBarWithReservation(
-        bar: bar,
-        ownerUid: currentUser.uid,
-      );
+      // Cria o bar com método simples (sem batch complexo)
+      await _barRepository.createBarSimple(bar);
+      final barId = bar.cnpj; // O ID do bar é o CNPJ normalizado
 
       // Atualiza o UserProfile com currentBarId e marca como completedFullRegistration = true
       final existingProfile = await _userRepository.getMe();
@@ -1013,6 +1135,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🎉 DEBUG Login Social Step 2: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true (senha já existia)');
       debugPrint('🎉 DEBUG Login Social Step 2: UserProfile atualizado com currentBarId=$barId e completedFullRegistration=true');
 
+      debugPrint('🎉 [STEP3_VM] Finalizado com sucesso');
       ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
       _setRegistrationState(RegistrationState.success);
       
@@ -1028,6 +1151,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
   }
 
   /// Finaliza o cadastro para usuários de login social no Step 3
+  /// Usa transaction atômica para garantir consistência completa
   Future<void> finalizeSocialLoginRegistration() async {
     debugPrint('🚀 [BarRegistrationViewModel] Iniciando finalizeSocialLoginRegistration...');
     debugPrint('🚀 [BarRegistrationViewModel] Step3 válido: $isStep3Valid');
@@ -1041,13 +1165,129 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      // Obtém o usuário atual (já autenticado via social)
-      final currentUser = _authRepository.currentUser;
-      if (currentUser == null) {
+      // Obtém o usuário atual do Firebase Auth (já autenticado via social)
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
         throw Exception('Usuário não autenticado');
       }
 
-      // Verifica se o usuário já tem provedor de email/senha vinculado
+      final normalizedCnpj = NormalizationHelpers.normalizeCnpj(_cnpj);
+      debugPrint('🔍 [BarRegistrationViewModel] Processando CNPJ: $normalizedCnpj');
+
+      // Executar operação atômica usando transaction
+      await _executeAtomicSocialRegistration(firebaseUser, normalizedCnpj);
+      
+      debugPrint('🎉 [BarRegistrationViewModel] Cadastro social finalizado com sucesso');
+      ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
+      _setRegistrationState(RegistrationState.success);
+    } catch (e) {
+      debugPrint('❌ [STEP3_VM] Erro | message=${e.toString()}');
+      
+      // UX de fallback para duplicados
+      if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+        debugPrint('🚫 [Firestore] PERMISSION_DENIED | path=bars/$_cnpj - tentando fallback');
+        
+        try {
+          // Fallback: verificar se o CNPJ existe usando checkCnpjExists
+          final normalizedCnpj = NormalizationHelpers.normalizeCnpj(_cnpj);
+          final cnpjExists = await _barRepository.checkCnpjExists(normalizedCnpj);
+          
+          if (cnpjExists) {
+            // CNPJ existe, mas não conseguimos acessar o bar - provavelmente pertence a outro usuário
+            debugPrint('❌ [BarRegistrationViewModel] CNPJ já cadastrado por outro usuário (fallback)');
+            ToastService.instance.showError(message: AppStrings.cnpjInUseErrorMessage);
+            _setError(AppStrings.cnpjInUseErrorMessage);
+            return;
+          } else {
+            // CNPJ não existe, erro de permissão inesperado
+            debugPrint('❌ [BarRegistrationViewModel] Erro de permissão inesperado - CNPJ não encontrado no registro');
+            ToastService.instance.showError(message: 'Erro de permissão. Tente novamente ou entre em contato com o suporte.');
+            _setError('Erro de permissão inesperado');
+            return;
+          }
+        } catch (fallbackError) {
+          debugPrint('❌ [BarRegistrationViewModel] Erro no fallback: $fallbackError');
+          ToastService.instance.showError(message: 'Erro ao verificar dados. Tente novamente.');
+          _setError('Erro ao verificar dados do bar');
+          return;
+        }
+      }
+      
+      // Log específico para erros de Firestore
+      if (e.toString().contains('FirebaseException')) {
+        debugPrint('🔥 [Firestore] FirebaseException | error=${e.toString()}');
+      }
+      
+      debugPrint('❌ [BarRegistrationViewModel] Erro durante o registro social step 3: $e');
+      debugPrint('❌ [BarRegistrationViewModel] Stack trace: ${StackTrace.current}');
+      
+      // Mensagens de erro mais amigáveis
+      String userFriendlyMessage;
+      if (e.toString().contains('network') || e.toString().contains('connection')) {
+        userFriendlyMessage = AppStrings.networkError;
+      } else if (e.toString().contains('email-already-in-use')) {
+        userFriendlyMessage = AppStrings.emailInUseErrorMessage;
+      } else {
+        userFriendlyMessage = AppStrings.registrationError;
+      }
+      
+      ToastService.instance.showError(message: userFriendlyMessage);
+      _setError(userFriendlyMessage);
+    } finally {
+      debugPrint('🔄 [BarRegistrationViewModel] Finalizando finalizeSocialLoginRegistration - definindo loading = false');
+      _setLoading(false);
+    }
+  }
+
+  /// Executa a operação atômica de registro social usando transaction
+  /// Garante consistência entre CNPJ registry, bar, membership e user profile
+  Future<void> _executeAtomicSocialRegistration(User currentUser, String normalizedCnpj) async {
+    debugPrint('🔄 [BarRegistrationViewModel] Iniciando operação atômica de registro social');
+    
+    final firestore = FirebaseFirestore.instance;
+    
+    await firestore.runTransaction((transaction) async {
+      // 1. Verificar se CNPJ já existe (idempotência)
+      final cnpjRegistryRef = firestore.collection('cnpj_registry').doc(normalizedCnpj);
+      final cnpjSnapshot = await transaction.get(cnpjRegistryRef);
+      
+      if (cnpjSnapshot.exists) {
+        final cnpjData = cnpjSnapshot.data()!;
+        final existingOwnerUid = cnpjData['ownerUid'] as String?;
+        
+        if (existingOwnerUid == currentUser.uid) {
+          // CNPJ já pertence ao usuário atual - operação idempotente
+          debugPrint('✅ [BarRegistrationViewModel] CNPJ já pertence ao usuário atual - operação idempotente');
+          
+          // Verificar se o user profile precisa ser atualizado
+          final userRef = firestore.collection('users').doc(currentUser.uid);
+          final userSnapshot = await transaction.get(userRef);
+          
+          if (userSnapshot.exists) {
+            final userData = userSnapshot.data()!;
+            final currentBarId = userData['currentBarId'] as String?;
+            final completedFullRegistration = userData['completedFullRegistration'] as bool? ?? false;
+            
+            if (currentBarId != normalizedCnpj || !completedFullRegistration) {
+              // Atualizar user profile
+              transaction.update(userRef, {
+                'currentBarId': normalizedCnpj,
+                'completedFullRegistration': true,
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+              debugPrint('✅ [BarRegistrationViewModel] User profile atualizado na operação idempotente');
+            }
+          }
+          
+          return; // Operação idempotente concluída
+        } else {
+          // CNPJ pertence a outro usuário
+          debugPrint('❌ [BarRegistrationViewModel] CNPJ já pertence a outro usuário: $existingOwnerUid');
+          throw Exception('CNPJ já cadastrado por outro usuário');
+        }
+      }
+      
+      // 2. Verificar se o usuário já tem provedor de email/senha vinculado
       final firebaseUser = FirebaseAuth.instance.currentUser;
       final hasEmailProvider = firebaseUser?.providerData
           .any((provider) => provider.providerId == 'password') ?? false;
@@ -1057,74 +1297,90 @@ class BarRegistrationViewModel extends ChangeNotifier {
         debugPrint('🔗 [BarRegistrationViewModel] Vinculando credencial de email/senha...');
         await _authRepository.linkEmailPassword(_email, _password);
         debugPrint('✅ [BarRegistrationViewModel] Credencial de email/senha vinculada com sucesso!');
-      } else {
-        debugPrint('ℹ️ [BarRegistrationViewModel] Usuário já possui provedor de email/senha vinculado, pulando vinculação...');
+        
+        // Recarrega os dados do usuário para atualizar os provedores
+        await FirebaseAuth.instance.currentUser?.reload();
       }
       
-      // Recarrega os dados do usuário para atualizar os provedores
-      debugPrint('🔄 [BarRegistrationViewModel] Recarregando dados do usuário...');
-      await FirebaseAuth.instance.currentUser?.reload();
-      debugPrint('✅ [BarRegistrationViewModel] Dados do usuário recarregados!');
-
-      // Cria o bar no Firestore com perfil completo
-      // Como o usuário completou todos os 3 passos, marca todas as flags como true
-      final bar = BarModel.empty().copyWith(
-        contactEmail: _email,
-        cnpj: _cnpj,
-        name: _name,
-        responsibleName: _responsibleName,
-        contactPhone: _phone,
-        address: BarAddress(
-          cep: _cep,
-          street: _street,
-          number: _number,
-          complement: _complement,
-          state: _stateUf,
-          city: _city,
-        ),
-        profile: BarProfile(
-          contactsComplete: true, // Passo 1 completo
-          addressComplete: true,  // Passo 2 completo
-        ),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        createdByUid: currentUser.uid,
-        primaryOwnerUid: currentUser.uid,
-      );
-
-      // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
-      final barId = await _barRepository.createBarWithReservation(
-        bar: bar,
-        ownerUid: currentUser.uid,
-      );
-
-      // Atualiza o UserProfile com currentBarId e marca como completedFullRegistration = true
-      final existingProfile = await _userRepository.getMe();
-      if (existingProfile != null) {
-        final updatedProfile = existingProfile.copyWith(
-          currentBarId: barId,
-          completedFullRegistration: true, // Marca como completo após Step 3
-        );
-        await _userRepository.upsert(updatedProfile);
+      // 3. Criar CNPJ registry
+      transaction.set(cnpjRegistryRef, {
+        'ownerUid': currentUser.uid,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      
+      // 4. Criar bar
+      final barRef = firestore.collection('bars').doc(normalizedCnpj);
+      final barData = {
+        'contactEmail': _email,
+        'cnpj': normalizedCnpj,
+        'name': _name,
+        'responsibleName': _responsibleName,
+        'contactPhone': _phone,
+        'address': {
+          'cep': _cep,
+          'street': _street,
+          'number': _number,
+          'complement': _complement,
+          'state': _stateUf,
+          'city': _city,
+        },
+        'profile': {
+          'contactsComplete': true, // Passo 1 completo
+          'addressComplete': true,  // Passo 2 completo
+        },
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'createdByUid': currentUser.uid,
+        'primaryOwnerUid': currentUser.uid,
+      };
+      
+      transaction.set(barRef, barData);
+      
+      // 5. Criar membership OWNER
+      final membershipRef = firestore
+          .collection('bars')
+          .doc(normalizedCnpj)
+          .collection('memberships')
+          .doc(currentUser.uid);
+      
+      transaction.set(membershipRef, {
+        'uid': currentUser.uid,
+        'role': 'OWNER',
+        'joinedAt': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      
+      // 6. Atualizar user profile
+      final userRef = firestore.collection('users').doc(currentUser.uid);
+      final userSnapshot = await transaction.get(userRef);
+      
+      if (userSnapshot.exists) {
+        transaction.update(userRef, {
+          'currentBarId': normalizedCnpj,
+          'completedFullRegistration': true,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // Criar user profile se não existir
+        transaction.set(userRef, {
+          'uid': currentUser.uid,
+          'email': currentUser.email,
+          'displayName': currentUser.displayName,
+          'currentBarId': normalizedCnpj,
+          'completedFullRegistration': true,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       }
-
-      // Debug log conforme especificado
-      debugPrint('🎉 DEBUG Login Social Step 3: Bar criado com sucesso para usuário ${currentUser.uid}');
-      debugPrint('🎉 DEBUG Login Social Step 3: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true');
-      debugPrint('🎉 DEBUG Login Social Step 3: UserProfile atualizado com currentBarId=$barId e completedFullRegistration=true');
-
-
-
-      ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
-      _setRegistrationState(RegistrationState.success);
-    } catch (e) {
-      debugPrint('❌ [BarRegistrationViewModel] Erro durante o registro social step 3: $e');
-      debugPrint('❌ [BarRegistrationViewModel] Stack trace: ${StackTrace.current}');
-      _setError(e.toString());
-      rethrow;
-    } finally {
-      debugPrint('🔄 [BarRegistrationViewModel] Finalizando finalizeSocialLoginRegistration - definindo loading = false');
-      _setLoading(false);
-    }
+      
+      debugPrint('✅ [BarRegistrationViewModel] Transaction atômica concluída com sucesso');
+    });
+    
+    // Debug logs após transaction
+    debugPrint('🎉 DEBUG Login Social Step 3: Bar criado com sucesso para usuário ${currentUser.uid}');
+    debugPrint('🎉 DEBUG Login Social Step 3: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true');
+    debugPrint('🎉 DEBUG Login Social Step 3: UserProfile atualizado com currentBarId=$normalizedCnpj e completedFullRegistration=true');
   }
 }

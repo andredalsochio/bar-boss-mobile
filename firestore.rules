@@ -1,16 +1,57 @@
 rules_version = '2';
+
 service cloud.firestore {
-  match /databases/{db}/documents {
-    function isAuthed() { return request.auth != null; }
-
+  match /databases/{database}/documents {
+    // Helper: usuário autenticado
+    function isAuthed() {
+      return request.auth != null;
+    }
+    
+    // Helper: membro do bar
+    function isMember(barId) {
+      return isAuthed() && 
+             (get(/databases/$(database)/documents/bars/$(barId)).data.primaryOwnerUid == request.auth.uid ||
+              exists(/databases/$(database)/documents/bars/$(barId)/members/$(request.auth.uid)));
+    }
+    
+    // cnpj_registry/{cnpj}
+    match /cnpj_registry/{cnpj} {
+      allow read: if false;
+      allow create: if isAuthed() && 
+                       request.resource.data.ownerUid == request.auth.uid &&
+                       !exists(/databases/$(database)/documents/cnpj_registry/$(cnpj));
+      allow update, delete: if false;
+    }
+    
+    // bars/{barId}
     match /bars/{barId} {
-      // permitir leitura somente se autenticado (inclui anônimo)
-      allow read: if isAuthed();
-
-      // só cria/edita quem é o dono do doc
-      allow create, update: if isAuthed() 
-        && request.resource.data.ownerUid == request.auth.uid;
-      allow delete: if false;
+      allow read: if isMember(barId);
+      allow create: if isAuthed() && 
+                       request.resource.data.cnpj == barId &&
+                       request.resource.data.primaryOwnerUid == request.auth.uid &&
+                       !exists(/databases/$(database)/documents/bars/$(barId));
+      allow update: if isMember(barId);
+      
+      // members/{memberUid}
+      match /members/{memberUid} {
+        allow read, create, update: if isAuthed() && request.auth.uid == memberUid;
+        allow delete: if false;
+      }
+      
+      // events/{eventId}
+      match /events/{eventId} {
+        allow read, write: if isMember(barId);
+      }
+    }
+    
+    // users/{userId}
+    match /users/{userId} {
+      allow read, write: if isAuthed() && request.auth.uid == userId;
+    }
+    
+    // Bloquear o restante
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

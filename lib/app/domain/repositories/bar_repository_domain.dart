@@ -15,6 +15,10 @@ abstract class BarRepositoryDomain {
     String? forcedBarId,
   });
 
+  /// Cria um bar de forma simples sem batch complexo
+  /// Usado especialmente para fluxo social
+  Future<void> createBarSimple(BarModel bar);
+
   /// Atualiza os dados de um bar
   Future<void> update(BarModel bar);
 
@@ -34,4 +38,13 @@ abstract class BarRepositoryDomain {
 
   /// Verifica se um CNPJ está disponível (único)
   Future<bool> isCnpjUnique(String cnpj);
+
+  /// Verifica se um CNPJ já existe (via Callable Function)
+  Future<bool> checkCnpjExists(String cnpjClean);
+
+  /// Busca um bar por ID
+  Future<BarModel?> getById(String barId);
+
+  /// Garante que o usuário seja membro do bar (cria membership se não existir)
+  Future<void> ensureMembership(String barId, String uid);
 }

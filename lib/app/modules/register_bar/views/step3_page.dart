@@ -96,9 +96,12 @@ class _Step3PageState extends State<Step3Page> {
     try {
       // Verifica se é usuário de login social
       if (_authViewModel.isFromSocialProvider) {
+        final uid = _authViewModel.currentUser?.uid ?? 'unknown';
+        debugPrint('🚀 [FLOW] start | type=social | uid=$uid');
         // Para usuários de login social, usa o método específico
         await _viewModel.finalizeSocialLoginRegistration();
       } else {
+        debugPrint('🚀 [FLOW] start | type=signup | uid=creating');
         // Para usuários de cadastro tradicional, usa o método padrão
         await _viewModel.registerBarAndUser();
       }

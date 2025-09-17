@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
@@ -36,6 +37,16 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     debugPrint('🏢 [FirebaseBarRepository] Iniciando createBarWithReservation...');
     debugPrint('🏢 [FirebaseBarRepository] CNPJ: ${bar.cnpj.substring(0, 3)}***, Nome: ${bar.name}, Owner: $ownerUid');
     
+    // 🔍 DEBUG: Verificar estado da autenticação Firebase
+    final currentUser = FirebaseAuth.instance.currentUser;
+    debugPrint('🔍 [FirebaseBarRepository] Estado da autenticação:');
+    debugPrint('🔍 [FirebaseBarRepository] - currentUser: ${currentUser?.uid}');
+    debugPrint('🔍 [FirebaseBarRepository] - ownerUid: $ownerUid');
+    debugPrint('🔍 [FirebaseBarRepository] - UIDs iguais: ${currentUser?.uid == ownerUid}');
+    debugPrint('🔍 [FirebaseBarRepository] - emailVerified: ${currentUser?.emailVerified}');
+    debugPrint('🔍 [FirebaseBarRepository] - isAnonymous: ${currentUser?.isAnonymous}');
+    debugPrint('🔍 [FirebaseBarRepository] - providerData: ${currentUser?.providerData.map((p) => p.providerId).toList()}');
+    
     final normalizedCnpj = _normalizeCnpj(bar.cnpj);
     // Usar CNPJ normalizado como docId para garantir unicidade
     final barId = forcedBarId ?? normalizedCnpj;
@@ -46,8 +57,17 @@ class FirebaseBarRepository implements BarRepositoryDomain {
 
     final barRef = _barsCol.doc(barId);
     final memberRef = barRef.collection(FirestoreKeys.membersSubcollection).doc(ownerUid);
+    final cnpjRegistryRef = _firestore.collection('cnpj_registry').doc(normalizedCnpj);
 
-    // 1) Cria o bar
+    // 1) Cria o registro no cnpj_registry (para garantir unicidade)
+    debugPrint('🏢 [FirebaseBarRepository] Adicionando cnpj_registry ao batch...');
+    batch.set(cnpjRegistryRef, {
+      'cnpj': normalizedCnpj,
+      'ownerUid': ownerUid,
+      'createdAt': _now,
+    });
+
+    // 2) Cria o bar
     debugPrint('🏢 [FirebaseBarRepository] Preparando dados do bar...');
     final barWithIds = bar.copyWith(
       id: barId,
@@ -68,7 +88,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     debugPrint('🏢 [FirebaseBarRepository] Adicionando bar ao batch...');
     batch.set(barRef, barData);
 
-    // 2) Adiciona o criador como membro OWNER
+    // 3) Adiciona o criador como membro OWNER
     debugPrint('🏢 [FirebaseBarRepository] Adicionando membership OWNER ao batch...');
     batch.set(memberRef, {
       'uid': ownerUid,
@@ -97,6 +117,86 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao atualizar bar: $e');
       throw Exception('Erro ao atualizar informações do bar. Tente novamente.');
+    }
+  }
+
+  /// Método simples para criar bar sem batch complexo
+  /// Usado especialmente para fluxo social
+  Future<void> createBarSimple(BarModel bar) async {
+    final cnpjLimpo = NormalizationHelpers.normalizeCnpj(bar.cnpj);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    
+    if (uid == null) {
+      debugPrint('❌ [FirebaseBarRepository] Usuário não autenticado');
+      throw Exception('Usuário não autenticado');
+    }
+
+    debugPrint('🏗️ [FirebaseBarRepository] Criando bar simples: $cnpjLimpo');
+    debugPrint('🏗️ [FirebaseBarRepository] Nome: ${bar.name}, Owner: $uid');
+    
+    try {
+      // Usar batch para garantir atomicidade das 3 escritas
+      final batch = _firestore.batch();
+      
+      // 1. Criar documento do bar
+      final barData = _toFirestore(bar)..addAll({
+        'createdAt': _now,
+        'updatedAt': _now,
+        'ownerUid': uid, // Campo necessário para as rules
+      });
+      
+      debugPrint('🏗️ [FirebaseBarRepository] Dados do bar: ${barData.keys.toList()}');
+      debugPrint('🏗️ [FirebaseBarRepository] Criando documento bars/$cnpjLimpo...');
+      
+      batch.set(_barsCol.doc(cnpjLimpo), barData);
+      
+      // 2. Criar membership do owner
+      debugPrint('🏗️ [FirebaseBarRepository] Criando membership do owner...');
+      final memberData = {
+        'uid': uid,
+        'role': 'OWNER',
+        'createdAt': _now,
+        'barId': cnpjLimpo,
+        'barName': bar.name,
+      };
+      
+      debugPrint('🏗️ [FirebaseBarRepository] Dados do member: ${memberData.keys.toList()}');
+      batch.set(
+        _barsCol
+            .doc(cnpjLimpo)
+            .collection(FirestoreKeys.membersSubcollection)
+            .doc(uid),
+        memberData,
+      );
+      
+      // 3. Criar registro no cnpj_registry
+       debugPrint('🏗️ [FirebaseBarRepository] Criando registro no cnpj_registry...');
+       final cnpjRegistryData = {
+         'cnpj': cnpjLimpo,
+         'ownerUid': uid,
+         'barId': cnpjLimpo,
+         'contactEmail': bar.contactEmail.toLowerCase().trim(),
+         'createdAt': _now,
+         'createdByUid': uid,
+       };
+      
+      debugPrint('🏗️ [FirebaseBarRepository] Dados do cnpj_registry: ${cnpjRegistryData.keys.toList()}');
+      batch.set(
+        _firestore.collection('cnpj_registry').doc(cnpjLimpo),
+        cnpjRegistryData,
+      );
+      
+      // Executar todas as operações atomicamente
+      await batch.commit();
+      
+      debugPrint('✅ [FirebaseBarRepository] Bar criado com sucesso!');
+      debugPrint('✅ [FirebaseBarRepository] Membership criado com sucesso!');
+      debugPrint('✅ [FirebaseBarRepository] CNPJ registrado com sucesso!');
+      debugPrint('✅ [FirebaseBarRepository] Bar simples criado com sucesso!');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [FirebaseBarRepository] Erro ao criar bar simples: $e');
+      debugPrint('❌ [FirebaseBarRepository] Stack trace: $stackTrace');
+      throw Exception('Erro ao criar bar. Tente novamente.');
     }
   }
 
@@ -263,8 +363,8 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       'profile': bar.profile.toMap(),
       'status': bar.status,
       'logoUrl': bar.logoUrl,
-      'createdAt': bar.createdAt,
-      'updatedAt': bar.updatedAt,
+      // Não incluir createdAt, updatedAt e ownerUid aqui
+      // pois são adicionados separadamente no createBarSimple
       'createdByUid': bar.createdByUid,
       'primaryOwnerUid': bar.primaryOwnerUid,
     };
@@ -314,6 +414,59 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao verificar unicidade do CNPJ: $e');
       throw Exception('Erro ao verificar CNPJ. Tente novamente.');
+    }
+  }
+
+  @override
+  Future<bool> checkCnpjExists(String cnpjClean) async {
+    debugPrint('🔍 [FirebaseBarRepository] Verificando existência do CNPJ: ${cnpjClean.substring(0, 4)}***');
+    try {
+      // Verificar APENAS no cnpj_registry (conforme regras do Firestore)
+      debugPrint('🔍 [FirebaseBarRepository] Consultando cnpj_registry...');
+      final cnpjRegistryDoc = await _firestore
+          .collection('cnpj_registry')
+          .doc(cnpjClean)
+          .get();
+      
+      final exists = cnpjRegistryDoc.exists;
+      debugPrint('✅ [FirebaseBarRepository] CNPJ existe: $exists');
+      return exists;
+    } catch (e) {
+      debugPrint('❌ [FirebaseBarRepository] Erro ao verificar existência do CNPJ: $e');
+      throw Exception('Erro ao verificar CNPJ. Tente novamente.');
+    }
+  }
+
+  @override
+  Future<void> ensureMembership(String barId, String uid) async {
+    debugPrint('🔗 [FirebaseBarRepository] Garantindo membership para barId: $barId, uid: $uid');
+    
+    try {
+      final memberRef = _barsCol.doc(barId).collection(FirestoreKeys.membersSubcollection).doc(uid);
+      final memberDoc = await memberRef.get();
+      
+      if (!memberDoc.exists) {
+        debugPrint('🔗 [FirebaseBarRepository] Membership não existe, criando...');
+        
+        // Buscar dados do bar para o membership
+        final barDoc = await _barsCol.doc(barId).get();
+        final barName = barDoc.exists ? (barDoc.data()?['name'] ?? 'Bar') : 'Bar';
+        
+        await memberRef.set({
+          'uid': uid,
+          'role': 'OWNER',
+          'createdAt': _now,
+          'barId': barId,
+          'barName': barName,
+        });
+        
+        debugPrint('✅ [FirebaseBarRepository] Membership criado com sucesso');
+      } else {
+        debugPrint('✅ [FirebaseBarRepository] Membership já existe');
+      }
+    } catch (e) {
+      debugPrint('❌ [FirebaseBarRepository] Erro ao garantir membership: $e');
+      throw Exception('Erro ao garantir acesso ao bar. Tente novamente.');
     }
   }
 }

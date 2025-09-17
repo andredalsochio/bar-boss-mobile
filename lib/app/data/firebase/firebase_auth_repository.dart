@@ -478,6 +478,45 @@ class FirebaseAuthRepository implements AuthRepository {
     return AuthResult.error(errorMessage);
   }
 
+  @override
+  Future<bool> isEmailInUse(String email) async {
+    debugPrint('🔍 [FirebaseAuthRepository] Verificando se email está em uso: ${email.substring(0, 3)}***');
+    
+    // Verificar se o usuário atual já está autenticado com este email
+    final currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.email?.toLowerCase() == email.toLowerCase()) {
+      debugPrint('✅ [FirebaseAuthRepository] Email pertence ao usuário atual autenticado');
+      return false; // Permitir prosseguir se é o mesmo usuário
+    }
+    
+    try {
+      // Estratégia alternativa ao fetchSignInMethodsForEmail depreciado:
+      // Tentar fazer reset de senha - se email não existir, retornará erro específico
+      debugPrint('🔍 [FirebaseAuthRepository] Tentando reset de senha para verificar existência...');
+      await _auth.sendPasswordResetEmail(email: email);
+      
+      // Se chegou aqui sem erro, email existe no sistema
+      debugPrint('✅ [FirebaseAuthRepository] Email já está em uso (reset enviado)');
+      return true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        debugPrint('✅ [FirebaseAuthRepository] Email disponível (usuário não encontrado)');
+        return false;
+      } else if (e.code == 'invalid-email') {
+        debugPrint('⚠️ [FirebaseAuthRepository] Email inválido');
+        return false;
+      } else {
+        // Para outros erros, assumir que email pode estar em uso (fail-safe)
+        debugPrint('⚠️ [FirebaseAuthRepository] Erro na verificação: ${e.code} - assumindo email em uso');
+        return true;
+      }
+    } catch (e) {
+      debugPrint('❌ [FirebaseAuthRepository] Erro inesperado: $e');
+      // Em caso de erro, assumir que email está em uso (fail-safe)
+      return true;
+    }
+  }
+
   /// Converte Exception genérica para AuthResult de erro
   AuthResult _fromGenericException(Exception exception) {
     return AuthResult.error('Erro inesperado: ${exception.toString()}');

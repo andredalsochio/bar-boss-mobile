@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkEmailAvailability = exports.validateRegistrationData = void 0;
+exports.validateCnpj = exports.checkEmailAvailability = exports.validateRegistrationData = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const v2_1 = require("firebase-functions/v2");
 const admin = __importStar(require("firebase-admin"));
@@ -227,6 +227,37 @@ exports.checkEmailAvailability = (0, https_1.onCall)(async (request) => {
             uid: (_c = request.auth) === null || _c === void 0 ? void 0 : _c.uid
         });
         throw new https_1.HttpsError('internal', 'Erro interno ao verificar disponibilidade do email');
+    }
+});
+/**
+ * Cloud Function callable para validar CNPJ sem autenticação (para Step3)
+ */
+exports.validateCnpj = (0, https_1.onCall)(async (request) => {
+    const { data } = request;
+    const { cnpj } = data;
+    // Validar parâmetros
+    if (!cnpj || typeof cnpj !== 'string') {
+        throw new https_1.HttpsError('invalid-argument', 'CNPJ é obrigatório');
+    }
+    // Normalizar CNPJ (remover formatação)
+    const normalizedCnpj = cnpj.replace(/\D/g, '');
+    // Validar formato do CNPJ
+    if (normalizedCnpj.length !== 14) {
+        throw new https_1.HttpsError('invalid-argument', 'CNPJ deve ter 14 dígitos');
+    }
+    try {
+        // Verificar se CNPJ já existe no registro usando Admin SDK
+        const cnpjDoc = await admin.firestore()
+            .collection('cnpj_registry')
+            .doc(normalizedCnpj)
+            .get();
+        const exists = cnpjDoc.exists;
+        console.log(`CNPJ ${normalizedCnpj} - Existe: ${exists}`);
+        return { exists };
+    }
+    catch (error) {
+        console.error('Erro ao verificar CNPJ:', error);
+        throw new https_1.HttpsError('internal', 'Erro interno do servidor');
     }
 });
 //# sourceMappingURL=index.js.map

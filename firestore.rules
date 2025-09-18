@@ -18,51 +18,69 @@ service cloud.firestore {
       allow read: if isAuthed();
 
       // criar bar só se o dono no payload for o usuário logado
-      allow create: if isAuthed() && 
-        (request.resource.data.primaryOwnerUid == request.auth.uid || 
+      allow create: if isAuthed() &&
+        (request.resource.data.primaryOwnerUid == request.auth.uid ||
          request.resource.data.ownerUid == request.auth.uid);
 
       // atualizar/excluir bar só se o dono do doc for o usuário logado
-      allow update, delete: if isAuthed() && 
-        (resource.data.primaryOwnerUid == request.auth.uid || 
+      allow update, delete: if isAuthed() &&
+        (resource.data.primaryOwnerUid == request.auth.uid ||
          resource.data.ownerUid == request.auth.uid);
 
       // Subcoleção MEMBERS (compat)
-      match /members/{memberUid} {
-        allow read: if isSelf(memberUid);
-        allow create: if isSelf(memberUid) && 
+      match /members/{memberId} {
+        // Permite leitura quando o CAMPO uid do doc é do usuário logado
+        allow read: if isAuthed() && resource.data.uid == request.auth.uid;
+        // Criar somente o próprio vínculo
+        allow create: if isAuthed() &&
           request.resource.data.uid == request.auth.uid;
-        allow update, delete: if false; // owners/admins podem gerenciar via função/server se quiser
+        allow update, delete: if false; // gerenciar via server/func
       }
 
       // Subcoleção MEMBERSHIPS (padrão novo)
-      match /memberships/{memberUid} {
-        allow read: if isSelf(memberUid);
-        allow create: if isSelf(memberUid) && 
+      match /memberships/{memberId} {
+        allow read: if isAuthed() && resource.data.uid == request.auth.uid;
+        allow create: if isAuthed() &&
           request.resource.data.uid == request.auth.uid;
         allow update, delete: if false;
       }
 
-      // EVENTS (opcional básico p/ não travar)
+      // EVENTS (básico p/ não travar)
       match /events/{eventId} {
         allow read: if isAuthed();
-        allow create: if isAuthed() && 
+        allow create: if isAuthed() &&
           request.resource.data.createdByUid == request.auth.uid;
-        allow update, delete: if isAuthed() && 
-          (resource.data.createdByUid == request.auth.uid);
+        allow update, delete: if isAuthed() &&
+          resource.data.createdByUid == request.auth.uid;
       }
     }
 
     // --- CNPJ REGISTRY ---
     match /cnpj_registry/{cnpj} {
-      allow read: if isAuthed();
-      allow create: if isAuthed() && 
-        (request.resource.data.primaryOwnerUid == request.auth.uid || 
+      // DEV: leitura liberada para permitir validação no signup (sem auth)
+      // Ajuste depois para uma Cloud Function ou auth anônima.
+      allow read: if true;
+
+      allow create: if isAuthed() &&
+        (request.resource.data.primaryOwnerUid == request.auth.uid ||
          request.resource.data.ownerUid == request.auth.uid);
-      allow update: if isAuthed() && 
-        (resource.data.primaryOwnerUid == request.auth.uid || 
+      allow update: if isAuthed() &&
+        (resource.data.primaryOwnerUid == request.auth.uid ||
          resource.data.ownerUid == request.auth.uid);
       allow delete: if false;
+    }
+
+    // --- COLLECTION GROUP QUERIES ---
+    // Permite queries em collection groups de members/memberships
+    // quando filtradas por uid == request.auth.uid
+    match /{path=**}/members/{memberId} {
+      allow read: if isAuthed() && 
+        resource.data.uid == request.auth.uid;
+    }
+
+    match /{path=**}/memberships/{memberId} {
+      allow read: if isAuthed() && 
+        resource.data.uid == request.auth.uid;
     }
 
     // bloqueio padrão

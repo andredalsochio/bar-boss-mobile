@@ -248,3 +248,50 @@ export const checkEmailAvailability = onCall(async (request) => {
     );
   }
 });
+
+/**
+ * Cloud Function callable para validar CNPJ sem autenticação (para Step3)
+ */
+export const validateCnpj = onCall(async (request) => {
+  const { data } = request;
+  const { cnpj } = data;
+
+  // Validar parâmetros
+  if (!cnpj || typeof cnpj !== 'string') {
+    throw new HttpsError(
+      'invalid-argument',
+      'CNPJ é obrigatório'
+    );
+  }
+
+  // Normalizar CNPJ (remover formatação)
+  const normalizedCnpj = cnpj.replace(/\D/g, '');
+
+  // Validar formato do CNPJ
+  if (normalizedCnpj.length !== 14) {
+    throw new HttpsError(
+      'invalid-argument',
+      'CNPJ deve ter 14 dígitos'
+    );
+  }
+
+  try {
+    // Verificar se CNPJ já existe no registro usando Admin SDK
+    const cnpjDoc = await admin.firestore()
+      .collection('cnpj_registry')
+      .doc(normalizedCnpj)
+      .get();
+
+    const exists = cnpjDoc.exists;
+
+    console.log(`CNPJ ${normalizedCnpj} - Existe: ${exists}`);
+
+    return { exists };
+  } catch (error) {
+    console.error('Erro ao verificar CNPJ:', error);
+    throw new HttpsError(
+      'internal',
+      'Erro interno do servidor'
+    );
+  }
+});

@@ -370,6 +370,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       return false;
     } finally {
       _setValidatingUniqueness(false);
+      debugPrint('🔄 [BarRegistrationViewModel] Loading resetado - isValidatingUniqueness=false');
     }
   }
 
@@ -388,7 +389,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
   // Métodos auxiliares para controle de estado
   void _setValidatingUniqueness(bool value) {
     _isValidatingUniqueness = value;
-    notifyListeners();
+    _updateStep1ButtonState(); // Recalcula o estado do botão após mudança
   }
 
   void _setUniquenessError(String error) {
@@ -628,7 +629,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       );
 
       // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
-      debugPrint('💾 [STEP3_VM] Gravando bar no Firestore | docId=${normalizedCnpj}');
+      debugPrint('💾 [STEP3_VM] Gravando bar no Firestore | docId=$normalizedCnpj');
       final barId = await _barRepository.createBarWithReservation(
         bar: bar,
         primaryOwnerUid: currentUser.uid,
@@ -709,12 +710,17 @@ class BarRegistrationViewModel extends ChangeNotifier {
       }
       
       // VALIDAÇÃO DE CNPJ NO STEP3 (FLUXO CLÁSSICO)
-      // Agora que vamos criar o usuário, validamos o CNPJ com usuário autenticado
+      // Usar Cloud Function que não requer autenticação para validar CNPJ
       debugPrint('🔍 [BarRegistrationViewModel] Validando CNPJ no Step3 (fluxo Clássico)...');
       final cnpjNormalized = NormalizationHelpers.normalizeCnpj(_cnpj);
       
       try {
-        final cnpjExists = await _barRepository.checkCnpjExists(cnpjNormalized);
+        // Usar Cloud Function validateCnpj que não requer autenticação
+        final functions = FirebaseFunctions.instance;
+        final callable = functions.httpsCallable('validateCnpj');
+        final result = await callable.call({'cnpj': cnpjNormalized});
+        
+        final cnpjExists = result.data['exists'] as bool;
         if (cnpjExists) {
           debugPrint('❌ [BarRegistrationViewModel] CNPJ já cadastrado: $cnpjNormalized');
           _setError(AppStrings.cnpjInUseErrorMessage);

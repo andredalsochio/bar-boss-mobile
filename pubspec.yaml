@@ -67,9 +67,9 @@ dependencies:
   
   # Autenticação Firebase
   firebase_auth: ^5.3.1
+  # flutter_facebook_auth: ^7.0.1  # TODO: Implementar no futuro
+  # sign_in_with_apple: ^6.1.1     # TODO: Implementar no futuro
   google_sign_in: ^6.2.1
-  flutter_facebook_auth: ^7.0.1
-  sign_in_with_apple: ^6.1.1
   
   # Validação de formulários
   form_field_validator: ^1.1.0

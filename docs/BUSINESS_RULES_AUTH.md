@@ -1,8 +1,10 @@
 # 🔐 BUSINESS_RULES_AUTH.md - Regras de Negócio para Autenticação
 
-**Versão:** 2.0  
-**Última Atualização:** 15 de Setembro de 2025  
+**Versão:** 2.1  
+**Última Atualização:** 17 de Setembro de 2025  
 **Objetivo:** Definição completa das regras de negócio para autenticação e cadastro
+
+> **📋 NOTA:** Para implementação técnica das regras de segurança, consulte [FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md).
 
 ---
 

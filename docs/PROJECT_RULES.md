@@ -1,8 +1,10 @@
 # 📋 PROJECT_RULES.md - Bar Boss Mobile
 
-**Versão:** 3.0  
-**Última Atualização:** 15 de Setembro de 2025  
+**Versão:** 3.1  
+**Última Atualização:** 17 de Setembro de 2025  
 **Objetivo:** Guia centralizado para desenvolvimento e IA antes de qualquer implementação
+
+> **📋 NOTA:** Para detalhes sobre fluxos de autenticação e regras de segurança, consulte [FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md).
 
 ---
 

@@ -1,8 +1,10 @@
 # 🗄️ FIRESTORE_SCHEMA.md - Estrutura de Dados
 
-**Versão:** 2.0  
-**Última Atualização:** 15 de Setembro de 2025  
+**Versão:** 2.1  
+**Última Atualização:** 17 de Setembro de 2025  
 **Objetivo:** Definição completa das coleções, campos e relacionamentos do Firestore
+
+> **📋 NOTA:** Para regras de segurança e permissões, consulte [FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md).
 
 ---
 

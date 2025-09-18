@@ -1,8 +1,10 @@
 # 👤 USER_RULES.md - Bar Boss Mobile
 
-**Versão:** 3.0  
-**Última Atualização:** 15 de Setembro de 2025  
+**Versão:** 3.1  
+**Última Atualização:** 17 de Setembro de 2025  
 **Objetivo:** Diretrizes para interação com desenvolvedores e IA
+
+> **📋 NOTA:** Para fluxos de autenticação e regras de segurança, consulte [FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md).
 
 ---
 
@@ -96,7 +98,7 @@ Estas diretrizes devem ser seguidas em todas as interações com o desenvolvedor
 **Regra crítica:** Após login social (Google/Apple/Facebook):
 - Exibir banner na Home: "Complete seu cadastro (0/3)"
 - CTA: "Completar agora" → navegar para `/cadastro/passo1`
-- **NÃO exibir** após cadastro completo via "Não tem um bar?"
+- **NÃO exibir** após cadastro completo via "Cadastra-se?"
 
 ### Fluxo de Cadastro
 - **Cadastro completo:** Passo 1 + Passo 2 + Passo 3 (criar senha) + Verificação de Email Obrigatória

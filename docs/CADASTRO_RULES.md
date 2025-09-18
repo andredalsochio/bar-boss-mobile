@@ -1,8 +1,10 @@
 # 🎯 CADASTRO_RULES.md - Fonte Única da Verdade
 
-**Versão:** 2.0  
-**Data:** 15 de Setembro de 2025  
+**Versão:** 2.1  
+**Data:** 17 de Setembro de 2025  
 **Objetivo:** Especificação definitiva dos fluxos de cadastro do Bar Boss Mobile
+
+> **📋 NOTA:** Para implementação técnica das regras de segurança, consulte [FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md).
 
 ---
 
@@ -10,7 +12,7 @@
 
 ### **A. Cadastro Completo (Email/Senha)**
 ```
-Entrada: Tela de Login → "Não tem um bar?"
+Entrada: Tela de Login → "Cadastra-se?"
 Fluxo: Passo 1 → Passo 2 → Passo 3 → Tela de Verificação de Email → Home
 Banner: Não exibe (cadastro já completo)
 Resultado: completedFullRegistration: true + emailVerified: true

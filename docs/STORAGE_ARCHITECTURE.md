@@ -1,8 +1,10 @@
-# 📁 STORAGE_ARCHITECTURE.md - Bar Boss Mobile
+# 🗄️ STORAGE_ARCHITECTURE.md - Arquitetura de Armazenamento
 
-**Versão:** 2.0  
-**Última Atualização:** 15 de Setembro de 2025  
-**Objetivo:** Arquitetura específica de armazenamento de imagens e cache local
+**Versão:** 2.1  
+**Última Atualização:** 17 de Setembro de 2025  
+**Objetivo:** Definição da estratégia de armazenamento e cache para o Bar Boss Mobile
+
+> **📋 NOTA:** Para regras de segurança e permissões, consulte [FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md).
 
 ---
 

@@ -142,9 +142,14 @@ lib/
 
 Documentação técnica detalhada disponível nos seguintes arquivos:
 
+- **[FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md)**: Fluxo consolidado de autenticação e cadastro
 - **[PROJECT_RULES.md](./PROJECT_RULES.md)**: Regras globais do projeto
 - **[USER_RULES.md](./USER_RULES.md)**: Diretrizes de interação com a IA
 - **[CADASTRO_RULES.md](./CADASTRO_RULES.md)**: Regras específicas de cadastro
+- **[BUSINESS_RULES_AUTH.md](./BUSINESS_RULES_AUTH.md)**: Regras de negócio de autenticação
+- **[FIRESTORE_SCHEMA.md](./FIRESTORE_SCHEMA.md)**: Estrutura de dados do Firestore
+- **[FIRESTORE_RULES.md](./FIRESTORE_RULES.md)**: Regras de segurança do Firestore
+- **[STORAGE_ARCHITECTURE.md](./STORAGE_ARCHITECTURE.md)**: Arquitetura de armazenamento
 - **[FIREBASE_BACKEND_GUIDE.md](./FIREBASE_BACKEND_GUIDE.md)**: Guia de backend/infra
 
 ## 📄 Licença

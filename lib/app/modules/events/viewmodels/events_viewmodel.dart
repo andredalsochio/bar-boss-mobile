@@ -76,7 +76,11 @@ class EventsViewModel extends ChangeNotifier {
   List<File> get promotionImages => _promotionImages;
 
   /// Lista de URLs das imagens existentes do evento
-  List<String> get existingPromotionImages => _currentEvent?.promoImages ?? [];
+  List<String> get existingPromotionImages {
+    final images = _currentEvent?.promoImages ?? [];
+    debugPrint('🔍 DEBUG existingPromotionImages getter: Retornando ${images.length} imagens: $images');
+    return images;
+  }
 
   /// Detalhes da promoção
   String get promotionDetails => _promotionDetails;
@@ -277,7 +281,8 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Adiciona uma imagem de promoção da galeria
   Future<void> addPromotionImageFromGallery() async {
-    if (_promotionImages.length >= 3) {
+    final totalImages = (_currentEvent?.promoImages?.length ?? 0) + _promotionImages.length;
+    if (totalImages >= 3) {
       ToastService.instance.showError(message: 'Máximo de 3 imagens permitidas');
       return;
     }
@@ -314,7 +319,8 @@ class EventsViewModel extends ChangeNotifier {
   
   /// Adiciona uma imagem de promoção da câmera
   Future<void> addPromotionImageFromCamera() async {
-    if (_promotionImages.length >= 3) {
+    final totalImages = (_currentEvent?.promoImages?.length ?? 0) + _promotionImages.length;
+    if (totalImages >= 3) {
       ToastService.instance.showError(message: 'Máximo de 3 imagens permitidas');
       return;
     }
@@ -359,11 +365,28 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Remove uma imagem existente do evento pelo índice
   void removeExistingPromotionImage(int index) {
+    debugPrint('🗑️ DEBUG removeExistingPromotionImage: Tentando remover imagem no índice $index');
+    debugPrint('🗑️ DEBUG removeExistingPromotionImage: _currentEvent != null: ${_currentEvent != null}');
+    debugPrint('🗑️ DEBUG removeExistingPromotionImage: Imagens atuais: ${_currentEvent?.promoImages}');
+    debugPrint('🗑️ DEBUG removeExistingPromotionImage: Quantidade de imagens: ${_currentEvent?.promoImages?.length ?? 0}');
+    
     if (_currentEvent != null && index >= 0 && index < (_currentEvent!.promoImages?.length ?? 0)) {
       final updatedImages = List<String>.from(_currentEvent!.promoImages ?? []);
+      debugPrint('🗑️ DEBUG removeExistingPromotionImage: Lista antes da remoção: $updatedImages');
+      
       updatedImages.removeAt(index);
+      debugPrint('🗑️ DEBUG removeExistingPromotionImage: Lista após remoção: $updatedImages');
+      debugPrint('🗑️ DEBUG removeExistingPromotionImage: Lista vazia? ${updatedImages.isEmpty}');
+      
       _currentEvent = _currentEvent!.copyWith(promoImages: updatedImages.isEmpty ? null : updatedImages);
+      debugPrint('🗑️ DEBUG removeExistingPromotionImage: Evento atualizado. Novas imagens: ${_currentEvent!.promoImages}');
+      
       notifyListeners();
+      debugPrint('🗑️ DEBUG removeExistingPromotionImage: notifyListeners() chamado');
+    } else {
+      debugPrint('❌ DEBUG removeExistingPromotionImage: Condições não atendidas para remoção');
+      debugPrint('❌ DEBUG removeExistingPromotionImage: index >= 0: ${index >= 0}');
+      debugPrint('❌ DEBUG removeExistingPromotionImage: index < length: ${index < (_currentEvent!.promoImages?.length ?? 0)}');
     }
   }
 

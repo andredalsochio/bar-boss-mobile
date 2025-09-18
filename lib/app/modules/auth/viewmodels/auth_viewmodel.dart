@@ -11,16 +11,32 @@ import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 /// Estados possíveis da autenticação
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
-/// ViewModel para a tela de login
+/// Tipos de fluxo de autenticação
+enum AuthFlowType { emailPassword, social }
+
+/// Estados específicos para verificação de email
+enum EmailVerificationState { notRequired, pending, verified }
+
+/// ViewModel para autenticação com fluxos separados conforme BUSINESS_RULES_AUTH.md v2.0
 class AuthViewModel extends ChangeNotifier {
   final AuthRepository _authRepository;
   final BarRepositoryDomain _barRepository;
   final UserRepository _userRepository;
 
+  // Estados principais
   AuthState _state = AuthState.initial;
   String? _errorMessage;
   bool _isLoading = false;
   AuthUser? _currentUser;
+  
+  // Estados específicos dos fluxos
+  AuthFlowType? _currentFlowType;
+  EmailVerificationState _emailVerificationState = EmailVerificationState.notRequired;
+  bool _hasCompletedFullRegistration = false;
+  
+  // Controle de verificação de email
+  Timer? _emailVerificationTimer;
+  bool _isCheckingEmailVerification = false;
 
   AuthViewModel({
     required AuthRepository authRepository,
@@ -33,6 +49,8 @@ class AuthViewModel extends ChangeNotifier {
     _subscribeToAuthChanges();
   }
 
+  // === GETTERS PRINCIPAIS ===
+  
   /// Estado atual da autenticação
   AuthState get state => _state;
 
@@ -59,6 +77,48 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Verifica se o e-mail do usuário atual foi verificado
   bool get isCurrentUserEmailVerified => _currentUser?.emailVerified ?? false;
+  
+  // === GETTERS ESPECÍFICOS DOS FLUXOS ===
+  
+  /// Tipo de fluxo atual (email/senha ou social)
+  AuthFlowType? get currentFlowType => _currentFlowType;
+  
+  /// Estado da verificação de email
+  EmailVerificationState get emailVerificationState => _emailVerificationState;
+  
+  /// Indica se o usuário completou o cadastro completo
+  bool get hasCompletedFullRegistration => _hasCompletedFullRegistration;
+  
+  /// Indica se é um usuário de login social (baseado no tipo de fluxo)
+  bool get isFromSocialFlow => _currentFlowType == AuthFlowType.social;
+  
+  /// Indica se precisa verificar email (fluxo email/senha)
+  bool get needsEmailVerification => 
+      _currentFlowType == AuthFlowType.emailPassword && 
+      _emailVerificationState == EmailVerificationState.pending;
+  
+  /// Indica se pode acessar o app (regras de negócio)
+  bool get canAccessApp {
+    if (!isAuthenticated) return false;
+    
+    switch (_currentFlowType) {
+      case AuthFlowType.emailPassword:
+        // Fluxo email/senha: precisa ter email verificado
+        return isCurrentUserEmailVerified;
+      case AuthFlowType.social:
+        // Fluxo social: acesso imediato, mas pode ter banner de completude
+        return true;
+      case null:
+        return false;
+    }
+  }
+  
+  /// Indica se deve mostrar banner de completude (fluxo social)
+  bool get shouldShowCompletionBanner => 
+      isFromSocialFlow && !_hasCompletedFullRegistration;
+  
+  /// Indica se está verificando email automaticamente
+  bool get isCheckingEmailVerification => _isCheckingEmailVerification;
 
   /// Verifica o estado inicial da autenticação
   Future<void> _checkInitialAuthState() async {
@@ -66,6 +126,8 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _currentUser = _authRepository.currentUser;
       if (_currentUser != null) {
+        await _determineAuthFlowType();
+        await _checkRegistrationCompleteness();
         _setState(AuthState.authenticated);
       } else {
         _setState(AuthState.unauthenticated);
@@ -78,6 +140,39 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  /// Determina o tipo de fluxo baseado nos provedores do usuário
+  Future<void> _determineAuthFlowType() async {
+    if (_currentUser == null) return;
+    
+    final socialProviders = ['google.com', 'apple.com', 'facebook.com'];
+    final hasSocialProvider = _currentUser!.providerIds.any((provider) => 
+        socialProviders.contains(provider));
+    
+    if (hasSocialProvider) {
+      _currentFlowType = AuthFlowType.social;
+      _emailVerificationState = EmailVerificationState.verified; // Social sempre verificado
+      debugPrint('🔄 [AuthViewModel] Fluxo determinado: SOCIAL');
+    } else {
+      _currentFlowType = AuthFlowType.emailPassword;
+      _emailVerificationState = _currentUser!.emailVerified 
+          ? EmailVerificationState.verified 
+          : EmailVerificationState.pending;
+      debugPrint('🔄 [AuthViewModel] Fluxo determinado: EMAIL/SENHA');
+    }
+  }
+
+  /// Verifica se o usuário completou o cadastro completo
+  Future<void> _checkRegistrationCompleteness() async {
+    try {
+      final userProfile = await _userRepository.getMe();
+      _hasCompletedFullRegistration = userProfile?.completedFullRegistration ?? false;
+      debugPrint('🔄 [AuthViewModel] Cadastro completo: $_hasCompletedFullRegistration');
+    } catch (e) {
+      debugPrint('❌ [AuthViewModel] Erro ao verificar completude do cadastro: $e');
+      _hasCompletedFullRegistration = false;
+    }
+  }
+
   StreamSubscription<AuthUser?>? _authSub;
 
   void _subscribeToAuthChanges() {
@@ -86,16 +181,37 @@ class AuthViewModel extends ChangeNotifier {
       debugPrint('🟠 [AuthViewModel] authStateChanges triggered: user=${user?.email ?? "null"}');
       _currentUser = user;
       if (user != null) {
-        debugPrint('🟠 [AuthViewModel] Usuário autenticado, garantindo documento no Firestore...');
+        debugPrint('🟠 [AuthViewModel] Usuário autenticado, processando fluxo...');
+        
         // Garantir que o documento do usuário existe no Firestore
         await _ensureUserDocumentExists(user);
+        
+        // Determinar tipo de fluxo e estados
+        await _determineAuthFlowType();
+        await _checkRegistrationCompleteness();
+        
+        // Iniciar verificação de email se necessário (fluxo email/senha)
+        if (_currentFlowType == AuthFlowType.emailPassword && 
+            _emailVerificationState == EmailVerificationState.pending) {
+          _startEmailVerificationPolling();
+        }
+        
         debugPrint('🟠 [AuthViewModel] Definindo estado como authenticated...');
         _setState(AuthState.authenticated);
       } else {
-        debugPrint('🟠 [AuthViewModel] Usuário não autenticado, definindo estado como unauthenticated...');
+        debugPrint('🟠 [AuthViewModel] Usuário não autenticado, limpando estados...');
+        _clearAuthStates();
         _setState(AuthState.unauthenticated);
       }
     });
+  }
+
+  /// Limpa todos os estados relacionados à autenticação
+  void _clearAuthStates() {
+    _currentFlowType = null;
+    _emailVerificationState = EmailVerificationState.notRequired;
+    _hasCompletedFullRegistration = false;
+    _stopEmailVerificationPolling();
   }
 
   /// Garante que o documento do usuário existe no Firestore
@@ -139,31 +255,113 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  // === MÉTODOS DE VERIFICAÇÃO DE EMAIL ===
+
+  /// Inicia o polling de verificação de email (fluxo email/senha)
+  void _startEmailVerificationPolling() {
+    if (_emailVerificationTimer?.isActive == true) return;
+    
+    debugPrint('📧 [AuthViewModel] Iniciando polling de verificação de email...');
+    _isCheckingEmailVerification = true;
+    notifyListeners();
+    
+    _emailVerificationTimer = Timer.periodic(
+      const Duration(seconds: 3), 
+      (timer) => _checkEmailVerificationStatus()
+    );
+  }
+
+  /// Para o polling de verificação de email
+  void _stopEmailVerificationPolling() {
+    _emailVerificationTimer?.cancel();
+    _emailVerificationTimer = null;
+    _isCheckingEmailVerification = false;
+    debugPrint('📧 [AuthViewModel] Polling de verificação de email parado');
+  }
+
+  /// Verifica o status de verificação de email
+  Future<void> _checkEmailVerificationStatus() async {
+    try {
+      final isVerified = await _authRepository.checkEmailVerified();
+      
+      if (isVerified) {
+        debugPrint('✅ [AuthViewModel] Email verificado com sucesso!');
+        _emailVerificationState = EmailVerificationState.verified;
+        _stopEmailVerificationPolling();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('❌ [AuthViewModel] Erro ao verificar status do email: $e');
+    }
+  }
+
+  /// Reenvia email de verificação
+  Future<void> resendVerificationEmail() async {
+    try {
+      _setLoading(true);
+      await _authRepository.sendEmailVerification();
+      ToastService.instance.showSuccess(
+        message: 'Email de verificação reenviado!',
+        title: 'Sucesso',
+      );
+    } catch (e) {
+      debugPrint('❌ [AuthViewModel] Erro ao reenviar email: $e');
+      ToastService.instance.showError(
+        message: 'Erro ao reenviar email de verificação',
+        title: 'Erro',
+      );
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   @override
   void dispose() {
     _authSub?.cancel();
+    _stopEmailVerificationPolling();
     super.dispose();
   }
 
-  /// Faz login com e-mail e senha
+  // === MÉTODOS DE AUTENTICAÇÃO ===
+
+  /// Faz login com e-mail e senha (Fluxo Email/Senha)
+  /// Após login bem-sucedido, usuário vai para verificação de email se necessário
   Future<void> loginWithEmailAndPassword(
     String email,
     String password,
   ) async {
-    debugPrint('🔐 [AuthViewModel] Iniciando login com e-mail: ${email.substring(0, 3)}***');
+    debugPrint('🔐 [AuthViewModel] Iniciando login EMAIL/SENHA: ${email.substring(0, 3)}***');
     try {
       _setLoading(true);
       _clearError();
-      debugPrint('🔐 [AuthViewModel] Chamando _authRepository.signInWithEmail...');
-      final result = await _authRepository.signInWithEmail(email, password);
-      debugPrint('🔐 [AuthViewModel] Resultado recebido: isSuccess=${result.isSuccess}');
       
-      if (result.isSuccess) {
-        debugPrint('✅ [AuthViewModel] Login com e-mail bem-sucedido!');
-        debugPrint('🔐 [AuthViewModel] Usuário: ${result.user?.email}');
+      final result = await _authRepository.signInWithEmail(email, password);
+      debugPrint('🔐 [AuthViewModel] Resultado: isSuccess=${result.isSuccess}');
+      
+      if (result.isSuccess && result.user != null) {
+        debugPrint('✅ [AuthViewModel] Login EMAIL/SENHA bem-sucedido!');
+        
+        // Definir tipo de fluxo
+        _currentFlowType = AuthFlowType.emailPassword;
         _currentUser = result.user;
+        
+        // Verificar status de verificação de email
+        final isEmailVerified = result.user!.emailVerified;
+        _emailVerificationState = isEmailVerified 
+            ? EmailVerificationState.verified 
+            : EmailVerificationState.pending;
+        
+        debugPrint('🔐 [AuthViewModel] Email verificado: $isEmailVerified');
+        
+        // Se email não verificado, iniciar polling
+        if (!isEmailVerified) {
+          debugPrint('📧 [AuthViewModel] Email não verificado, iniciando polling...');
+          _startEmailVerificationPolling();
+        }
+        
         _setState(AuthState.authenticated);
-        debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
+        debugPrint('✅ [AuthViewModel] Fluxo EMAIL/SENHA configurado');
+        
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
         final errorMsg = result.errorMessage ?? 'Erro ao fazer login com e-mail.';
@@ -174,7 +372,7 @@ class AuthViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
-      debugPrint('❌ [AuthViewModel] Exceção durante login com e-mail: $e');
+      debugPrint('❌ [AuthViewModel] Exceção durante login EMAIL/SENHA: $e');
       const errorMsg = 'Erro ao fazer login com e-mail. Por favor, tente novamente.';
       _setError(errorMsg);
       ToastService.instance.showError(
@@ -183,27 +381,38 @@ class AuthViewModel extends ChangeNotifier {
       );
     } finally {
       _setLoading(false);
-      debugPrint('🔐 [AuthViewModel] Login com e-mail finalizado (loading=false)');
     }
   }
 
-  /// Faz login com Google
+  /// Faz login com Google (Fluxo Social)
+  /// Acesso imediato ao app, mas pode mostrar banner de completude
   Future<void> loginWithGoogle() async {
-    debugPrint('🔵 [AuthViewModel] Iniciando login com Google...');
+    debugPrint('🔵 [AuthViewModel] Iniciando login SOCIAL (Google)...');
     try {
       _setLoading(true);
       _clearError();
-      debugPrint('🔵 [AuthViewModel] Chamando _authRepository.signInWithGoogle()...');
-      final result = await _authRepository.signInWithGoogle();
-      debugPrint('🔵 [AuthViewModel] Resultado recebido: isSuccess=${result.isSuccess}');
       
-      if (result.isSuccess) {
-        debugPrint('✅ [AuthViewModel] Login com Google bem-sucedido!');
-        debugPrint('🔵 [AuthViewModel] Usuário: ${result.user?.email}');
+      final result = await _authRepository.signInWithGoogle();
+      debugPrint('🔵 [AuthViewModel] Resultado: isSuccess=${result.isSuccess}');
+      
+      if (result.isSuccess && result.user != null) {
+        debugPrint('✅ [AuthViewModel] Login SOCIAL (Google) bem-sucedido!');
+        
+        // Definir tipo de fluxo
+        _currentFlowType = AuthFlowType.social;
         _currentUser = result.user;
+        
+        // Email sempre verificado em login social
+        _emailVerificationState = EmailVerificationState.verified;
+        
+        // Verificar se completou cadastro completo
+        await _checkRegistrationCompleteness();
+        
+        debugPrint('🔵 [AuthViewModel] Cadastro completo: $_hasCompletedFullRegistration');
+        
         _setState(AuthState.authenticated);
-        // Toast de boas-vindas removido conforme solicitado
-        debugPrint('✅ [AuthViewModel] Estado alterado para authenticated');
+        debugPrint('✅ [AuthViewModel] Fluxo SOCIAL configurado');
+        
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
         final errorMsg = result.errorMessage ?? 'Erro ao fazer login com Google.';
@@ -214,7 +423,7 @@ class AuthViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
-      debugPrint('❌ [AuthViewModel] Exceção durante login com Google: $e');
+      debugPrint('❌ [AuthViewModel] Exceção durante login SOCIAL (Google): $e');
       const errorMsg = 'Erro ao fazer login com Google. Por favor, tente novamente.';
       _setError(errorMsg);
       ToastService.instance.showError(
@@ -534,5 +743,63 @@ class AuthViewModel extends ChangeNotifier {
       debugPrint('❌ [AuthViewModel] Erro ao verificar e-mail: $e');
       throw Exception('Erro ao verificar e-mail: $e');
     }
+  }
+
+  /// Marca o cadastro como completo após finalizar todos os steps
+  /// Usado principalmente no fluxo social
+  Future<void> markRegistrationAsComplete() async {
+    debugPrint('✅ [AuthViewModel] Marcando cadastro como completo...');
+    try {
+      if (_currentUser?.uid != null) {
+        // Buscar perfil atual e atualizar
+        final currentProfile = await _userRepository.getMe();
+        if (currentProfile != null) {
+          final updatedProfile = currentProfile.copyWith(
+            completedFullRegistration: true,
+          );
+          await _userRepository.upsert(updatedProfile);
+          _hasCompletedFullRegistration = true;
+          notifyListeners();
+          debugPrint('✅ [AuthViewModel] Cadastro marcado como completo!');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ [AuthViewModel] Erro ao marcar cadastro como completo: $e');
+    }
+  }
+
+  /// Limpa todos os estados de autenticação (versão atualizada)
+  void _clearAuthStatesUpdated() {
+    _currentFlowType = null;
+    _emailVerificationState = EmailVerificationState.notRequired;
+    _hasCompletedFullRegistration = false;
+    _stopEmailVerificationPolling();
+    debugPrint('🧹 [AuthViewModel] Estados de autenticação limpos');
+  }
+
+  /// Força uma nova verificação da completude do cadastro
+  /// Útil após completar steps no fluxo social
+  Future<void> refreshRegistrationStatus() async {
+    debugPrint('🔄 [AuthViewModel] Atualizando status de cadastro...');
+    if (_currentUser?.uid != null) {
+      await _checkRegistrationCompleteness();
+      notifyListeners();
+    }
+  }
+
+  /// Getter para saber quantos steps foram completados (para banner)
+  int get completedStepsCount {
+    if (_hasCompletedFullRegistration) return 3;
+    
+    // Aqui você pode implementar lógica mais granular
+    // verificando quais steps específicos foram completados
+    // Por enquanto, retorna 0 se não completou tudo
+    return 0;
+  }
+
+  /// Getter para mensagem do banner de completude
+  String get completionBannerMessage {
+    final completed = completedStepsCount;
+    return 'Complete seu cadastro ($completed/3)';
   }
 }

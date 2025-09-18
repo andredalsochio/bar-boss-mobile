@@ -10,11 +10,18 @@ import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
+import 'package:bar_boss_mobile/app/core/services/hybrid_validation_service.dart';
 import 'package:bar_boss_mobile/app/core/utils/normalization_helpers.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 
 /// Estados possíveis do cadastro de bar
 enum RegistrationState { initial, loading, success, error }
+
+/// Estados dos botões por step
+enum ButtonState { disabled, enabled, loading }
+
+/// Estados de validação por step
+enum StepValidationState { initial, validating, valid, invalid }
 
 /// ViewModel para o cadastro de bar
 class BarRegistrationViewModel extends ChangeNotifier {
@@ -26,6 +33,16 @@ class BarRegistrationViewModel extends ChangeNotifier {
   RegistrationState _registrationState = RegistrationState.initial;
   String? _errorMessage;
   bool _isLoading = false;
+
+  // Estados dos botões por step
+  ButtonState _step1ButtonState = ButtonState.disabled;
+  ButtonState _step2ButtonState = ButtonState.disabled;
+  ButtonState _step3ButtonState = ButtonState.disabled;
+
+  // Estados de validação por step
+  StepValidationState _step1ValidationState = StepValidationState.initial;
+  StepValidationState _step2ValidationState = StepValidationState.initial;
+  StepValidationState _step3ValidationState = StepValidationState.initial;
 
   // Dados do bar - Passo 1 (Informações de contato)
   String _email = '';
@@ -82,6 +99,16 @@ class BarRegistrationViewModel extends ChangeNotifier {
   RegistrationState get registrationState => _registrationState;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
+
+  // Getters para estados dos botões
+  ButtonState get step1ButtonState => _step1ButtonState;
+  ButtonState get step2ButtonState => _step2ButtonState;
+  ButtonState get step3ButtonState => _step3ButtonState;
+
+  // Getters para estados de validação
+  StepValidationState get step1ValidationState => _step1ValidationState;
+  StepValidationState get step2ValidationState => _step2ValidationState;
+  StepValidationState get step3ValidationState => _step3ValidationState;
 
   // Getters para os dados do Passo 1
   String get email => _email;
@@ -145,6 +172,8 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setEmail(String value) {
     _email = value;
     _validateEmail();
+    clearUniquenessValidation();
+    _updateStep1ButtonState();
     notifyListeners();
   }
 
@@ -157,24 +186,29 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setCnpj(String value) {
     _cnpj = value;
     _validateCnpj();
+    clearUniquenessValidation();
+    _updateStep1ButtonState();
     notifyListeners();
   }
 
   void setName(String value) {
     _name = value;
     _validateName();
+    _updateStep1ButtonState();
     notifyListeners();
   }
 
   void setResponsibleName(String value) {
     _responsibleName = value;
     _validateResponsibleName();
+    _updateStep1ButtonState();
     notifyListeners();
   }
 
   void setPhone(String value) {
     _phone = value;
     _validatePhone();
+    _updateStep1ButtonState();
     notifyListeners();
   }
 
@@ -182,6 +216,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setCep(String value) {
     _cep = value;
     _validateCep();
+    _updateStep2ButtonState();
     notifyListeners();
 
     // Se o CEP for válido, busca o endereço
@@ -193,29 +228,34 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void setStreet(String value) {
     _street = value;
     _validateStreet();
+    _updateStep2ButtonState();
     notifyListeners();
   }
 
   void setNumber(String value) {
     _number = value;
     _validateNumber();
+    _updateStep2ButtonState();
     notifyListeners();
   }
 
   void setComplement(String value) {
     _complement = value;
+    _updateStep2ButtonState();
     notifyListeners();
   }
 
   void setState(String value) {
     _stateUf = value;
     _validateState();
+    _updateStep2ButtonState();
     notifyListeners();
   }
 
   void setCity(String value) {
     _city = value;
     _validateCity();
+    _updateStep2ButtonState();
     notifyListeners();
   }
 
@@ -224,12 +264,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _password = value;
     _validatePassword();
     _validateConfirmPassword(); // Valida novamente a confirmação de senha
+    _updateStep3ButtonState();
     notifyListeners();
   }
 
   void setConfirmPassword(String value) {
     _confirmPassword = value;
     _validateConfirmPassword();
+    _updateStep3ButtonState();
     notifyListeners();
   }
 
@@ -275,136 +317,63 @@ class BarRegistrationViewModel extends ChangeNotifier {
     return true;
   }
 
-  /// Valida unicidade de email e CNPJ no Step1 (Fluxo Social/Clássico)
+  /// Valida unicidade de email e CNPJ no Step1 usando HybridValidationService
   Future<bool> validateStep1Uniqueness() async {
-    debugPrint('🔍 [BarRegistrationViewModel] Iniciando validação de unicidade...');
+    debugPrint('🔍 [BarRegistrationViewModel] Iniciando validação híbrida...');
     
     // Determinar o tipo de fluxo
     final currentUser = _authRepository.currentUser;
     final isSocialFlow = currentUser != null;
-    final flowType = isSocialFlow ? 'SOCIAL' : 'CLÁSSICO';
+    final flowType = isSocialFlow ? 'SOCIAL' : 'CLASSIC';
     debugPrint('📋 [BarRegistrationViewModel] Tipo de fluxo: $flowType');
     
     // Validar formato dos dados primeiro
     if (!isStep1Valid) {
-      debugPrint('❌ [BarRegistrationViewModel] Dados do Step1 inválidos, abortando validação de unicidade');
+      debugPrint('❌ [BarRegistrationViewModel] Dados do Step1 inválidos, abortando validação');
+      _setStep1ValidationState(StepValidationState.invalid);
       return false;
     }
     
     _setValidatingUniqueness(true);
     _clearUniquenessError();
+    _setStep1ValidationState(StepValidationState.validating);
     
     try {
-      if (isSocialFlow) {
-        return await _validateSocialFlow();
+      // Usar o novo serviço de validação híbrida
+      final validationService = HybridValidationService();
+      final result = await validationService.validateRegistrationData(
+        email: flowType == 'CLASSIC' ? _email : null,
+        cnpj: _cnpj,
+        flowType: flowType,
+      );
+      
+      if (result.isValid) {
+        debugPrint('✅ [BarRegistrationViewModel] Validação híbrida aprovada');
+        _emailUnique = true;
+        _cnpjUnique = true;
+        _setStep1ValidationState(StepValidationState.valid);
+        return true;
       } else {
-        return await _validateClassicFlow();
+        debugPrint('❌ [BarRegistrationViewModel] Validação híbrida falhou: ${result.errorMessage}');
+        _setUniquenessError(result.errorMessage ?? 'Erro na validação');
+        _emailUnique = false;
+        _cnpjUnique = false;
+        _setStep1ValidationState(StepValidationState.invalid);
+        return false;
       }
     } catch (e) {
-      debugPrint('❌ [BarRegistrationViewModel] Erro na validação de unicidade: $e');
+      debugPrint('❌ [BarRegistrationViewModel] Erro na validação híbrida: $e');
       _setUniquenessError('Erro ao validar dados. Tente novamente.');
       _emailUnique = false;
       _cnpjUnique = false;
+      _setStep1ValidationState(StepValidationState.invalid);
       return false;
     } finally {
       _setValidatingUniqueness(false);
     }
   }
 
-  /// Validação para fluxo de cadastro clássico (não autenticado)
-  Future<bool> _validateClassicFlow() async {
-    debugPrint('📋 [BarRegistrationViewModel] Executando validação do fluxo CLÁSSICO');
-    
-    final emailNormalized = _email.trim().toLowerCase();
-    final cnpjClean = _cnpj.replaceAll(RegExp(r'[^\d]'), '');
-    
-    // Validar email com fetchSignInMethodsForEmail
-    debugPrint('📧 [BarRegistrationViewModel] Validando email: ${emailNormalized.substring(0, 3)}***');
-    final emailExists = await _validateEmailWithFetchSignInMethods(emailNormalized);
-    _emailUnique = !emailExists;
-    
-    if (emailExists) {
-      _setUniquenessError('E-mail já cadastrado, faça login.');
-      return false;
-    }
-    
-    // Validar CNPJ com Cloud Function checkAvailability
-    debugPrint('🏢 [BarRegistrationViewModel] Validando CNPJ: ${cnpjClean.substring(0, 4)}***');
-    final cnpjExists = await _validateCnpjWithCloudFunction(cnpjClean);
-    _cnpjUnique = !cnpjExists;
-    
-    if (cnpjExists) {
-      _setUniquenessError('CNPJ já registrado.');
-      return false;
-    }
-    
-    debugPrint('✅ [BarRegistrationViewModel] Fluxo CLÁSSICO validado com sucesso');
-    return true;
-  }
 
-  /// Validação para fluxo social (autenticado)
-  Future<bool> _validateSocialFlow() async {
-    debugPrint('📋 [BarRegistrationViewModel] Executando validação do fluxo SOCIAL');
-    
-    final cnpjClean = _cnpj.replaceAll(RegExp(r'[^\d]'), '');
-    
-    // Email não precisa ser validado (vem do login social)
-    debugPrint('📧 [BarRegistrationViewModel] Email do login social - sem validação');
-    _emailUnique = true;
-    
-    // Validar CNPJ com Cloud Function checkAvailability
-    debugPrint('🏢 [BarRegistrationViewModel] Validando CNPJ: ${cnpjClean.substring(0, 4)}***');
-    final cnpjExists = await _validateCnpjWithCloudFunction(cnpjClean);
-    _cnpjUnique = !cnpjExists;
-    
-    if (cnpjExists) {
-      _setUniquenessError('CNPJ já registrado.');
-      return false;
-    }
-    
-    debugPrint('✅ [BarRegistrationViewModel] Fluxo SOCIAL validado com sucesso');
-    return true;
-  }
-
-  /// Valida CNPJ usando Cloud Function checkAvailability
-  Future<bool> _validateCnpjWithCloudFunction(String cnpj) async {
-    try {
-      debugPrint('☁️ [BarRegistrationViewModel] Chamando Cloud Function checkAvailability');
-      
-      final callable = FirebaseFunctions.instance.httpsCallable('checkAvailability');
-      final result = await callable.call({'cnpj': cnpj});
-      
-      final cnpjExists = result.data['cnpjExists'] as bool;
-      debugPrint('☁️ [BarRegistrationViewModel] Cloud Function retornou: cnpjExists=$cnpjExists');
-      
-      return cnpjExists;
-    } catch (e) {
-      debugPrint('❌ [BarRegistrationViewModel] Erro na Cloud Function: $e');
-      // Em caso de erro, assumir que CNPJ não existe (fail-safe)
-      return false;
-    }
-  }
-
-  /// Valida email usando fetchSignInMethodsForEmail (método recomendado)
-  Future<bool> _validateEmailWithFetchSignInMethods(String email) async {
-    try {
-      debugPrint('🔍 [BarRegistrationViewModel] Usando fetchSignInMethodsForEmail para: ${email.substring(0, 3)}***');
-      
-      // Importar Firebase Auth diretamente para usar fetchSignInMethodsForEmail
-      final FirebaseAuth auth = FirebaseAuth.instance;
-      final signInMethods = await auth.fetchSignInMethodsForEmail(email);
-      
-      final emailExists = signInMethods.isNotEmpty;
-      debugPrint('📧 [BarRegistrationViewModel] Métodos de login encontrados: $signInMethods');
-      debugPrint('📧 [BarRegistrationViewModel] Email existe: $emailExists');
-      
-      return emailExists;
-    } catch (e) {
-      debugPrint('❌ [BarRegistrationViewModel] Erro ao validar email com fetchSignInMethodsForEmail: $e');
-      // Em caso de erro, assumir que email não existe (fail-safe para permitir cadastro)
-      return false;
-    }
-  }
 
 
 
@@ -569,6 +538,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
 
     debugPrint('🔍 [VIEWMODEL] _searchCep: Iniciando busca na API ViaCEP para CEP: $numericCep');
     _setLoading(true);
+    _setStep2ValidationState(StepValidationState.validating);
 
     try {
       final viaCepSearchCep = ViaCepSearchCep();
@@ -600,17 +570,27 @@ class BarRegistrationViewModel extends ChangeNotifier {
     } finally {
       debugPrint('🔍 [VIEWMODEL] _searchCep: Finalizando busca de CEP');
       _setLoading(false);
+      // Define estado final baseado na validação do Step 2
+      if (isStep2Valid) {
+        _setStep2ValidationState(StepValidationState.valid);
+      } else {
+        _setStep2ValidationState(StepValidationState.invalid);
+      }
     }
   }
 
   // Cria bar para usuários de login social (apenas Passo 1 e 2)
   Future<void> createBarFromSocialLogin() async {
     if (!isStep1Valid || !isStep2Valid) {
+      _setStep1ValidationState(StepValidationState.invalid);
+      _setStep2ValidationState(StepValidationState.invalid);
       throw Exception('Dados incompletos para criar bar');
     }
 
     _setLoading(true);
     _clearError();
+    _setStep1ValidationState(StepValidationState.validating);
+    _setStep2ValidationState(StepValidationState.validating);
 
     try {
       // Obtém o usuário atual (já autenticado via social)
@@ -677,10 +657,17 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('❌ [BarRegistrationViewModel] Erro durante o registro: $e');
       debugPrint('❌ [BarRegistrationViewModel] Stack trace: ${StackTrace.current}');
       _setError(e.toString());
+      _setStep1ValidationState(StepValidationState.invalid);
+      _setStep2ValidationState(StepValidationState.invalid);
       rethrow;
     } finally {
       debugPrint('🔄 [BarRegistrationViewModel] Finalizando registerBarAndUser - definindo loading = false');
       _setLoading(false);
+      // Define estado final baseado no sucesso da operação
+      if (_registrationState == RegistrationState.success) {
+        _setStep1ValidationState(StepValidationState.valid);
+        _setStep2ValidationState(StepValidationState.valid);
+      }
     }
   }
 
@@ -693,11 +680,15 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🔄 [BarRegistrationViewModel] Definindo loading = true');
       _setLoading(true);
       _clearError();
+      _setStep1ValidationState(StepValidationState.validating);
+      _setStep2ValidationState(StepValidationState.validating);
+      _setStep3ValidationState(StepValidationState.validating);
 
       // Validar formato do Passo 1
       debugPrint('🔍 [BarRegistrationViewModel] Validando formato do Step 1...');
       if (!validateStep1Format()) {
         debugPrint('❌ [BarRegistrationViewModel] Step 1 inválido');
+        _setStep1ValidationState(StepValidationState.invalid);
         return;
       }
       
@@ -705,6 +696,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       if (!isStep2Valid) {
         debugPrint('❌ [BarRegistrationViewModel] Passo 2 inválido');
         _setError('Dados de endereço incompletos ou inválidos');
+        _setStep2ValidationState(StepValidationState.invalid);
         return;
       }
       
@@ -712,6 +704,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       if (!isStep3Valid) {
         debugPrint('❌ [BarRegistrationViewModel] Step3 inválido, cancelando registro');
         _setError('Senhas não conferem ou são muito fracas');
+        _setStep3ValidationState(StepValidationState.invalid);
         return;
       }
       
@@ -848,9 +841,18 @@ class BarRegistrationViewModel extends ChangeNotifier {
       }
       
       _setError(e.toString());
+      _setStep1ValidationState(StepValidationState.invalid);
+      _setStep2ValidationState(StepValidationState.invalid);
+      _setStep3ValidationState(StepValidationState.invalid);
       rethrow;
     } finally {
       _setLoading(false);
+      // Define estado final baseado no sucesso da operação
+      if (_registrationState == RegistrationState.success) {
+        _setStep1ValidationState(StepValidationState.valid);
+        _setStep2ValidationState(StepValidationState.valid);
+        _setStep3ValidationState(StepValidationState.valid);
+      }
     }
   }
 
@@ -875,6 +877,56 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void _clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  // Métodos para atualizar estados dos botões
+  void _updateStep1ButtonState() {
+    if (_step1ValidationState == StepValidationState.validating || _isValidatingUniqueness) {
+      _step1ButtonState = ButtonState.loading;
+    } else if (canProceedToStep2) {
+      _step1ButtonState = ButtonState.enabled;
+    } else {
+      _step1ButtonState = ButtonState.disabled;
+    }
+    notifyListeners();
+  }
+
+  void _updateStep2ButtonState() {
+    if (_step2ValidationState == StepValidationState.validating) {
+      _step2ButtonState = ButtonState.loading;
+    } else if (isStep2Valid) {
+      _step2ButtonState = ButtonState.enabled;
+    } else {
+      _step2ButtonState = ButtonState.disabled;
+    }
+    notifyListeners();
+  }
+
+  void _updateStep3ButtonState() {
+    if (_step3ValidationState == StepValidationState.validating || _isLoading) {
+      _step3ButtonState = ButtonState.loading;
+    } else if (isStep3Valid) {
+      _step3ButtonState = ButtonState.enabled;
+    } else {
+      _step3ButtonState = ButtonState.disabled;
+    }
+    notifyListeners();
+  }
+
+  // Métodos para atualizar estados de validação
+  void _setStep1ValidationState(StepValidationState state) {
+    _step1ValidationState = state;
+    _updateStep1ButtonState();
+  }
+
+  void _setStep2ValidationState(StepValidationState state) {
+    _step2ValidationState = state;
+    _updateStep2ButtonState();
+  }
+
+  void _setStep3ValidationState(StepValidationState state) {
+    _step3ValidationState = state;
+    _updateStep3ButtonState();
   }
 
 
@@ -1158,11 +1210,13 @@ class BarRegistrationViewModel extends ChangeNotifier {
     
     if (!isStep3Valid) {
       debugPrint('❌ [BarRegistrationViewModel] Step3 inválido, cancelando registro');
+      _setStep3ValidationState(StepValidationState.invalid);
       return;
     }
 
     _setLoading(true);
     _clearError();
+    _setStep3ValidationState(StepValidationState.validating);
 
     try {
       // Obtém o usuário atual do Firebase Auth (já autenticado via social)
@@ -1233,9 +1287,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
       
       ToastService.instance.showError(message: userFriendlyMessage);
       _setError(userFriendlyMessage);
+      _setStep3ValidationState(StepValidationState.invalid);
     } finally {
       debugPrint('🔄 [BarRegistrationViewModel] Finalizando finalizeSocialLoginRegistration - definindo loading = false');
       _setLoading(false);
+      // Define estado final baseado no sucesso da operação
+      if (_registrationState == RegistrationState.success) {
+        _setStep3ValidationState(StepValidationState.valid);
+      }
     }
   }
 

@@ -133,6 +133,61 @@ class _Step1PageState extends State<Step1Page> {
     });
   }
 
+  Widget _buildValidationStatusIndicator(BuildContext context, StepValidationState state) {
+    IconData icon;
+    Color color;
+    String text;
+
+    switch (state) {
+      case StepValidationState.initial:
+        icon = Icons.info_outline;
+        color = AppColors.textSecondary(context);
+        text = 'Preencha os dados abaixo';
+        break;
+      case StepValidationState.invalid:
+        icon = Icons.error_outline;
+        color = AppColors.error;
+        text = 'Dados incompletos ou inválidos';
+        break;
+      case StepValidationState.validating:
+        icon = Icons.hourglass_empty;
+        color = AppColors.warning;
+        text = 'Validando dados...';
+        break;
+      case StepValidationState.valid:
+        icon = Icons.check_circle_outline;
+        color = AppColors.success;
+        text = 'Dados válidos';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacingMedium,
+        vertical: AppSizes.spacingSmall,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: AppSizes.spacingSmall),
+          Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _goToNextStep() async {
     debugPrint('🔘 [STEP1_PAGE] Botão Continuar pressionado');
     debugPrint('🔘 [STEP1_PAGE] Email: "${_viewModel.email}"');
@@ -202,6 +257,10 @@ class _Step1PageState extends State<Step1Page> {
                           color: AppColors.textPrimary(context),
                         ),
                   ),
+                  const SizedBox(height: AppSizes.spacingMedium),
+                  
+                  // Indicador de status de validação
+                  _buildValidationStatusIndicator(context, viewModel.step1ValidationState),
                   const SizedBox(height: AppSizes.spacingLarge),
                   FormInputFieldWidget(
                     label: AppStrings.emailLabel,
@@ -284,8 +343,8 @@ class _Step1PageState extends State<Step1Page> {
 
                   ButtonWidget(
                     text: AppStrings.continueButton,
-                    onPressed: _goToNextStep, // Sempre habilitado
-                    isLoading: viewModel.isLoading || viewModel.isValidatingUniqueness,
+                    onPressed: viewModel.step1ButtonState == ButtonState.disabled ? null : _goToNextStep,
+                    isLoading: viewModel.step1ButtonState == ButtonState.loading,
                   ),
                 ],
               ),

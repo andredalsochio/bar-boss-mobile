@@ -77,6 +77,61 @@ class _Step3PageState extends State<Step3Page> {
     });
   }
 
+  Widget _buildValidationStatusIndicator(BuildContext context, StepValidationState state) {
+    IconData icon;
+    Color color;
+    String text;
+
+    switch (state) {
+      case StepValidationState.initial:
+        icon = Icons.info_outline;
+        color = AppColors.textSecondary(context);
+        text = 'Crie uma senha segura';
+        break;
+      case StepValidationState.invalid:
+        icon = Icons.error_outline;
+        color = AppColors.error;
+        text = 'Senhas inválidas ou não coincidem';
+        break;
+      case StepValidationState.validating:
+        icon = Icons.hourglass_empty;
+        color = AppColors.warning;
+        text = 'Validando dados...';
+        break;
+      case StepValidationState.valid:
+        icon = Icons.check_circle_outline;
+        color = AppColors.success;
+        text = 'Senhas válidas';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacingMedium,
+        vertical: AppSizes.spacingSmall,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: AppSizes.spacingSmall),
+          Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _goToPreviousStep() {
     // Verifica se há algo na pilha de navegação para fazer pop
     if (context.canPop()) {
@@ -151,6 +206,10 @@ class _Step3PageState extends State<Step3Page> {
                           color: AppColors.textPrimary(context),
                         ),
                   ),
+                  const SizedBox(height: AppSizes.spacingMedium),
+                  
+                  // Indicador de status de validação
+                  _buildValidationStatusIndicator(context, viewModel.step3ValidationState),
                   const SizedBox(height: AppSizes.spacingLarge),
                   FormPasswordFieldWidget(
                     label: AppStrings.passwordLabel,
@@ -171,8 +230,8 @@ class _Step3PageState extends State<Step3Page> {
 
                   ButtonWidget(
                     text: AppStrings.submitRegistrationButton,
-                    onPressed: _submitRegistration,
-                    isLoading: viewModel.isLoading,
+                    onPressed: viewModel.step3ButtonState == ButtonState.disabled ? null : _submitRegistration,
+                    isLoading: viewModel.step3ButtonState == ButtonState.loading,
                   ),
                 ],
               ),

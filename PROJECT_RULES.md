@@ -26,6 +26,9 @@ O **Bar Boss Mobile** é um aplicativo Flutter para gestão de bares e eventos, 
 - ✅ Gestão de eventos
 - ✅ Integração Firebase completa
 - ✅ Validação de email implementada
+- ✅ Estratégia híbrida de validação (cliente + servidor)
+- ✅ Cloud Functions para validações de unicidade
+- ✅ HybridValidationService implementado
 - 🔄 Em desenvolvimento: melhorias de UX e cache local
 
 ---

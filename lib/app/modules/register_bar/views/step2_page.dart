@@ -122,6 +122,61 @@ class _Step2PageState extends State<Step2Page> {
     });
   }
 
+  Widget _buildValidationStatusIndicator(BuildContext context, StepValidationState state) {
+    IconData icon;
+    Color color;
+    String text;
+
+    switch (state) {
+      case StepValidationState.initial:
+        icon = Icons.info_outline;
+        color = AppColors.textSecondary(context);
+        text = 'Preencha os dados de endereço';
+        break;
+      case StepValidationState.invalid:
+        icon = Icons.error_outline;
+        color = AppColors.error;
+        text = 'Dados incompletos ou inválidos';
+        break;
+      case StepValidationState.validating:
+        icon = Icons.hourglass_empty;
+        color = AppColors.warning;
+        text = 'Validando dados...';
+        break;
+      case StepValidationState.valid:
+        icon = Icons.check_circle_outline;
+        color = AppColors.success;
+        text = 'Dados válidos';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacingMedium,
+        vertical: AppSizes.spacingSmall,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: AppSizes.spacingSmall),
+          Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _goToNextStep() async {
     // Valida o Step 2 antes de prosseguir
     if (!_viewModel.isStep2Valid) {
@@ -203,6 +258,10 @@ class _Step2PageState extends State<Step2Page> {
                           color: AppColors.textPrimary(context),
                         ),
                   ),
+                  const SizedBox(height: AppSizes.spacingMedium),
+                  
+                  // Indicador de status de validação
+                  _buildValidationStatusIndicator(context, viewModel.step2ValidationState),
                   const SizedBox(height: AppSizes.spacingLarge),
                   FormInputFieldWidget(
                     label: AppStrings.cepLabel,
@@ -312,10 +371,12 @@ class _Step2PageState extends State<Step2Page> {
                     text: _authViewModel.isFromSocialProvider 
                         ? 'Salvar' 
                         : AppStrings.continueButton,
-                    onPressed: _authViewModel.isFromSocialProvider 
-                        ? _saveSocialLoginStep2 
-                        : _goToNextStep,
-                    isLoading: viewModel.isLoading,
+                    onPressed: viewModel.step2ButtonState == ButtonState.disabled 
+                        ? null 
+                        : (_authViewModel.isFromSocialProvider 
+                            ? _saveSocialLoginStep2 
+                            : _goToNextStep),
+                    isLoading: viewModel.step2ButtonState == ButtonState.loading,
                   ),
                 ],
               ),

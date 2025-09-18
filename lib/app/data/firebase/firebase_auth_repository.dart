@@ -294,35 +294,24 @@ class FirebaseAuthRepository implements AuthRepository {
     final normalizedEmail = email.toLowerCase().trim();
     
     try {
-      // 1. Verificar se email existe na coleção bars (segurança contra enumeração)
-      debugPrint('🔍 [FirebaseAuthRepository] Verificando se email existe na base de dados...');
-      final barQuery = await FirebaseFirestore.instance
-        .collection('bars')
-        .where('email', isEqualTo: normalizedEmail)
-        .limit(1)
-        .get();
+      // Configurar idioma para português
+      await _auth.setLanguageCode('pt');
       
-      if (barQuery.docs.isNotEmpty) {
-        debugPrint('✅ [FirebaseAuthRepository] Email encontrado na base, enviando reset...');
-        
-        // 2. Configurar idioma para português
-        await _auth.setLanguageCode('pt');
-        
-        // 3. Enviar e-mail de reset
-        await _auth.sendPasswordResetEmail(email: normalizedEmail);
-        debugPrint('✅ [FirebaseAuthRepository] E-mail de redefinição enviado com sucesso!');
-      } else {
-        debugPrint('⚠️ [FirebaseAuthRepository] Email não encontrado na base, simulando sucesso por segurança');
-        // Simular delay para não revelar que email não existe
-        await Future.delayed(const Duration(milliseconds: 500));
-      }
+      // Enviar e-mail de reset diretamente via Firebase Auth
+      // O Firebase Auth já tem proteção contra enumeração de usuários
+      // e não revela se o email existe ou não
+      debugPrint('📧 [FirebaseAuthRepository] Enviando e-mail de reset via Firebase Auth...');
+      await _auth.sendPasswordResetEmail(email: normalizedEmail);
+      debugPrint('✅ [FirebaseAuthRepository] Solicitação de reset processada com sucesso!');
       
-      // SEMPRE retornar sucesso (segurança contra enumeração de usuários)
     } catch (e) {
       debugPrint('❌ [FirebaseAuthRepository] Erro ao processar reset de senha: $e');
-      // SEMPRE retornar sucesso mesmo em caso de erro (segurança)
-      // O usuário sempre verá a mensagem de sucesso
+      // SEMPRE retornar sucesso mesmo em caso de erro (segurança contra enumeração)
+      // O Firebase Auth já trata a segurança internamente
     }
+    
+    // SEMPRE retornar sucesso (segurança contra enumeração de usuários)
+    // O Firebase Auth não revela se o email existe ou não
   }
 
   @override

@@ -571,11 +571,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
     } finally {
       debugPrint('🔍 [VIEWMODEL] _searchCep: Finalizando busca de CEP');
       _setLoading(false);
-      // Define estado final baseado na validação do Step 2
+      // Após busca do CEP, apenas define como válido se todos os campos estão preenchidos
+      // Caso contrário, mantém estado inicial para permitir que usuário complete os dados
       if (isStep2Valid) {
         _setStep2ValidationState(StepValidationState.valid);
       } else {
-        _setStep2ValidationState(StepValidationState.invalid);
+        // Não marca como inválido imediatamente após busca do CEP
+        // Permite que usuário complete os campos obrigatórios (número, etc.)
+        _setStep2ValidationState(StepValidationState.initial);
       }
     }
   }

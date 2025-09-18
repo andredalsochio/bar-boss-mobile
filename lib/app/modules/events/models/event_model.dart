@@ -146,7 +146,7 @@ class EventModel {
       attractions: attractions ?? this.attractions,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       promoDetails: promoDetails ?? this.promoDetails,
-      promoImages: promoImages ?? this.promoImages,
+      promoImages: promoImages, // Permite null explícito
       published: published ?? this.published,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

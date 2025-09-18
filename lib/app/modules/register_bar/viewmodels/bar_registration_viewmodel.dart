@@ -1409,6 +1409,8 @@ class BarRegistrationViewModel extends ChangeNotifier {
       transaction.set(membershipRef, {
         'uid': currentUser.uid,
         'role': 'OWNER',
+        'barId': normalizedCnpj,  // Campo necessário para getUserBars
+        'barName': barData['name'],  // Nome do bar para referência
         'joinedAt': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),

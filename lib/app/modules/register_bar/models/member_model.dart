@@ -52,12 +52,16 @@ class MemberModel {
   final MemberRole role;
   final String? invitedByUid;
   final DateTime createdAt;
+  final String? barId;  // ID do bar para referência
+  final String? barName;  // Nome do bar para exibição
 
   MemberModel({
     required this.uid,
     required this.role,
     this.invitedByUid,
     required this.createdAt,
+    this.barId,
+    this.barName,
   });
 
   /// Cria uma instância vazia com valores padrão
@@ -67,6 +71,8 @@ class MemberModel {
       role: MemberRole.editor,
       invitedByUid: null,
       createdAt: DateTime.now(),
+      barId: null,
+      barName: null,
     );
   }
 
@@ -78,6 +84,8 @@ class MemberModel {
       role: MemberRole.fromString(data[FirestoreKeys.memberRole] ?? FirestoreKeys.roleEditor),
       invitedByUid: data[FirestoreKeys.memberInvitedByUid],
       createdAt: (data[FirestoreKeys.memberCreatedAt] as Timestamp).toDate(),
+      barId: data['barId'],  // Campo para referência do bar
+      barName: data['barName'],  // Nome do bar para exibição
     );
   }
 
@@ -88,6 +96,8 @@ class MemberModel {
       FirestoreKeys.memberRole: role.value,
       if (invitedByUid != null) FirestoreKeys.memberInvitedByUid: invitedByUid,
       FirestoreKeys.memberCreatedAt: Timestamp.fromDate(createdAt),
+      if (barId != null) 'barId': barId,  // ID do bar para referência
+      if (barName != null) 'barName': barName,  // Nome do bar para exibição
     };
   }
 
@@ -97,12 +107,16 @@ class MemberModel {
     MemberRole? role,
     String? invitedByUid,
     DateTime? createdAt,
+    String? barId,
+    String? barName,
   }) {
     return MemberModel(
       uid: uid ?? this.uid,
       role: role ?? this.role,
       invitedByUid: invitedByUid ?? this.invitedByUid,
       createdAt: createdAt ?? this.createdAt,
+      barId: barId ?? this.barId,
+      barName: barName ?? this.barName,
     );
   }
 

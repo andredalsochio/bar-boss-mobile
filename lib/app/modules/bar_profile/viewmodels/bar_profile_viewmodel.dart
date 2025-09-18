@@ -50,12 +50,20 @@ class BarProfileViewModel extends ChangeNotifier {
       debugPrint('🔍 [BarProfileViewModel] Email verificado: ${currentUser.emailVerified}');
       debugPrint('🔍 [BarProfileViewModel] Email: ${currentUser.email}');
       
-      // Busca o bar do usuário atual via membership (método recomendado)
-      final userBars = await _barRepository.getUserBars(currentUser.uid);
+      // Busca o bar do usuário atual via membership usando Stream (mesmo método do HomeViewModel)
+      final userBarsStream = _barRepository.listMyBars(currentUser.uid);
+      final userBars = await userBarsStream.first;
+      
+      debugPrint('🔍 [BarProfileViewModel] Encontrados ${userBars.length} bares');
+      for (int i = 0; i < userBars.length; i++) {
+        debugPrint('🔍 [BarProfileViewModel] Bar $i: id=${userBars[i].id}, name=${userBars[i].name}');
+      }
+      
       if (userBars.isNotEmpty) {
         _bar = userBars.first;
         debugPrint('✅ [BarProfileViewModel] Perfil carregado: ${_bar?.name ?? "Nenhum bar encontrado"}');
       } else {
+        debugPrint('❌ [BarProfileViewModel] Nenhum bar encontrado para o usuário ${currentUser.uid}');
         _setError('Nenhum bar encontrado para este usuário');
       }
     } catch (e) {

@@ -50,6 +50,12 @@ class FormInputFieldWidget extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    // Gera mensagem de erro se necessário
+    String? errorMessage;
+    if (showError && validator != null) {
+      errorMessage = validator!(controller?.text ?? initialValue ?? '');
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -112,10 +118,11 @@ class FormInputFieldWidget extends StatelessWidget {
                   width: AppSizes.borderWidth,
                 ),
               ),
+              // Borda escura ao focar, independente do erro
               focusedBorder: OutlineInputBorder(
                  borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
                  borderSide: BorderSide(
-                   color: showError ? AppColors.error : AppColors.primary(context),
+                   color: AppColors.textPrimary(context),
                    width: AppSizes.borderWidth,
                  ),
                ),
@@ -129,7 +136,7 @@ class FormInputFieldWidget extends StatelessWidget {
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
                 borderSide: BorderSide(
-                  color: AppColors.error,
+                  color: AppColors.textPrimary(context),
                   width: AppSizes.borderWidth,
                 ),
               ),
@@ -142,6 +149,17 @@ class FormInputFieldWidget extends StatelessWidget {
             ),
           ),
         ),
+        // Exibe mensagem de erro abaixo do campo
+        if (showError && errorMessage != null) ...[
+          SizedBox(height: AppSizes.spacing4),
+          Text(
+            errorMessage,
+            style: TextStyle(
+              fontSize: AppSizes.fontSize12,
+              color: AppColors.error,
+            ),
+          ),
+        ],
       ],
     );
   }

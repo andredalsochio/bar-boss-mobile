@@ -47,6 +47,12 @@ class _FormPasswordFieldWidgetState extends State<FormPasswordFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Gera mensagem de erro se necessário
+    String? errorMessage;
+    if (widget.showError && widget.validator != null) {
+      errorMessage = widget.validator!(widget.controller?.text ?? widget.initialValue ?? '');
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -119,10 +125,11 @@ class _FormPasswordFieldWidgetState extends State<FormPasswordFieldWidget> {
                 width: AppSizes.borderWidth,
               ),
             ),
+            // Borda escura ao focar, independente do erro
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
               borderSide: BorderSide(
-                color: widget.showError ? AppColors.error : AppColors.primary(context),
+                color: AppColors.textPrimary(context),
                 width: AppSizes.borderWidth,
               ),
             ),
@@ -136,7 +143,7 @@ class _FormPasswordFieldWidgetState extends State<FormPasswordFieldWidget> {
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
               borderSide: BorderSide(
-                color: AppColors.error,
+                color: AppColors.textPrimary(context),
                 width: AppSizes.borderWidth,
               ),
             ),
@@ -149,6 +156,17 @@ class _FormPasswordFieldWidgetState extends State<FormPasswordFieldWidget> {
             ),
           ),
         ),
+        // Exibe mensagem de erro abaixo do campo
+        if (widget.showError && errorMessage != null) ...[
+          SizedBox(height: AppSizes.spacing4),
+          Text(
+            errorMessage,
+            style: TextStyle(
+              fontSize: AppSizes.fontSize12,
+              color: AppColors.error,
+            ),
+          ),
+        ],
       ],
     );
   }

@@ -35,9 +35,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
   bool _isLoading = false;
 
   // Estados dos botões por step
-  ButtonState _step1ButtonState = ButtonState.disabled;
-  ButtonState _step2ButtonState = ButtonState.disabled;
-  ButtonState _step3ButtonState = ButtonState.disabled;
+  ButtonState _step1ButtonState = ButtonState.enabled;
+  ButtonState _step2ButtonState = ButtonState.enabled;
+  ButtonState _step3ButtonState = ButtonState.enabled;
 
   // Estados de validação por step
   StepValidationState _step1ValidationState = StepValidationState.initial;
@@ -892,10 +892,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void _updateStep1ButtonState() {
     if (_step1ValidationState == StepValidationState.validating || _isValidatingUniqueness) {
       _step1ButtonState = ButtonState.loading;
-    } else if (canProceedToStep2) {
-      _step1ButtonState = ButtonState.enabled;
     } else {
-      _step1ButtonState = ButtonState.disabled;
+      // Botão sempre habilitado quando não está carregando
+      _step1ButtonState = ButtonState.enabled;
     }
     notifyListeners();
   }
@@ -903,10 +902,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void _updateStep2ButtonState() {
     if (_step2ValidationState == StepValidationState.validating) {
       _step2ButtonState = ButtonState.loading;
-    } else if (isStep2Valid) {
-      _step2ButtonState = ButtonState.enabled;
     } else {
-      _step2ButtonState = ButtonState.disabled;
+      // Botão sempre habilitado quando não está carregando
+      _step2ButtonState = ButtonState.enabled;
     }
     notifyListeners();
   }
@@ -914,10 +912,9 @@ class BarRegistrationViewModel extends ChangeNotifier {
   void _updateStep3ButtonState() {
     if (_step3ValidationState == StepValidationState.validating || _isLoading) {
       _step3ButtonState = ButtonState.loading;
-    } else if (isStep3Valid) {
-      _step3ButtonState = ButtonState.enabled;
     } else {
-      _step3ButtonState = ButtonState.disabled;
+      // Botão sempre habilitado quando não está carregando
+      _step3ButtonState = ButtonState.enabled;
     }
     notifyListeners();
   }

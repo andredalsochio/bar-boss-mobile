@@ -10,6 +10,7 @@ import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.da
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
+import 'package:bar_boss_mobile/app/core/services/image_processing_service.dart';
 
 /// Estados possíveis da operação de eventos
 enum EventsState { initial, loading, success, error }
@@ -276,43 +277,75 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Adiciona uma imagem de promoção da galeria
   Future<void> addPromotionImageFromGallery() async {
-    if (_promotionImages.length >= 3) return;
-    
+    if (_promotionImages.length >= 3) {
+      ToastService.instance.showError(message: 'Máximo de 3 imagens permitidas');
+      return;
+    }
+
     try {
+      debugPrint('📱 Selecionando imagem da galeria...');
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 1920,
         maxHeight: 1080,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
-        _promotionImages.add(File(image.path));
-        notifyListeners();
+        debugPrint('🖼️ Imagem selecionada: ${image.path}');
+        
+        // Processa a imagem para corrigir problemas de color space no iOS
+        final processedFile = await ImageProcessingService.processSelectedImage(File(image.path));
+        
+        if (processedFile != null) {
+          _promotionImages.add(processedFile);
+          debugPrint('✅ Imagem processada e adicionada com sucesso');
+          notifyListeners();
+        } else {
+          debugPrint('❌ Falha no processamento da imagem');
+          ToastService.instance.showError(message: 'Erro ao processar imagem');
+        }
       }
     } catch (e) {
-      debugPrint('Erro ao selecionar imagem da galeria: $e');
+      debugPrint('❌ Erro ao selecionar imagem da galeria: $e');
+      ToastService.instance.showError(message: 'Erro ao selecionar imagem');
     }
   }
   
   /// Adiciona uma imagem de promoção da câmera
   Future<void> addPromotionImageFromCamera() async {
-    if (_promotionImages.length >= 3) return;
-    
+    if (_promotionImages.length >= 3) {
+      ToastService.instance.showError(message: 'Máximo de 3 imagens permitidas');
+      return;
+    }
+
     try {
+      debugPrint('📷 Capturando imagem da câmera...');
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.camera,
         maxWidth: 1920,
         maxHeight: 1080,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
-        _promotionImages.add(File(image.path));
-        notifyListeners();
+        debugPrint('🖼️ Imagem capturada: ${image.path}');
+        
+        // Processa a imagem para corrigir problemas de color space no iOS
+        final processedFile = await ImageProcessingService.processSelectedImage(File(image.path));
+        
+        if (processedFile != null) {
+          _promotionImages.add(processedFile);
+          debugPrint('✅ Imagem processada e adicionada com sucesso');
+          notifyListeners();
+        } else {
+          debugPrint('❌ Falha no processamento da imagem');
+          ToastService.instance.showError(message: 'Erro ao processar imagem');
+        }
       }
     } catch (e) {
-      debugPrint('Erro ao capturar imagem da câmera: $e');
+      debugPrint('❌ Erro ao capturar imagem da câmera: $e');
+      ToastService.instance.showError(message: 'Erro ao capturar imagem');
     }
   }
 
@@ -354,7 +387,25 @@ class EventsViewModel extends ChangeNotifier {
       }
       debugPrint('✅ [EventsViewModel] Usuário autenticado: ${user.uid}');
       
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
+      debugPrint('🔄 [EventsViewModel] Iniciando upload da imagem...');
+
+      // Processa a imagem antes do upload (se ainda não foi processada)
+      File processedFile = imageFile;
+      
+      // Verifica se a imagem precisa ser processada novamente
+      // (caso tenha sido carregada de uma fonte externa)
+      if (!imageFile.path.contains('processed_')) {
+        debugPrint('🔧 [EventsViewModel] Processando imagem antes do upload...');
+        final newProcessedFile = await ImageProcessingService.processSelectedImage(imageFile);
+        if (newProcessedFile != null) {
+          processedFile = newProcessedFile;
+          debugPrint('✅ [EventsViewModel] Imagem reprocessada com sucesso');
+        } else {
+          debugPrint('⚠️ [EventsViewModel] Falha no reprocessamento, usando imagem original');
+        }
+      }
+      
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${processedFile.path.split('/').last}';
       final storageRef = storage
           .ref()
           .child('events')
@@ -362,13 +413,17 @@ class EventsViewModel extends ChangeNotifier {
           .child('images')
           .child(fileName);
       
-      debugPrint('📸 [EventsViewModel] Iniciando upload da imagem: $fileName');
+      debugPrint('📸 [EventsViewModel] Fazendo upload da imagem: $fileName');
       
-      final uploadTask = storageRef.putFile(imageFile);
+      final uploadTask = storageRef.putFile(processedFile);
       final snapshot = await uploadTask;
       final downloadUrl = await snapshot.ref.getDownloadURL();
       
       debugPrint('✅ [EventsViewModel] Imagem enviada com sucesso: $downloadUrl');
+      
+      // Limpa arquivos temporários antigos
+       await ImageProcessingService.cleanupTempFiles();
+      
       return downloadUrl;
     } on FirebaseException catch (e) {
       debugPrint('❌ [EventsViewModel] Erro do Firebase ao enviar imagem: ${e.code} - ${e.message}');

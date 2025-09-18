@@ -15,133 +15,97 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkEmailAvailability = exports.validateRegistrationData = exports.checkAvailability = void 0;
-const functions = __importStar(require("firebase-functions"));
+exports.checkEmailAvailability = exports.validateRegistrationData = void 0;
+const https_1 = require("firebase-functions/v2/https");
+const v2_1 = require("firebase-functions/v2");
 const admin = __importStar(require("firebase-admin"));
 // Inicializar Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();
-// Configurações regionais para melhor performance
-const runtimeOpts = {
-    timeoutSeconds: 60,
-    memory: '256MB',
-};
-/**
- * Cloud Function callable para verificar disponibilidade de CNPJ
- * Permite validação sem depender de permissões do cliente no Firestore
- */
-exports.checkAvailability = functions
-    .region('us-central1')
-    .runWith(runtimeOpts)
-    .https.onCall(async (data, context) => {
-    // Validar autenticação (obrigatória)
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Usuário deve estar autenticado para verificar disponibilidade');
-    }
-    const { cnpj } = data;
-    // Validar parâmetros
-    if (!cnpj || typeof cnpj !== 'string') {
-        throw new functions.https.HttpsError('invalid-argument', 'CNPJ é obrigatório e deve ser uma string');
-    }
-    // Normalizar CNPJ (apenas dígitos)
-    const cnpjClean = cnpj.replace(/[^\d]/g, '');
-    // Validar formato do CNPJ
-    if (cnpjClean.length !== 14) {
-        throw new functions.https.HttpsError('invalid-argument', 'CNPJ deve conter exatamente 14 dígitos');
-    }
-    try {
-        // Verificar se CNPJ existe no registro usando Admin SDK
-        const cnpjRegistryDoc = await admin.firestore()
-            .collection('cnpj_registry')
-            .doc(cnpjClean)
-            .get();
-        const exists = cnpjRegistryDoc.exists;
-        functions.logger.info('CNPJ availability check', {
-            cnpj: cnpjClean.substring(0, 4) + '***',
-            exists,
-            uid: context.auth.uid
-        });
-        return {
-            cnpjExists: exists
-        };
-    }
-    catch (error) {
-        functions.logger.error('Error checking CNPJ availability', {
-            cnpj: cnpjClean.substring(0, 4) + '***',
-            error: error instanceof Error ? error.message : String(error),
-            uid: context.auth.uid
-        });
-        throw new functions.https.HttpsError('internal', 'Erro interno ao verificar disponibilidade do CNPJ');
-    }
+// Configuração global para 2nd gen
+(0, v2_1.setGlobalOptions)({
+    region: 'us-central1',
+    maxInstances: 10,
 });
+// Função checkAvailability removida - redundante com validateRegistrationData
 /**
  * Cloud Function callable para validação híbrida de email e CNPJ
  * Estratégia híbrida: cliente + servidor para máxima segurança
  */
-exports.validateRegistrationData = functions
-    .region('us-central1')
-    .runWith(runtimeOpts)
-    .https.onCall(async (data, context) => {
-    // Validar autenticação (obrigatória)
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Usuário deve estar autenticado para validar dados');
-    }
+exports.validateRegistrationData = (0, https_1.onCall)(async (request) => {
+    const { data, auth } = request;
     const { email, cnpj, flowType } = data;
+    // Validar autenticação apenas para fluxo SOCIAL
+    // Fluxo CLASSIC pode ser chamado sem autenticação (usuário ainda não existe)
+    if (flowType === 'SOCIAL' && !auth) {
+        throw new https_1.HttpsError('unauthenticated', 'Usuário deve estar autenticado para fluxo social');
+    }
     // Validar parâmetros obrigatórios
     if (!flowType || !['CLASSIC', 'SOCIAL'].includes(flowType)) {
-        throw new functions.https.HttpsError('invalid-argument', 'flowType deve ser CLASSIC ou SOCIAL');
+        throw new https_1.HttpsError('invalid-argument', 'flowType deve ser CLASSIC ou SOCIAL');
     }
     if (!cnpj || typeof cnpj !== 'string') {
-        throw new functions.https.HttpsError('invalid-argument', 'CNPJ é obrigatório e deve ser uma string');
+        throw new https_1.HttpsError('invalid-argument', 'CNPJ é obrigatório e deve ser uma string');
     }
     // Para fluxo clássico, email é obrigatório
     if (flowType === 'CLASSIC' && (!email || typeof email !== 'string')) {
-        throw new functions.https.HttpsError('invalid-argument', 'Email é obrigatório para fluxo clássico');
+        throw new https_1.HttpsError('invalid-argument', 'Email é obrigatório para fluxo clássico');
     }
     // Normalizar dados
     const cnpjClean = cnpj.replace(/[^\d]/g, '');
     const emailNormalized = email ? email.trim().toLowerCase() : null;
     // Validar formato do CNPJ
     if (cnpjClean.length !== 14) {
-        throw new functions.https.HttpsError('invalid-argument', 'CNPJ deve conter exatamente 14 dígitos');
+        throw new https_1.HttpsError('invalid-argument', 'CNPJ deve conter exatamente 14 dígitos');
     }
     try {
-        const auth = admin.auth();
+        const adminAuth = admin.auth();
+        const uid = (auth === null || auth === void 0 ? void 0 : auth.uid) || 'unauthenticated';
         let emailExists = false;
         let cnpjExists = false;
         // Validar email (apenas para fluxo clássico)
         if (flowType === 'CLASSIC' && emailNormalized) {
             try {
                 // Usar Firebase Admin Auth para verificar se email existe
-                await auth.getUserByEmail(emailNormalized);
+                await adminAuth.getUserByEmail(emailNormalized);
                 emailExists = true;
-                functions.logger.info('Email exists in Firebase Auth', {
+                console.log('Email exists in Firebase Auth', {
                     email: emailNormalized.substring(0, 3) + '***',
-                    uid: context.auth.uid
+                    uid: uid
                 });
             }
             catch (error) {
                 if (error.code === 'auth/user-not-found') {
                     emailExists = false;
-                    functions.logger.info('Email not found in Firebase Auth', {
+                    console.log('Email not found in Firebase Auth', {
                         email: emailNormalized.substring(0, 3) + '***',
-                        uid: context.auth.uid
+                        uid: uid
                     });
                 }
                 else {
                     // Erro inesperado, logar e continuar
-                    functions.logger.warn('Error checking email in Firebase Auth', {
+                    console.warn('Error checking email in Firebase Auth', {
                         email: emailNormalized.substring(0, 3) + '***',
                         error: error.message,
-                        uid: context.auth.uid
+                        uid: uid
                     });
                     emailExists = false; // Fail-safe: assumir que não existe
                 }
@@ -149,9 +113,9 @@ exports.validateRegistrationData = functions
         }
         // Validar CNPJ usando Admin SDK (bypass das Firestore Rules)
         try {
-            functions.logger.info('Checking CNPJ in registry', {
+            console.log('Checking CNPJ in registry', {
                 cnpj: cnpjClean.substring(0, 4) + '***',
-                uid: context.auth.uid,
+                uid: uid,
                 flowType
             });
             const cnpjRegistryDoc = await admin.firestore()
@@ -159,32 +123,32 @@ exports.validateRegistrationData = functions
                 .doc(cnpjClean)
                 .get();
             cnpjExists = cnpjRegistryDoc.exists;
-            functions.logger.info('CNPJ check completed', {
+            console.log('CNPJ check completed', {
                 cnpj: cnpjClean.substring(0, 4) + '***',
                 exists: cnpjExists,
-                uid: context.auth.uid,
+                uid: uid,
                 flowType
             });
         }
         catch (cnpjError) {
-            functions.logger.error('Error checking CNPJ', {
+            console.error('Error checking CNPJ', {
                 cnpj: cnpjClean.substring(0, 4) + '***',
                 error: cnpjError.message,
                 code: cnpjError.code,
-                uid: context.auth.uid,
+                uid: uid,
                 flowType
             });
             // Em caso de erro, assumir que CNPJ não existe (fail-safe)
             cnpjExists = false;
         }
         // Log da operação
-        functions.logger.info('Hybrid validation completed', {
+        console.log('Hybrid validation completed', {
             flowType,
             email: emailNormalized ? emailNormalized.substring(0, 3) + '***' : 'N/A',
             cnpj: cnpjClean.substring(0, 4) + '***',
             emailExists,
             cnpjExists,
-            uid: context.auth.uid
+            uid: uid
         });
         return {
             emailExists,
@@ -193,48 +157,48 @@ exports.validateRegistrationData = functions
         };
     }
     catch (error) {
-        functions.logger.error('Error in hybrid validation', {
+        const uid = (auth === null || auth === void 0 ? void 0 : auth.uid) || 'unauthenticated';
+        console.error('Error in hybrid validation', {
             flowType,
             email: emailNormalized ? emailNormalized.substring(0, 3) + '***' : 'N/A',
             cnpj: cnpjClean.substring(0, 4) + '***',
             error: error instanceof Error ? error.message : String(error),
-            uid: context.auth.uid
+            uid: uid
         });
-        throw new functions.https.HttpsError('internal', 'Erro interno na validação híbrida');
+        throw new https_1.HttpsError('internal', 'Erro interno na validação híbrida');
     }
 });
 /**
  * Cloud Function callable para validação segura de email
  * Alternativa ao fetchSignInMethodsForEmail que foi depreciado
  */
-exports.checkEmailAvailability = functions
-    .region('us-central1')
-    .runWith(runtimeOpts)
-    .https.onCall(async (data, context) => {
+exports.checkEmailAvailability = (0, https_1.onCall)(async (request) => {
+    var _a, _b, _c;
+    const { data, auth } = request;
     // Validar autenticação (obrigatória)
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Usuário deve estar autenticado para verificar email');
+    if (!auth) {
+        throw new https_1.HttpsError('unauthenticated', 'Usuário deve estar autenticado para verificar email');
     }
     const { email } = data;
     // Validar parâmetros
     if (!email || typeof email !== 'string') {
-        throw new functions.https.HttpsError('invalid-argument', 'Email é obrigatório e deve ser uma string');
+        throw new https_1.HttpsError('invalid-argument', 'Email é obrigatório e deve ser uma string');
     }
     // Normalizar email
     const emailNormalized = email.trim().toLowerCase();
     // Validar formato básico do email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailNormalized)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Formato de email inválido');
+        throw new https_1.HttpsError('invalid-argument', 'Formato de email inválido');
     }
     try {
-        const auth = admin.auth();
+        const adminAuthCheck = admin.auth();
         // Usar Firebase Admin Auth para verificar se email existe
         try {
-            await auth.getUserByEmail(emailNormalized);
-            functions.logger.info('Email availability check - exists', {
+            await adminAuthCheck.getUserByEmail(emailNormalized);
+            console.log('Email availability check - exists', {
                 email: emailNormalized.substring(0, 3) + '***',
-                uid: context.auth.uid
+                uid: (_a = request.auth) === null || _a === void 0 ? void 0 : _a.uid
             });
             return {
                 emailExists: true
@@ -242,9 +206,9 @@ exports.checkEmailAvailability = functions
         }
         catch (error) {
             if (error.code === 'auth/user-not-found') {
-                functions.logger.info('Email availability check - not found', {
+                console.log('Email availability check - not found', {
                     email: emailNormalized.substring(0, 3) + '***',
-                    uid: context.auth.uid
+                    uid: (_b = request.auth) === null || _b === void 0 ? void 0 : _b.uid
                 });
                 return {
                     emailExists: false
@@ -257,12 +221,12 @@ exports.checkEmailAvailability = functions
         }
     }
     catch (error) {
-        functions.logger.error('Error checking email availability', {
+        console.error('Error checking email availability', {
             email: emailNormalized.substring(0, 3) + '***',
             error: error instanceof Error ? error.message : String(error),
-            uid: context.auth.uid
+            uid: (_c = request.auth) === null || _c === void 0 ? void 0 : _c.uid
         });
-        throw new functions.https.HttpsError('internal', 'Erro interno ao verificar disponibilidade do email');
+        throw new https_1.HttpsError('internal', 'Erro interno ao verificar disponibilidade do email');
     }
 });
 //# sourceMappingURL=index.js.map

@@ -6,7 +6,7 @@ abstract class BarRepository {
   /// Cria um novo bar com reserva de nome
   Future<void> createBarWithReservation({
     required BarModel bar,
-    required String ownerUid,
+    required String primaryOwnerUid,
   });
 
   /// Cria um novo bar
@@ -19,10 +19,10 @@ abstract class BarRepository {
   Future<BarModel?> getBarById(String barId);
 
   /// Obtém bares por proprietário
-  Future<List<BarModel>> getBarsByOwner(String ownerUid);
+  Future<List<BarModel>> getBarsByOwner(String primaryOwnerUid);
 
   /// Obtém stream de bares por proprietário
-  Stream<List<BarModel>> getBarsStream(String ownerUid);
+  Stream<List<BarModel>> getBarsStream(String primaryOwnerUid);
 
   /// Verifica se um usuário tem bares cadastrados
   Future<bool> hasUserRegisteredBars(String userUid);

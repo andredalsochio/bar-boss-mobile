@@ -31,18 +31,18 @@ class FirebaseBarRepository implements BarRepositoryDomain {
   @override
   Future<String> createBarWithReservation({
     required BarModel bar,
-    required String ownerUid,
+    required String primaryOwnerUid,
     String? forcedBarId,
   }) async {
     debugPrint('🏢 [FirebaseBarRepository] Iniciando createBarWithReservation...');
-    debugPrint('🏢 [FirebaseBarRepository] CNPJ: ${bar.cnpj.substring(0, 3)}***, Nome: ${bar.name}, Owner: $ownerUid');
+    debugPrint('🏢 [FirebaseBarRepository] CNPJ: ${bar.cnpj.substring(0, 3)}***, Nome: ${bar.name}, Owner: $primaryOwnerUid');
     
     // 🔍 DEBUG: Verificar estado da autenticação Firebase
     final currentUser = FirebaseAuth.instance.currentUser;
     debugPrint('🔍 [FirebaseBarRepository] Estado da autenticação:');
     debugPrint('🔍 [FirebaseBarRepository] - currentUser: ${currentUser?.uid}');
-    debugPrint('🔍 [FirebaseBarRepository] - ownerUid: $ownerUid');
-    debugPrint('🔍 [FirebaseBarRepository] - UIDs iguais: ${currentUser?.uid == ownerUid}');
+    debugPrint('🔍 [FirebaseBarRepository] - primaryOwnerUid: $primaryOwnerUid');
+    debugPrint('🔍 [FirebaseBarRepository] - UIDs iguais: ${currentUser?.uid == primaryOwnerUid}');
     debugPrint('🔍 [FirebaseBarRepository] - emailVerified: ${currentUser?.emailVerified}');
     debugPrint('🔍 [FirebaseBarRepository] - isAnonymous: ${currentUser?.isAnonymous}');
     debugPrint('🔍 [FirebaseBarRepository] - providerData: ${currentUser?.providerData.map((p) => p.providerId).toList()}');
@@ -56,14 +56,14 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     final batch = _firestore.batch();
 
     final barRef = _barsCol.doc(barId);
-    final memberRef = barRef.collection(FirestoreKeys.membersSubcollection).doc(ownerUid);
+    final memberRef = barRef.collection(FirestoreKeys.membersSubcollection).doc(primaryOwnerUid);
     final cnpjRegistryRef = _firestore.collection('cnpj_registry').doc(normalizedCnpj);
 
     // 1) Cria o registro no cnpj_registry (para garantir unicidade)
     debugPrint('🏢 [FirebaseBarRepository] Adicionando cnpj_registry ao batch...');
     batch.set(cnpjRegistryRef, {
       'cnpj': normalizedCnpj,
-      'ownerUid': ownerUid,
+      'primaryOwnerUid': primaryOwnerUid,
       'createdAt': _now,
     });
 
@@ -74,15 +74,15 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       cnpj: normalizedCnpj,
       createdAt: DateTime.now(), // será sobrescrito pelo _now
       updatedAt: DateTime.now(), // será sobrescrito pelo _now
-      createdByUid: ownerUid,
-      primaryOwnerUid: ownerUid, // Campo obrigatório para validação do Firestore
+      createdByUid: primaryOwnerUid,
+      primaryOwnerUid: primaryOwnerUid, // Campo obrigatório para validação do Firestore
     );
     final barData = _toFirestore(barWithIds)
       ..addAll({
         'createdAt': _now,
         'updatedAt': _now,
-        'createdByUid': ownerUid,
-        'primaryOwnerUid': ownerUid, // Campo obrigatório para validação do Firestore
+        'createdByUid': primaryOwnerUid,
+        'primaryOwnerUid': primaryOwnerUid, // Campo obrigatório para validação do Firestore
       });
 
     debugPrint('🏢 [FirebaseBarRepository] Adicionando bar ao batch...');
@@ -91,7 +91,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     // 3) Adiciona o criador como membro OWNER
     debugPrint('🏢 [FirebaseBarRepository] Adicionando membership OWNER ao batch...');
     batch.set(memberRef, {
-      'uid': ownerUid,
+      'uid': primaryOwnerUid,
       'role': 'OWNER',
       'createdAt': _now,
       'barId': barId,
@@ -142,7 +142,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       final barData = _toFirestore(bar)..addAll({
         'createdAt': _now,
         'updatedAt': _now,
-        'ownerUid': uid, // Campo necessário para as rules
+        'primaryOwnerUid': uid, // Campo necessário para as rules
       });
       
       debugPrint('🏗️ [FirebaseBarRepository] Dados do bar: ${barData.keys.toList()}');
@@ -173,7 +173,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
        debugPrint('🏗️ [FirebaseBarRepository] Criando registro no cnpj_registry...');
        final cnpjRegistryData = {
          'cnpj': cnpjLimpo,
-         'ownerUid': uid,
+         'primaryOwnerUid': uid,
          'barId': cnpjLimpo,
          'contactEmail': bar.contactEmail.toLowerCase().trim(),
          'createdAt': _now,
@@ -232,11 +232,11 @@ class FirebaseBarRepository implements BarRepositoryDomain {
           .where('uid', isEqualTo: uid)
           .get();
 
-      debugPrint('👥 [FirebaseBarRepository] Encontrados ${querySnapshot.docs.length} memberships');
+      debugPrint('👥 [FirebaseBarRepository] Encontrados ${querySnapshot.docs.length} members');
       final List<BarModel> bars = [];
       for (final memberDoc in querySnapshot.docs) {
         final barId = memberDoc.data()['barId'] as String?;
-        debugPrint('👥 [FirebaseBarRepository] Processando membership para barId: $barId');
+        debugPrint('👥 [FirebaseBarRepository] Processando member para barId: $barId');
         if (barId != null) {
           final bar = await getById(barId);
           if (bar != null) {
@@ -363,7 +363,7 @@ class FirebaseBarRepository implements BarRepositoryDomain {
       'profile': bar.profile.toMap(),
       'status': bar.status,
       'logoUrl': bar.logoUrl,
-      // Não incluir createdAt, updatedAt e ownerUid aqui
+      // Não incluir createdAt, updatedAt e primaryOwnerUid aqui
       // pois são adicionados separadamente no createBarSimple
       'createdByUid': bar.createdByUid,
       'primaryOwnerUid': bar.primaryOwnerUid,
@@ -467,6 +467,53 @@ class FirebaseBarRepository implements BarRepositoryDomain {
     } catch (e) {
       debugPrint('❌ [FirebaseBarRepository] Erro ao garantir membership: $e');
       throw Exception('Erro ao garantir acesso ao bar. Tente novamente.');
+    }
+  }
+
+  @override
+  Future<List<BarModel>> getBarsByOwner(String primaryOwnerUid) async {
+    try {
+      debugPrint('🔍 [FirebaseBarRepository] Buscando bares do proprietário: $primaryOwnerUid');
+      
+      final querySnapshot = await _firestore
+          .collection(FirestoreKeys.barsCollection)
+          .where(FirestoreKeys.barPrimaryOwnerUid, isEqualTo: primaryOwnerUid)
+          .get();
+
+      final bars = querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return BarModel.fromMap(data, doc.id);
+      }).toList();
+
+      debugPrint('✅ [FirebaseBarRepository] Encontrados ${bars.length} bares');
+      return bars;
+    } catch (e) {
+      debugPrint('❌ [FirebaseBarRepository] Erro ao buscar bares: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Stream<List<BarModel>> getBarsStream(String primaryOwnerUid) {
+    try {
+      debugPrint('🔄 [FirebaseBarRepository] Iniciando stream de bares para: $primaryOwnerUid');
+      
+      return _firestore
+          .collection(FirestoreKeys.barsCollection)
+          .where(FirestoreKeys.barPrimaryOwnerUid, isEqualTo: primaryOwnerUid)
+          .snapshots()
+          .map((snapshot) {
+        final bars = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return BarModel.fromMap(data, doc.id);
+        }).toList();
+
+        debugPrint('🔄 [FirebaseBarRepository] Stream atualizado: ${bars.length} bares');
+        return bars;
+      });
+    } catch (e) {
+      debugPrint('❌ [FirebaseBarRepository] Erro no stream de bares: $e');
+      rethrow;
     }
   }
 }

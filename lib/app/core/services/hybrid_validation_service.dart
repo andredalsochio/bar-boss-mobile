@@ -125,41 +125,7 @@ class HybridValidationService {
     }
   }
 
-  /// Validação apenas de CNPJ (para casos específicos)
-  Future<ValidationResult> validateCnpjAvailability(String cnpj) async {
-    debugPrint('🏢 [HybridValidationService] Validando disponibilidade do CNPJ...');
-
-    try {
-      // 1. Validar formato no cliente
-      final cnpjError = Validators.cnpj(cnpj);
-      if (cnpjError != null) {
-        return ValidationResult.error(cnpjError);
-      }
-
-      // 2. Validar unicidade no servidor
-      final callable = _functions.httpsCallable('checkAvailability');
-      final result = await callable.call({
-        'cnpj': NormalizationHelpers.normalizeCnpj(cnpj),
-      });
-
-      final cnpjExists = result.data['cnpjExists'] as bool;
-
-      if (cnpjExists) {
-        return ValidationResult.error('CNPJ já registrado.');
-      }
-
-      return ValidationResult.success(
-        details: {'cnpjExists': false},
-      );
-
-    } catch (e) {
-      debugPrint('❌ [HybridValidationService] Erro na validação de CNPJ: $e');
-      return ValidationResult.error(
-        'Erro ao validar CNPJ. Tente novamente.',
-        details: {'error': e.toString()},
-      );
-    }
-  }
+  // Método validateCnpjAvailability removido - funcionalidade integrada em validateRegistrationData
 
   /// Validações do lado do cliente (formato, regras básicas)
   ValidationResult _validateClientSide({

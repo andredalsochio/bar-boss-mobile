@@ -59,7 +59,7 @@ class CachedBars extends Table {
   TextColumn get neighborhood => text()();
   TextColumn get city => text()();
   TextColumn get state => text()();
-  TextColumn get ownerUid => text()();
+  TextColumn get primaryOwnerUid => text()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   
@@ -75,7 +75,7 @@ class CachedBars extends Table {
   Set<Column> get primaryKey => {id};
 
   List<Index> get indexes => [
-    Index('idx_cached_bars_owner_uid', ownerUid.name),
+    Index('idx_cached_bars_primary_owner_uid', primaryOwnerUid.name),
     Index('idx_cached_bars_cnpj', cnpj.name),
     Index('idx_cached_bars_contact_email', contactEmail.name),
     Index('idx_cached_bars_needs_sync', needsSync.name),

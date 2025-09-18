@@ -628,10 +628,10 @@ class BarRegistrationViewModel extends ChangeNotifier {
       );
 
       // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
-      debugPrint('💾 [STEP3_VM] Gravando bar no Firestore | docId=${_cnpj}');
+      debugPrint('💾 [STEP3_VM] Gravando bar no Firestore | docId=${normalizedCnpj}');
       final barId = await _barRepository.createBarWithReservation(
         bar: bar,
-        ownerUid: currentUser.uid,
+        primaryOwnerUid: currentUser.uid,
       );
 
       // Atualiza o UserProfile com currentBarId
@@ -790,14 +790,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
        );
 
        // Cria o bar com operação atômica (reserva CNPJ + bar + membership OWNER)
-       debugPrint('💾 [STEP3_VM] Gravando bar no Firestore | docId=${_cnpj}');
+       debugPrint('💾 [STEP3_VM] Gravando bar no Firestore | docId=${normalizedCnpj}');
        debugPrint('💾 [BarRegistrationViewModel] Criando bar no Firestore com operação atômica...');
-       debugPrint('💾 [BarRegistrationViewModel] CNPJ: ${_cnpj.substring(0, 5)}***');
+       debugPrint('💾 [BarRegistrationViewModel] CNPJ: ${normalizedCnpj.substring(0, 5)}***');
        debugPrint('💾 [BarRegistrationViewModel] Nome do bar: $_name');
        
        final barId = await _barRepository.createBarWithReservation(
          bar: bar,
-         ownerUid: currentUser.uid,
+         primaryOwnerUid: currentUser.uid,
        );
        
        debugPrint('✅ [BarRegistrationViewModel] Bar criado com sucesso! ID: $barId');
@@ -835,7 +835,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       
       // Log específico para erros de Firestore
       if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
-        debugPrint('🚫 [Firestore] PERMISSION_DENIED | path=bars/$_cnpj');
+        debugPrint('🚫 [Firestore] PERMISSION_DENIED | path=bars/${NormalizationHelpers.normalizeCnpj(_cnpj)}');
       } else if (e.toString().contains('FirebaseException')) {
         debugPrint('🔥 [Firestore] FirebaseException | error=${e.toString()}');
       }
@@ -1239,7 +1239,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       
       // UX de fallback para duplicados
       if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
-        debugPrint('🚫 [Firestore] PERMISSION_DENIED | path=bars/$_cnpj - tentando fallback');
+        debugPrint('🚫 [Firestore] PERMISSION_DENIED | path=bars/${NormalizationHelpers.normalizeCnpj(_cnpj)} - tentando fallback');
         
         try {
           // Fallback: verificar se o CNPJ existe usando checkCnpjExists
@@ -1306,21 +1306,25 @@ class BarRegistrationViewModel extends ChangeNotifier {
     final firestore = FirebaseFirestore.instance;
     
     await firestore.runTransaction((transaction) async {
+      // ===== FASE 1: TODAS AS LEITURAS PRIMEIRO =====
+      
       // 1. Verificar se CNPJ já existe (idempotência)
       final cnpjRegistryRef = firestore.collection('cnpj_registry').doc(normalizedCnpj);
       final cnpjSnapshot = await transaction.get(cnpjRegistryRef);
       
+      // 2. Verificar user profile existente
+      final userRef = firestore.collection('users').doc(currentUser.uid);
+      final userSnapshot = await transaction.get(userRef);
+      
+      // ===== FASE 2: PROCESSAMENTO DOS DADOS LIDOS =====
+      
       if (cnpjSnapshot.exists) {
         final cnpjData = cnpjSnapshot.data()!;
-        final existingOwnerUid = cnpjData['ownerUid'] as String?;
+        final existingOwnerUid = cnpjData['primaryOwnerUid'] as String?;
         
         if (existingOwnerUid == currentUser.uid) {
           // CNPJ já pertence ao usuário atual - operação idempotente
           debugPrint('✅ [BarRegistrationViewModel] CNPJ já pertence ao usuário atual - operação idempotente');
-          
-          // Verificar se o user profile precisa ser atualizado
-          final userRef = firestore.collection('users').doc(currentUser.uid);
-          final userSnapshot = await transaction.get(userRef);
           
           if (userSnapshot.exists) {
             final userData = userSnapshot.data()!;
@@ -1346,24 +1350,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
         }
       }
       
-      // 2. Verificar se o usuário já tem provedor de email/senha vinculado
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-      final hasEmailProvider = firebaseUser?.providerData
-          .any((provider) => provider.providerId == 'password') ?? false;
+      // ===== FASE 3: VINCULAÇÃO DE CREDENCIAL (FORA DA TRANSACTION) =====
+      // Nota: Esta operação não pode estar dentro da transaction pois é uma operação Auth
       
-      if (!hasEmailProvider) {
-        // Vincula credencial de email/senha ao usuário de login social
-        debugPrint('🔗 [BarRegistrationViewModel] Vinculando credencial de email/senha...');
-        await _authRepository.linkEmailPassword(_email, _password);
-        debugPrint('✅ [BarRegistrationViewModel] Credencial de email/senha vinculada com sucesso!');
-        
-        // Recarrega os dados do usuário para atualizar os provedores
-        await FirebaseAuth.instance.currentUser?.reload();
-      }
+      // ===== FASE 4: TODAS AS ESCRITAS =====
       
       // 3. Criar CNPJ registry
       transaction.set(cnpjRegistryRef, {
-        'ownerUid': currentUser.uid,
+        'primaryOwnerUid': currentUser.uid,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -1400,7 +1394,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
       final membershipRef = firestore
           .collection('bars')
           .doc(normalizedCnpj)
-          .collection('memberships')
+          .collection('members')
           .doc(currentUser.uid);
       
       transaction.set(membershipRef, {
@@ -1411,10 +1405,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
         'updatedAt': FieldValue.serverTimestamp(),
       });
       
-      // 6. Atualizar user profile
-      final userRef = firestore.collection('users').doc(currentUser.uid);
-      final userSnapshot = await transaction.get(userRef);
-      
+      // 6. Atualizar/criar user profile
       if (userSnapshot.exists) {
         transaction.update(userRef, {
           'currentBarId': normalizedCnpj,
@@ -1436,6 +1427,23 @@ class BarRegistrationViewModel extends ChangeNotifier {
       
       debugPrint('✅ [BarRegistrationViewModel] Transaction atômica concluída com sucesso');
     });
+    
+    // ===== FASE 5: VINCULAÇÃO DE CREDENCIAL (APÓS TRANSACTION) =====
+    
+    // Verificar se o usuário já tem provedor de email/senha vinculado
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    final hasEmailProvider = firebaseUser?.providerData
+        .any((provider) => provider.providerId == 'password') ?? false;
+    
+    if (!hasEmailProvider) {
+      // Vincula credencial de email/senha ao usuário de login social
+      debugPrint('🔗 [BarRegistrationViewModel] Vinculando credencial de email/senha...');
+      await _authRepository.linkEmailPassword(_email, _password);
+      debugPrint('✅ [BarRegistrationViewModel] Credencial de email/senha vinculada com sucesso!');
+      
+      // Recarrega os dados do usuário para atualizar os provedores
+      await FirebaseAuth.instance.currentUser?.reload();
+    }
     
     // Debug logs após transaction
     debugPrint('🎉 DEBUG Login Social Step 3: Bar criado com sucesso para usuário ${currentUser.uid}');

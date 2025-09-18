@@ -10,6 +10,10 @@ class FirebaseUserRepository implements UserRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
+  /// Cache para evitar múltiplas operações simultâneas
+  static final Map<String, Future<void>> _ongoingUpserts = {};
+  static final Map<String, Future<UserProfile?>> _ongoingGets = {};
+  
   /// Timestamp do servidor
   FieldValue get _now => FieldValue.serverTimestamp();
 
@@ -19,13 +23,36 @@ class FirebaseUserRepository implements UserRepository {
 
   @override
   Future<UserProfile?> getMe() async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) {
-        debugPrint('🔍 [DEBUG] UserRepository.getMe: Usuário não autenticado');
-        return null;
-      }
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      debugPrint('🔍 [DEBUG] UserRepository.getMe: Usuário não autenticado');
+      return null;
+    }
 
+    final uid = currentUser.uid;
+    
+    // Verifica se já existe uma operação em andamento para este usuário
+    if (_ongoingGets.containsKey(uid)) {
+      debugPrint('🔄 [DEBUG] UserRepository.getMe: Operação já em andamento para uid=$uid, aguardando...');
+      return await _ongoingGets[uid]!;
+    }
+
+    // Cria e armazena a operação
+    final operation = _performGetMe(currentUser);
+    _ongoingGets[uid] = operation;
+
+    try {
+      final result = await operation;
+      return result;
+    } finally {
+      // Remove a operação do cache quando concluída
+      _ongoingGets.remove(uid);
+    }
+  }
+
+  /// Executa a operação real de getMe
+  Future<UserProfile?> _performGetMe(User currentUser) async {
+    try {
       debugPrint('🔍 [DEBUG] UserRepository.getMe: Buscando perfil para uid=${currentUser.uid}');
       final doc = await _usersCollection.doc(currentUser.uid).get();
       if (doc.exists) {
@@ -59,6 +86,28 @@ class FirebaseUserRepository implements UserRepository {
 
   @override
   Future<void> upsert(UserProfile data) async {
+    final uid = data.uid;
+    
+    // Verifica se já existe uma operação em andamento para este usuário
+    if (_ongoingUpserts.containsKey(uid)) {
+      debugPrint('🔄 [DEBUG] UserRepository.upsert: Operação já em andamento para uid=$uid, aguardando...');
+      return await _ongoingUpserts[uid]!;
+    }
+
+    // Cria e armazena a operação
+    final operation = _performUpsert(data);
+    _ongoingUpserts[uid] = operation;
+
+    try {
+      await operation;
+    } finally {
+      // Remove a operação do cache quando concluída
+      _ongoingUpserts.remove(uid);
+    }
+  }
+
+  /// Executa a operação real de upsert
+  Future<void> _performUpsert(UserProfile data) async {
     try {
       debugPrint('🔍 [DEBUG] UserRepository.upsert: Salvando perfil uid=${data.uid}, completedFullRegistration=${data.completedFullRegistration}');
       final firestoreData = _toFirestore(data);

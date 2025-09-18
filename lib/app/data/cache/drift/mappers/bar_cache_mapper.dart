@@ -21,7 +21,7 @@ class BarCacheMapper {
       neighborhood: Value(''), // Campo não existe no BarModel atual
       city: Value(bar.address.city),
       state: Value(bar.address.state),
-      ownerUid: Value(bar.createdByUid),
+      primaryOwnerUid: Value(bar.primaryOwnerUid),
       createdAt: Value(bar.createdAt),
       updatedAt: Value(bar.updatedAt),
       cacheCreatedAt: Value(now),
@@ -54,8 +54,8 @@ class BarCacheMapper {
       logoUrl: null,
       createdAt: cached.createdAt,
       updatedAt: cached.updatedAt,
-      createdByUid: cached.ownerUid,
-      primaryOwnerUid: cached.ownerUid,
+      createdByUid: cached.primaryOwnerUid,
+      primaryOwnerUid: cached.primaryOwnerUid,
     );
   }
 
@@ -78,7 +78,7 @@ class BarCacheMapper {
       neighborhood: Value(''),
       city: Value(bar.address.city),
       state: Value(bar.address.state),
-      ownerUid: Value(bar.createdByUid),
+      primaryOwnerUid: Value(bar.primaryOwnerUid),
       createdAt: Value(bar.createdAt),
       updatedAt: Value(bar.updatedAt),
       cacheUpdatedAt: Value(DateTime.now()),

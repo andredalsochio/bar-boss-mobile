@@ -11,7 +11,7 @@ abstract class BarRepositoryDomain {
   /// Retorna o ID do bar criado
   Future<String> createBarWithReservation({
     required BarModel bar,
-    required String ownerUid,
+    required String primaryOwnerUid,
     String? forcedBarId,
   });
 

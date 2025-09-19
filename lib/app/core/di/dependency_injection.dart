@@ -12,6 +12,10 @@ import 'package:bar_boss_mobile/app/modules/auth/services/auth_service.dart';
 import 'package:bar_boss_mobile/app/modules/auth/repositories/user_repository.dart' as auth_user_repo;
 import 'package:bar_boss_mobile/app/modules/events/repositories/event_repository.dart' as legacy_event_repo;
 
+// Photos repositories
+import 'package:bar_boss_mobile/app/data/repositories/event_photos_repository.dart';
+import 'package:bar_boss_mobile/app/data/repositories/photos_repository.dart';
+
 // ViewModels
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/viewmodels/bar_registration_viewmodel.dart';

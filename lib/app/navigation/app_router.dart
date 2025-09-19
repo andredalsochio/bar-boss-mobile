@@ -13,6 +13,7 @@ import 'package:bar_boss_mobile/app/modules/register_bar/views/step2_page.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/views/step3_page.dart';
 import 'package:bar_boss_mobile/app/modules/home/views/home_page.dart';
 import 'package:bar_boss_mobile/app/modules/bar_profile/views/bar_profile_page.dart';
+import 'package:bar_boss_mobile/app/modules/bar_profile/views/bar_profile_edit_page.dart';
 import 'package:bar_boss_mobile/app/modules/settings/views/settings_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/events_list_page.dart';
 import 'package:bar_boss_mobile/app/modules/events/views/event_form_page.dart';
@@ -125,6 +126,13 @@ class AppRouter {
           path: AppRoutes.barProfile,
           name: 'barProfile',
           builder: (context, state) => const BarProfilePage(),
+        ),
+        
+        // Rota para edição do perfil do bar
+        GoRoute(
+          path: AppRoutes.barProfileEdit,
+          name: 'barProfileEdit',
+          builder: (context, state) => const BarProfileEditPage(),
         ),
 
         // Rota para configurações

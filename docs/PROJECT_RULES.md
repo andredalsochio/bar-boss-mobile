@@ -106,6 +106,27 @@ lib/
 - **Funcionalidades completas:** Requerem email verificado
 - **Janela de tolerância:** 10 minutos para usuários recém-criados
 
+### Fluxo de Fotos de Eventos
+#### Upload de Fotos
+1. **Seleção:** Câmera ou galeria via ImagePicker
+2. **Validação:** Tipo de arquivo (imagens) e tamanho (máx 10MB)
+3. **Armazenamento Local:** Salvo temporariamente no dispositivo
+4. **Upload Assíncrono:** Firebase Storage com progresso em tempo real
+5. **Persistência:** Metadados salvos no Firestore após upload
+
+#### Estados de Upload
+- **Pending (0):** Aguardando upload
+- **Uploading (1):** Upload em progresso com barra de progresso
+- **Completed (2):** Upload concluído com sucesso
+- **Failed (3):** Falha no upload com opção de retry
+- **Cancelled (4):** Upload cancelado pelo usuário
+
+#### Gerenciamento de Fotos
+- **Visualização:** Grid responsivo com placeholders durante upload
+- **Exclusão:** Remove do Storage e Firestore simultaneamente
+- **Retry:** Reenvio automático em caso de falha de rede
+- **Cache:** Imagens carregadas mantidas em cache local
+
 ---
 
 ## ⚙️ 4. Regras Técnicas
@@ -312,7 +333,59 @@ if (!user.completedFullRegistration) {
 }
 ```
 
+### Coleção: `events`
+```javascript
+{
+  id: string,                    // ID do evento (auto-gerado)
+  barId: string,                 // ID do bar proprietário
+  title: string,                 // Título do evento
+  description: string,           // Descrição do evento
+  date: timestamp,               // Data e hora do evento
+  attractions: string[],         // Lista de atrações/artistas
+  promotions: {                  // Promoções do evento
+    title: string,               // Título da promoção
+    description: string,         // Descrição da promoção
+    imageUrl: string             // URL da imagem (Storage)
+  }[],
+  createdByUid: string,          // UID do criador
+  createdAt: timestamp,          // Data de criação
+  updatedAt: timestamp           // Data de atualização
+}
+```
 
+### Subcoleção: `events/{eventId}/photos`
+```javascript
+{
+  id: string,                    // ID da foto (auto-gerado)
+  eventId: string,               // ID do evento pai
+  localPath: string,             // Caminho local do arquivo
+  storagePath: string,           // Caminho no Firebase Storage
+  downloadUrl: string,           // URL de download da imagem
+  uploadStatus: number,          // Status do upload (enum)
+  uploadProgress: number,        // Progresso do upload (0-100)
+  fileSize: number,              // Tamanho do arquivo em bytes
+  mimeType: string,              // Tipo MIME da imagem
+  width: number,                 // Largura da imagem em pixels
+  height: number,                // Altura da imagem em pixels
+  retryCount: number,            // Número de tentativas de upload
+  lastRetryAt: timestamp,        // Data da última tentativa
+  errorMessage: string,          // Mensagem de erro (se houver)
+  createdByUid: string,          // UID do criador
+  createdAt: timestamp,          // Data de criação
+  updatedAt: timestamp           // Data de atualização
+}
+```
+
+### Enum: EventPhotoUploadStatus
+```dart
+enum EventPhotoUploadStatus {
+  pending(0),      // Aguardando upload
+  uploading(1),    // Upload em progresso
+  completed(2),    // Upload concluído
+  failed(3),       // Upload falhou
+  cancelled(4);    // Upload cancelado
+}
+```
 
 ---
 
@@ -356,6 +429,12 @@ if (!user.completedFullRegistration) {
 - **Problema:** Dados recarregados a cada abertura
 - **Solução:** Implementar Drift para persistência local
 - **Status:** 🔄 Planejado
+
+### Sistema de Fotos de Eventos
+- **Implementação:** Upload assíncrono com feedback visual
+- **Funcionalidades:** Câmera, galeria, progresso, retry, exclusão
+- **Armazenamento:** Firebase Storage + metadados no Firestore
+- **Status:** ✅ Implementado
 
 ---
 

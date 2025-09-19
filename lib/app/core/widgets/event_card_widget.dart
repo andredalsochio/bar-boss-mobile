@@ -3,6 +3,7 @@ import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
+import 'upload_retry_widget.dart';
 
 /// Widget de card de evento
 class EventCardWidget extends StatelessWidget {
@@ -80,8 +81,9 @@ class EventCardWidget extends StatelessWidget {
                         AppStrings.promotionsAvailable,
                         AppColors.success,
                       ),
-
-
+                    
+                    // Status de upload
+                    UploadStatusIndicator(eventId: event.id),
                   ],
                 ),
                 

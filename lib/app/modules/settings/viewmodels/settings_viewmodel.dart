@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 
 /// ViewModel para gerenciar as configurações do aplicativo
 /// Inclui gerenciamento de tema (claro/escuro/sistema) e outras preferências
@@ -252,6 +253,35 @@ class SettingsViewModel extends ChangeNotifier {
   void clearPasswordError() {
     _passwordChangeError = null;
     notifyListeners();
+  }
+
+  /// Realiza logout do usuário
+  /// Limpa dados locais e redireciona para tela de login
+  Future<bool> logout(BuildContext context) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // Faz logout do Firebase Auth
+      await FirebaseAuth.instance.signOut();
+
+      // Limpa dados locais (SharedPreferences)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Navega para tela de login
+      if (context.mounted) {
+        context.go('/login');
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao fazer logout: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
 

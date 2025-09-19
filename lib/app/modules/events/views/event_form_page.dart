@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +7,13 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/widgets/button_widget.dart';
 import '../../../core/widgets/form_input_field_widget.dart';
+import '../../../core/widgets/promotion_image_widget.dart';
+import '../../../core/widgets/upload_retry_widget.dart';
+
 import '../models/event_model.dart';
 import '../viewmodels/events_viewmodel.dart';
+import 'package:bar_boss_mobile/app/data/models/event_photo.dart';
+import 'package:bar_boss_mobile/app/core/services/upload_queue_service.dart';
 
 class EventFormPage extends StatefulWidget {
   final EventModel? event;
@@ -23,19 +29,19 @@ class _EventFormPageState extends State<EventFormPage> {
   late EventsViewModel _viewModel;
   final TextEditingController _promoDetailsController = TextEditingController();
   final TextEditingController _attractionController = TextEditingController();
-  
+    
   // Lista de controllers para as atrações
   final List<TextEditingController> _attractionControllers = [];
 
   @override
   void initState() {
     super.initState();
-    _viewModel = Provider.of<EventsViewModel>(context, listen: false);
+    _viewModel = Provider.of<EventsViewModel>(context, listen: false)    ;
     
     // Adiciona listener para atualizar o contador de caracteres
     _promoDetailsController.addListener(() {
       setState(() {});
-    });
+        });
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeForm();
@@ -60,29 +66,29 @@ class _EventFormPageState extends State<EventFormPage> {
   @override
   void dispose() {
     _promoDetailsController.dispose();
-    _attractionController.dispose();
+    _attractionController.d    ispose();
     
     // Dispose de todos os controllers de atrações
     for (final controller in _attractionControllers) {
       controller.dispose();
     }
-    _attractionControllers.clear();
+    _attractionControl    lers.clear();
     
-    super.dispose();
+    sup  er.dispose();
   }
   
   /// Sincroniza os controllers com a lista de atrações do ViewModel
   void _syncAttractionControllers() {
-    final attractions = _viewModel.attractions;
+    final attractions = _vie    wModel.attractions;
     
     // Remove controllers extras
     while (_attractionControllers.length > attractions.length) {
-      _attractionControllers.removeLast().dispose();
+      _attractionControllers.remove    Last().dispose();
     }
     
     // Adiciona controllers faltantes
     while (_attractionControllers.length < attractions.length) {
-      _attractionControllers.add(TextEditingController());
+      _attractionControllers.add(Text    EditingController());
     }
     
     // Atualiza o texto dos controllers
@@ -107,14 +113,18 @@ class _EventFormPageState extends State<EventFormPage> {
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(
-          color: AppColors.primary(context),
+ 
+                 iconTheme: IconThemeData(
+,
+                  color: AppColors.primary(context),
         ),
       ),
       body: Consumer<EventsViewModel>(
         builder: (context, viewModel, child) {
-          if (viewModel.state == EventsState.loading) {
-            return const Center(
+          if (viewModel.state == Ev
+              entsState.loading) {
+            r,
+            eturn const Center(
               child: CircularProgressIndicator(),
             );
           }
@@ -126,18 +136,18 @@ class _EventFormPageState extends State<EventFormPage> {
             child: Column(
               children: [
                 // Card 1 - Data do Evento
-                _buildDateCard(viewModel),
+                _buil                dDateCard(viewModel),
                 const SizedBox(height: AppSizes.spacing16),
                 
                 // Card 2 - Atrações
-                _buildAttractionsCard(viewModel),
+                                _buildAttractionsCard(viewModel),
                 const SizedBox(height: AppSizes.spacing16),
                 
                 // Card 3 - Imagens de Promoção
-                _buildPromotionImagesCard(viewModel),
+                                _buildPromotionImagesCard(viewModel),
                 const SizedBox(height: AppSizes.spacing16),
                 
-                // Card 4 - Detalhes da Promoção
+                // Card 4 - Detalh                es da Promoção
                 _buildPromotionDetailsCard(viewModel),
                 const SizedBox(height: AppSizes.spacing32),
                 
@@ -184,17 +194,19 @@ class _EventFormPageState extends State<EventFormPage> {
               onTap: () => _selectDate(context, viewModel),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(AppSizes.spacing16),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: viewModel.state == EventsState.error && viewModel.eventDate == null
+                padding: cones.spacing16),
+                decoratio    border: Border.all(
+                    color: videl.state == EventsState.error && vieel.eventDate == null
                         ? Colors.red
                         : AppColors.border(context),
                   ),
                   borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
                 ),
-                child: Row(
-                  children: [
+ 
+                                  
+                        child: Row(
+                  c,
+                    hildren: [
                     Icon(
                       Icons.event,
                       color: AppColors.primary(context),
@@ -203,10 +215,9 @@ class _EventFormPageState extends State<EventFormPage> {
                     Text(
                       viewModel.eventDate != null
                           ? '${viewModel.eventDate!.day.toString().padLeft(2, '0')}/${viewModel.eventDate!.month.toString().padLeft(2, '0')}/${viewModel.eventDate!.year}'
-                          : 'Selecionar data',
-                      style: TextStyle(
-                        fontSize: AppSizes.fontSize16,
-                        color: viewModel.eventDate != null
+                                         style: TextStyle(
+                      ontSize: AppSizes.fontSize16,
+                     color: viewModel.eventDate != null
                              ? Colors.black
                              : Colors.grey,
                       ),
@@ -214,8 +225,7 @@ class _EventFormPageState extends State<EventFormPage> {
                   ],
                 ),
               ),
-            ),
-            // Mensagem de erro para data obrigatória
+           // Mensagem de erro para data obrigatória
             if (viewModel.state == EventsState.error && viewModel.eventDate == null)
               Padding(
                 padding: const EdgeInsets.only(top: AppSizes.spacing8),
@@ -233,7 +243,7 @@ class _EventFormPageState extends State<EventFormPage> {
     );
   }
 
-  Widget _buildAttractionsCard(EventsViewModel viewModel) {
+  Widget _buildAttractionsCard(EventsViewModel viewModel)     {
     // Sincroniza os controllers com as atrações do ViewModel
     _syncAttractionControllers();
     
@@ -343,93 +353,46 @@ class _EventFormPageState extends State<EventFormPage> {
               ],
             ),
             const SizedBox(height: AppSizes.spacing16),
-            // Exibe imagens existentes e novas imagens
+            // Estentes e novas imagens
             if (viewModel.existingPromotionImages.isNotEmpty || viewModel.promotionImages.isNotEmpty)
               SizedBox(
                 height: 100,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: viewModel.existingPromotionImages.length + viewModel.promotionImages.length,
+                child: ListView.bu   scrollDirection: Axis.horizontal,
+       viewModel.existingPromotionImages.length + viewModel.promotionImages.length,
                   itemBuilder: (context, index) {
-                    final isExistingImage = index < viewModel.existingPromotionImages.length;
+l isExistingImage = index < viewModel.existingPromo                    tionImages.length;
                     
                     return Padding(
                       padding: const EdgeInsets.only(right: AppSizes.spacing8),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(AppSizes.borderRadius4),
-                            child: isExistingImage
-                                ? Image.network(
-                                    viewModel.existingPromotionImages[index],
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return Container(
-                                        width: 100,
-                                        height: 100,
-                                        color: Colors.grey[300],
-                                        child: const Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      );
-                                    },
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        width: 100,
-                                        height: 100,
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.error),
-                                      );
-                                    },
-                                  )
-                                : Image.file(
-                                    viewModel.promotionImages[index - viewModel.existingPromotionImages.length],
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                  ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: GestureDetector(
-                              onTap: () {
-                                if (isExistingImage) {
-                                  viewModel.removeExistingPromotionImage(index);
-                                } else {
-                                  viewModel.removePromotionImage(index - viewModel.existingPromotionImages.length);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                      child: PromotionImageWi  imageUrl: isExPromotionImages[index] : null,
+            gImage ? null : viewModel.promotionImages[imotionImages.lenentId:                     index: index,
+  
+                          if (isExistingImage) {
+                            viewModel.removeExistingPromotionImage(index);
+                          } else {
+                            viewModel.removePromotionImage(index - viewModel.existingPromotionImages.length);
+                          }
+                        },
+                        onRetry: () {
+                          if (!isExisvent?.id != null) {
+                            onImages[index - viewModel.existingPromotionImages.length];
+                            final uploadItems = viewModel.getUploadQueueItems(viewMod                    
+                            // Encontra o item de upload c                     final uploadI                             item.file.path == file.path && 
+                              item.status == UploadStatus.fai ).firstOrNull;
+                                                       if (uploadItem != null) {
+                              viewModel.retryUploadItem(uploadItem.id);
+                        }
+                 },
+ 
+   ),
               ),
-            const SizedBox(height: AppSizes.spacing16),
+            const SizedBox(height: Aps
+g16),
             Row(
               children: [
-                Expanded(
-                  child: ButtonWidget(
-                    text: 'Câmera',
-                    onPressed: () {
+               E
+                  child: But'Câmera',
+                                                onPressed: () {
                       viewModel.addPromotionImageFromCamera();
                     },
                     isOutlined: true,
@@ -521,40 +484,42 @@ class _EventFormPageState extends State<EventFormPage> {
       children: [
         ButtonWidget(
           text: widget.event != null ? 'Salvar' : 'Criar evento',
-          onPressed: viewModel.isLoading ? null : () async {
-            // Valida se a data foi selecionada antes de tentar salvar
-            if (viewModel.eventDate == null) {
+          onPressed: viewModel.isLoading ? null : ()lida se a data foi selecionada antes de ter
+salvar
+            if (viewModel.evente
+== null) {
               // Força o estado de erro para mostrar a mensagem inline
               viewModel.setErrorState('Por favor, selecione a data do evento');
               return;
             }
             
+            // Salva o evento sem aguardar upload de imagens
             await viewModel.saveEvent();
-            if (mounted && viewModel.state == EventsState.success) {
-              Navigator.of(context).pop();
+            
+            // Navega imediatamente após o sucesso (upload continua em backgrou  if (mounted && vieentsSta          Navigator.of(conp();
             }
           },
-          isLoading: viewModel.isLoading,
-          isFullWidth: true,
+          isLoading: viewModel.isLoadin     isFullWidth: true,
         ),
-        if (widget.event != null) ...[
+        if (wint != null) ...[
           const SizedBox(height: AppSizes.spacing16),
-          ButtonWidget(
-            text: 'Excluir evento',
-            onPressed: viewModel.isLoading ? null : () async {
-              final confirmed = await _showDeleteConfirmation();
+  ButtonWidget(
+        ',
+            onPressed: viewModel.isL {
+              nfirmed = await _shoon  irmation  
+();
               if (confirmed == true) {
-                await viewModel.deleteEvent();
-                if (mounted && viewModel.state == EventsState.success) {
+                await viewModeEvent();
+                if (  ounted &  
+& viewModel.state == EventsState.success) {
                   Navigator.of(context).pop();
-                }
+        }
               }
             },
             isOutlined: true,
-            isFullWidth: true,
-            textColor: Colors.red,
-          ),
-        ],
+    isFullWidth: true,
+            textColor:red,
+             ],
       ],
     );
   }
@@ -564,26 +529,22 @@ class _EventFormPageState extends State<EventFormPage> {
     
     if (Theme.of(context).platform == TargetPlatform.iOS) {
       // Cupertino date picker para iOS
-      picked = await showCupertinoModalPopup<DateTime>(
-        context: context,
-        builder: (BuildContext context) {
-          final DateTime minimumDate = DateTime.now();
-          DateTime tempDate = viewModel.eventDate ?? minimumDate;
-          
-          // Garante que a data inicial não seja anterior à data mínima
+      picked rtinoModalPopup<Datext: conr: (BuildContext context) {
+  final DateTime minimumDate = DateTime.now();
+          DateTimee = viewModel.eventDate ?? minimumDate;
+  
+          // Garante que a data inicial não srior à data mínima
           if (tempDate.isBefore(minimumDate)) {
-            tempDate = minimumDate;
+        Date = minimumDate;
           }
           
-          return Container(
-            height: 300,
-            color: CupertinoColors.systemBackground.resolveFrom(context),
+  return Container      height:          color: CupertinoColors.systemBackground.resolveFrom(context),
             child: Column(
               children: [
                 Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemBackground.resolveFrom(context),
+                  he 50,
+                coration: BoxDecoration(
+                color: CupertinoColors.    systemBackground.resolveFrom(context),
                     border: const Border(
                       bottom: BorderSide(
                         color: CupertinoColors.separator,
@@ -592,10 +553,10 @@ class _EventFormPageState extends State<EventFormPage> {
                     ),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAl          ignment: MainAxisAlignment.spaceBetween,
                     children: [
                       CupertinoButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () => Navigator.of(con          text).pop(),
                         child: const Text('Cancelar'),
                       ),
                       CupertinoButton(
@@ -605,8 +566,8 @@ class _EventFormPageState extends State<EventFormPage> {
                     ],
                   ),
                 ),
-                Expanded(
-                  child: CupertinoDatePicker(
+ (
+     pertinoDatePicker(
                     mode: CupertinoDatePickerMode.date,
                     initialDateTime: tempDate,
                     minimumDate: minimumDate,
@@ -654,11 +615,40 @@ class _EventFormPageState extends State<EventFormPage> {
     }
   }
 
+
+
   Future<bool?> _showDeleteConfirmation() async {
     return showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      builder:       (BuildContext context) {
         return AlertDialog(
+          title: const Text('Confirmar exclusão'),
+          content: const Text('Tem certeza que deseja       excluir este evento?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'Ex       (color: Colors.red),
+  
+                            ),
+            ),
+     ,
+                   ],
+        );
+      },
+    );
+  }
+}mation() async {
+    return showDialog<bool>    (
+      context: context,
+      builder: (BuildContext context) {
+        re
+
+turn AlertDialog(
           title: const Text('Confirmar exclusão'),
           content: const Text('Tem certeza que deseja excluir este evento?'),
           actions: [
@@ -677,5 +667,8 @@ class _EventFormPageState extends State<EventFormPage> {
         );
       },
     );
-  }
+
+                  }
 }
+               ,
+              

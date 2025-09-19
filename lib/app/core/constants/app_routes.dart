@@ -17,6 +17,7 @@ class AppRoutes {
   // Rotas principais
   static const String home = '/';
   static const String barProfile = '/bar-profile';
+  static const String barProfileEdit = '/bar-profile/edit';
   static const String settings = '/settings';
   static const String eventsList = '/events';
   static const String eventForm = '/events/form';

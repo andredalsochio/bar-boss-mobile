@@ -9,6 +9,7 @@ import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/widgets/loading_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/button_widget.dart';
 import 'package:bar_boss_mobile/app/core/widgets/image_viewer_page.dart';
+import 'package:bar_boss_mobile/app/core/widgets/promotion_image_widget.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
@@ -364,22 +365,19 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: _event!.promoImages!.length,
-              itemBuilder: (context, index) {
-                final imageUrl = _event!.promoImages![index];
-                return Container(
-                  width: 120,
-                  margin: EdgeInsets.only(
-                    right: index < _event!.promoImages!.length - 1
-                        ? AppSizes.spacing8
-                        : 0,
-                  ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
-                      border: Border.all(
-                        color: AppColors.border(context),
-                      ),
+                itemBuilder: (context, index) {
+                  final imageUrl = _event!.promoImages![index];
+                  return Container(
+                    width: 120,
+                    margin: EdgeInsets.only(
+                      right: index < _event!.promoImages!.length - 1
+                          ? AppSizes.spacing8
+                          : 0,
                     ),
-                    child: GestureDetector(
+                    child: PromotionImageWidget(
+                      imageUrl: imageUrl,
+                      eventId: _event!.id,
+                      index: index,
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -391,57 +389,11 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                           ),
                         );
                       },
-                      child: Hero(
-                        tag: 'promo_image_$index',
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(AppSizes.borderRadius8),
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: AppColors.cardBackground(context),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                    color: AppColors.primary(context),
-                                  ),
-                                ),
-                              );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: AppColors.cardBackground(context),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.broken_image,
-                                  color: AppColors.textSecondary(context),
-                                  size: AppSizes.iconSize24,
-                                ),
-                                const SizedBox(height: AppSizes.spacing4),
-                                Text(
-                                  'Erro ao carregar',
-                                  style: TextStyle(
-                                    fontSize: AppSizes.fontSize10,
-                                    color: AppColors.textSecondary(context),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                      // Na página de detalhes, não permitimos remoção
+                      onRemove: null,
+                      onRetry: null,
                     ),
-                  ),
-                ),
-              );
+                  );
                 },
               ),
             ),
@@ -519,17 +471,46 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                   onPressed: viewModel.isLoading
                        ? null
                        : () async {
+                           // Armazena referências do contexto antes das operações assíncronas
+                           final navigator = Navigator.of(context);
+                           final router = GoRouter.of(context);
+                           
                            try {
                              // Carrega o evento antes de excluir
                              await viewModel.loadEvent(widget.eventId);
                              await viewModel.deleteEvent();
                               if (mounted) {
-                                Navigator.of(context).pop(); // Fecha o dialog
-                                context.pop(); // Volta para a tela anterior
+                                navigator.pop(); // Fecha o dialog
+                                router.pop(); // Volta para a tela anterior
                               }
                             } catch (e) {
                               if (mounted) {
-                                Navigator.of(context).pop(); // Fecha o dialog
+                                navigator.pop(); // Fecha o dialog
+                                ToastService.instance.showError(
+                                  message: AppStrings.deleteEventErrorMessage,
+                                );
+                              }
+                            }
+                         },
+                  backgroundColor: AppColors.error,
+                  isLoading: viewModel.isLoading,
+                );
+              },
+            ),
+            const SizedBox(height: AppSizes.spacing8),
+             Align(
+               alignment: Alignment.center,
+               child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+                           ),
+             ),
+          ],
+        );
+      },
+    );
+  }
+}        Navigator.of(context).pop(); // Fecha o dialog
                                 ToastService.instance.showError(
                                   message: AppStrings.deleteEventErrorMessage,
                                 );

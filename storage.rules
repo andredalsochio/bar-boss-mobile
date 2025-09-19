@@ -3,12 +3,23 @@ rules_version = '2';
 // Firebase Storage Security Rules for Bar Boss Mobile
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow authenticated users to read and write their own event images
+    // Allow authenticated users to read and write their own event images (promotion images)
     match /events/{eventId}/images/{fileName} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
                    && request.auth.uid != null
                    && request.resource.size < 5 * 1024 * 1024 // Max 5MB
+                   && request.resource.contentType.matches('image/.*'); // Only images
+      allow delete: if request.auth != null
+                    && request.auth.uid != null;
+    }
+    
+    // Allow authenticated users to read and write event photos
+    match /events/{eventId}/photos/{photoId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.auth.uid != null
+                   && request.resource.size < 10 * 1024 * 1024 // Max 10MB for event photos
                    && request.resource.contentType.matches('image/.*'); // Only images
       allow delete: if request.auth != null
                     && request.auth.uid != null;

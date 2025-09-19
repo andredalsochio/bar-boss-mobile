@@ -217,14 +217,20 @@ class _SettingsPageState extends State<SettingsPage> {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              // TODO: Implementar logout
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Logout será implementado em breve'),
-                ),
-              );
+              
+              final viewModel = context.read<SettingsViewModel>();
+              final success = await viewModel.logout(context);
+              
+              if (!success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Erro ao fazer logout. Tente novamente.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             child: const Text('Sair'),
           ),

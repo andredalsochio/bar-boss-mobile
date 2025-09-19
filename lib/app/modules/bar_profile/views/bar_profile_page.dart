@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_colors.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_sizes.dart';
 import 'package:bar_boss_mobile/app/core/widgets/app_bar_widget.dart';
@@ -294,12 +295,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () {
-                // TODO: Implementar edição do perfil
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Funcionalidade de edição em desenvolvimento'),
-                  ),
-                );
+                context.push('/bar-profile/edit');
               },
               icon: const Icon(Icons.edit),
               label: const Text('Editar Perfil'),

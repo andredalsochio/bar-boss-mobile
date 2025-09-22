@@ -29,7 +29,7 @@ class Formatters {
   
   /// Formata uma data para exibição (DD/MM/YYYY)
   static String formatDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy').format(date);
+    return DateFormat('dd/MM/yyyy', 'pt_BR').format(date);
   }
   
   /// Formata uma data para exibição com dia da semana (SEG 05)

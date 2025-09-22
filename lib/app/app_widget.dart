@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
@@ -37,6 +38,16 @@ class _AppWidgetState extends State<AppWidget> {
             debugShowCheckedModeBanner: false,
             theme: themeProvider.currentTheme,
             routerConfig: _router,
+            // Configuração de localização para português brasileiro
+            locale: const Locale('pt', 'BR'),
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('pt', 'BR'),
+            ],
           );
         },
       ),

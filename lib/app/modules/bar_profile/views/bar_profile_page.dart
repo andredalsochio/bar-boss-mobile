@@ -142,12 +142,13 @@ class _BarProfilePageState extends State<BarProfilePage> {
                       child: ClipOval(
                         child: Consumer<BarProfileViewModel>(
                           builder: (context, viewModel, _) {
-                            if (bar.logoUrl != null && bar.logoUrl!.isNotEmpty) {
+                            if (viewModel.bar?.logoUrl != null && viewModel.bar!.logoUrl!.isNotEmpty) {
                               return Image.network(
-                                bar.logoUrl!,
+                                viewModel.bar!.logoUrl!,
+                                key: ValueKey(viewModel.bar!.logoUrl!), 
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
-                                  return _buildDefaultAvatar(bar.name);
+                                  return _buildDefaultAvatar(viewModel.bar?.name ?? bar.name);
                                 },
                                 loadingBuilder: (context, child, loadingProgress) {
                                   if (loadingProgress == null) return child;
@@ -159,7 +160,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
                                 },
                               );
                             }
-                            return _buildDefaultAvatar(bar.name);
+                            return _buildDefaultAvatar(viewModel.bar?.name ?? bar.name);
                           },
                         ),
                       ),
@@ -539,8 +540,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
  
    Future<void> _removePhoto(BarProfileViewModel viewModel) async {
      try {
-       final updatedBar = viewModel.bar!.copyWith(logoUrl: null);
-       await viewModel.updateBarProfile(updatedBar);
+       await viewModel.removeProfilePhoto();
        ToastService.instance.showSuccess(message: 'Foto removida com sucesso!');
      } catch (e) {
        ToastService.instance.showError(message: 'Erro ao remover foto: $e');

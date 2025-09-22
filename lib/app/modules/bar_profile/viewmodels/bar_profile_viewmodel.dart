@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
@@ -119,6 +118,53 @@ class BarProfileViewModel extends ChangeNotifier {
       _setError('Erro ao atualizar foto de perfil: $e');
     } finally {
       _setUploadingPhoto(false);
+    }
+  }
+
+  /// Remove a foto de perfil do bar
+  Future<void> removeProfilePhoto() async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      if (_bar == null) {
+        throw Exception('Nenhum bar encontrado para atualizar');
+      }
+
+      debugPrint('🗑️ [BarProfileViewModel] Iniciando remoção da foto de perfil para bar: ${_bar!.id}');
+      
+      // Se existe uma foto atual, remove do Storage
+      if (_bar!.logoUrl != null && _bar!.logoUrl!.isNotEmpty) {
+        debugPrint('🗑️ [BarProfileViewModel] Removendo imagem do Storage: ${_bar!.logoUrl}');
+        final deleteSuccess = await _imageStorageRepository.deleteImage(_bar!.logoUrl!);
+        
+        if (deleteSuccess) {
+          debugPrint('✅ [BarProfileViewModel] Imagem removida do Storage com sucesso');
+        } else {
+          debugPrint('⚠️ [BarProfileViewModel] Falha ao remover imagem do Storage, continuando...');
+        }
+      }
+      
+      // Atualiza o bar removendo a URL da foto
+      final updatedBar = _bar!.copyWith(logoUrl: null);
+      await _barRepository.update(updatedBar);
+      
+      // Atualiza o estado local
+      _bar = updatedBar;
+      
+      // Limpa o cache de imagens para forçar atualização da UI
+      PaintingBinding.instance.imageCache.clear();
+      debugPrint('🧹 [BarProfileViewModel] Cache de imagens limpo');
+      
+      notifyListeners();
+      
+      debugPrint('✅ [BarProfileViewModel] Foto de perfil removida com sucesso');
+      
+    } catch (e) {
+      debugPrint('❌ [BarProfileViewModel] Erro ao remover foto de perfil: $e');
+      _setError('Erro ao remover foto de perfil: $e');
+    } finally {
+      _setLoading(false);
     }
   }
 

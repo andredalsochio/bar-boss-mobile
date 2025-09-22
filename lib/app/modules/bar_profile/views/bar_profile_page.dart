@@ -503,7 +503,7 @@ class _BarProfilePageState extends State<BarProfilePage> {
 
   Future<void> _pickImageFromCamera(BarProfileViewModel viewModel) async {
      try {
-       final imageFile = await ImagePickerService.pickImageFromCamera();
+       final imageFile = await ImagePickerService.pickImageFromCamera(context);
        if (imageFile != null) {
          await viewModel.uploadProfilePhoto(imageFile);
          _showUploadResult(viewModel);

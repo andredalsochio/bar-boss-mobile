@@ -78,4 +78,42 @@ class NormalizationHelpers {
   static String normalizePhone(String phone) {
     return phone.replaceAll(RegExp(r'[^0-9]'), '');
   }
+
+  /// Normaliza nomes convertendo para caixa alta e removendo acentos
+  /// 
+  /// Exemplo:
+  /// ```dart
+  /// normalizeName('João da Silva') // retorna 'JOAO DA SILVA'
+  /// normalizeName('Café & Cia') // retorna 'CAFE & CIA'
+  /// ```
+  static String normalizeName(String name) {
+    // Remove espaços extras no início e fim
+    String normalized = name.trim();
+    
+    // Converte para caixa alta
+    normalized = normalized.toUpperCase();
+    
+    // Remove acentos e caracteres especiais
+    const Map<String, String> accentMap = {
+      'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A', 'Å': 'A',
+      'È': 'E', 'É': 'E', 'Ê': 'E', 'Ë': 'E',
+      'Ì': 'I', 'Í': 'I', 'Î': 'I', 'Ï': 'I',
+      'Ò': 'O', 'Ó': 'O', 'Ô': 'O', 'Õ': 'O', 'Ö': 'O',
+      'Ù': 'U', 'Ú': 'U', 'Û': 'U', 'Ü': 'U',
+      'Ç': 'C', 'Ñ': 'N',
+      'à': 'A', 'á': 'A', 'â': 'A', 'ã': 'A', 'ä': 'A', 'å': 'A',
+      'è': 'E', 'é': 'E', 'ê': 'E', 'ë': 'E',
+      'ì': 'I', 'í': 'I', 'î': 'I', 'ï': 'I',
+      'ò': 'O', 'ó': 'O', 'ô': 'O', 'õ': 'O', 'ö': 'O',
+      'ù': 'U', 'ú': 'U', 'û': 'U', 'ü': 'U',
+      'ç': 'C', 'ñ': 'N'
+    };
+    
+    // Substitui cada caractere acentuado
+    accentMap.forEach((accented, unaccented) {
+      normalized = normalized.replaceAll(accented, unaccented);
+    });
+    
+    return normalized;
+  }
 }

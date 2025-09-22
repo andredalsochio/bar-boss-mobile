@@ -192,14 +192,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
   }
 
   void setName(String value) {
-    _name = value;
+    _name = NormalizationHelpers.normalizeName(value);
     _validateName();
     _updateStep1ButtonState();
     notifyListeners();
   }
 
   void setResponsibleName(String value) {
-    _responsibleName = value;
+    _responsibleName = NormalizationHelpers.normalizeName(value);
     _validateResponsibleName();
     _updateStep1ButtonState();
     notifyListeners();

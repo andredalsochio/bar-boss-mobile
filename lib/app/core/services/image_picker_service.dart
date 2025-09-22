@@ -22,9 +22,8 @@ class ImagePickerService {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop();
-                final file = await pickImageFromCamera();
-                if (context.mounted && file != null) {
+                final file = await pickImageFromCamera(context);
+                if (context.mounted) {
                   Navigator.of(context).pop(file);
                 }
               },
@@ -39,9 +38,8 @@ class ImagePickerService {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop();
                 final file = await pickImageFromGallery();
-                if (context.mounted && file != null) {
+                if (context.mounted) {
                   Navigator.of(context).pop(file);
                 }
               },
@@ -61,14 +59,30 @@ class ImagePickerService {
   }
 
   /// Seleciona imagem da câmera
-  static Future<File?> pickImageFromCamera() async {
+  static Future<File?> pickImageFromCamera(BuildContext context) async {
     try {
-      // Verifica permissão da câmera
+      // No iOS, deixamos o image_picker gerenciar as permissões da câmera
+      // Só mostramos dialog de configurações se for permanentemente negado
+      if (Platform.isIOS) {
+        final XFile? image = await _picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 80,
+          maxWidth: 1024,
+          maxHeight: 1024,
+        );
+
+        if (image != null) {
+          return File(image.path);
+        }
+        return null;
+      }
+
+      // Para Android, mantemos a verificação de permissão
       final cameraPermission = await Permission.camera.request();
       if (!cameraPermission.isGranted) {
         debugPrint('Permissão da câmera negada: ${cameraPermission.toString()}');
-        if (cameraPermission.isPermanentlyDenied) {
-          debugPrint('Permissão da câmera permanentemente negada - usuário deve ir às configurações');
+        if (cameraPermission.isPermanentlyDenied && context.mounted) {
+          await _showPermissionDialog(context, 'câmera');
         }
         return null;
       }
@@ -93,22 +107,28 @@ class ImagePickerService {
   /// Seleciona imagem da galeria
   static Future<File?> pickImageFromGallery() async {
     try {
-      // Verifica permissão da galeria (iOS 14+ usa photosAddOnly para seleção)
-      Permission galleryPermission;
+      // No iOS 14+, o PHPicker não requer permissão prévia
+      // Deixamos o image_picker gerenciar tudo
       if (Platform.isIOS) {
-        galleryPermission = Permission.photos;
-      } else {
-        galleryPermission = Permission.storage;
+        final XFile? image = await _picker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 80,
+          maxWidth: 1024,
+          maxHeight: 1024,
+        );
+
+        if (image != null) {
+          return File(image.path);
+        }
+        return null;
       }
-      
-      final permissionStatus = await galleryPermission.request();
-       if (!permissionStatus.isGranted) {
-         debugPrint('Permissão da galeria negada: ${permissionStatus.toString()}');
-         if (permissionStatus.isPermanentlyDenied) {
-           debugPrint('Permissão da galeria permanentemente negada - usuário deve ir às configurações');
-         }
-         return null;
-       }
+
+      // Para Android, verificamos permissão de storage
+      final storagePermission = await Permission.storage.request();
+      if (!storagePermission.isGranted && !storagePermission.isLimited) {
+        debugPrint('Permissão da galeria negada: ${storagePermission.toString()}');
+        return null;
+      }
 
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -128,38 +148,72 @@ class ImagePickerService {
   }
 
   /// Verifica se as permissões necessárias estão concedidas
+  /// No iOS, sempre retorna true pois o PHPicker não requer permissão prévia
   static Future<bool> checkPermissions() async {
-    final cameraStatus = await Permission.camera.status;
-    
-    Permission galleryPermission;
     if (Platform.isIOS) {
-      galleryPermission = Permission.photos;
-    } else {
-      galleryPermission = Permission.storage;
+      // No iOS 14+, o PHPicker não requer permissão prévia para galeria
+      // e a câmera é gerenciada pelo próprio image_picker
+      return true;
     }
+
+    final cameraStatus = await Permission.camera.status;
+    final storageStatus = await Permission.storage.status;
     
-    final photosStatus = await galleryPermission.status;
-    
-    return cameraStatus.isGranted && photosStatus.isGranted;
+    return cameraStatus.isGranted && 
+           (storageStatus.isGranted || storageStatus.isLimited);
   }
 
   /// Solicita todas as permissões necessárias
+  /// No iOS, sempre retorna true pois o PHPicker gerencia as permissões
   static Future<bool> requestPermissions() async {
-    List<Permission> permissionsToRequest = [Permission.camera];
-    
     if (Platform.isIOS) {
-      permissionsToRequest.add(Permission.photos);
-    } else {
-      permissionsToRequest.add(Permission.storage);
+      // No iOS, deixamos o image_picker gerenciar as permissões
+      return true;
     }
-    
-    final Map<Permission, PermissionStatus> permissions = await permissionsToRequest.request();
 
-    return permissions.values.every((status) => status.isGranted);
+    final Map<Permission, PermissionStatus> permissions = 
+        await [Permission.camera, Permission.storage].request();
+
+    return permissions.values.every((status) => 
+        status.isGranted || status.isLimited);
+  }
+
+  /// Mostra dialog específico para permissão permanentemente negada
+  static Future<void> _showPermissionDialog(BuildContext context, String permissionType) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Permissão necessária'),
+          content: Text(
+            'Para usar a $permissionType, você precisa permitir o acesso nas configurações do dispositivo.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                openAppSettings();
+              },
+              child: const Text('Abrir configurações'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Mostra dialog explicando por que as permissões são necessárias
+  /// Mantido para compatibilidade, mas no iOS não é mais necessário
   static Future<void> showPermissionDialog(BuildContext context) async {
+    if (Platform.isIOS) {
+      // No iOS, não precisamos mais deste dialog pois o PHPicker gerencia tudo
+      return;
+    }
+
     return showDialog(
       context: context,
       builder: (BuildContext context) {

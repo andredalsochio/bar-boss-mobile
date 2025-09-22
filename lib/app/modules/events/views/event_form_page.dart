@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/button_widget.dart';
 import '../../../core/widgets/form_input_field_widget.dart';
 import '../models/event_model.dart';
@@ -202,7 +203,7 @@ class _EventFormPageState extends State<EventFormPage> {
                     const SizedBox(width: AppSizes.spacing8),
                     Text(
                       viewModel.eventDate != null
-                          ? '${viewModel.eventDate!.day.toString().padLeft(2, '0')}/${viewModel.eventDate!.month.toString().padLeft(2, '0')}/${viewModel.eventDate!.year}'
+                          ? Formatters.formatDate(viewModel.eventDate!)
                           : 'Selecionar data',
                       style: TextStyle(
                         fontSize: AppSizes.fontSize16,

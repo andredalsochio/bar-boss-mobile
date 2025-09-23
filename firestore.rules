@@ -45,13 +45,15 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      // EVENTS (básico p/ não travar)
+      // EVENTS (subcoleção de bars)
       match /events/{eventId} {
         allow read: if isAuthed();
         allow create: if isAuthed() &&
           request.resource.data.createdByUid == request.auth.uid;
-        allow update, delete: if isAuthed() &&
-          resource.data.createdByUid == request.auth.uid;
+        allow update, delete: if isAuthed() && (
+          resource.data.createdByUid == request.auth.uid ||
+          get(/databases/(default)/documents/bars/$(barId)).data.primaryOwnerUid == request.auth.uid
+        );
       }
     }
 

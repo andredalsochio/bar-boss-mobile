@@ -120,6 +120,11 @@ class _EventsListPageState extends State<EventsListPage> {
         showBackButton: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadEvents,
+            tooltip: 'Atualizar eventos',
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: _goToNewEvent,
             tooltip: AppStrings.newEventTooltip,

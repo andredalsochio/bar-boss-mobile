@@ -111,29 +111,33 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Carrega todos os eventos do bar
   Future<void> loadEvents() async {
+    debugPrint('🔄 [EventsViewModel] loadEvents iniciado');
     _setLoading(true);
     _clearError();
 
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) {
+        debugPrint('❌ [EventsViewModel] Usuário não autenticado');
         _setError(AppStrings.userNotLoggedInErrorMessage);
         return;
       }
+      debugPrint('👤 [EventsViewModel] Usuário autenticado: ${currentUser.uid}');
 
       // Configura stream de bares do usuário
       _barsStream = _barRepository.listMyBars(currentUser.uid);
       
       // Escuta o primeiro bar disponível para configurar stream de eventos
+      debugPrint('🏪 [EventsViewModel] Buscando bares do usuário...');
       final barsSnapshot = await _barsStream!.first;
       
-      debugPrint('🔍 DEBUG: Usuário ${currentUser.uid} tem ${barsSnapshot.length} bares');
+      debugPrint('🔍 [EventsViewModel] Usuário ${currentUser.uid} tem ${barsSnapshot.length} bares');
       for (int i = 0; i < barsSnapshot.length; i++) {
         debugPrint('  Bar $i: ${barsSnapshot[i].id} - ${barsSnapshot[i].name}');
       }
       
       if (barsSnapshot.isEmpty) {
-        debugPrint('❌ DEBUG: Nenhum bar encontrado para o usuário ${currentUser.uid}');
+        debugPrint('❌ [EventsViewModel] Nenhum bar encontrado para o usuário ${currentUser.uid}');
         _events = [];
         _upcomingEvents = [];
         _setState(EventsState.success);
@@ -141,24 +145,34 @@ class EventsViewModel extends ChangeNotifier {
       }
       
       final bar = barsSnapshot.first; // Assume que o usuário tem apenas um bar
-      debugPrint('✅ DEBUG: Usando bar ${bar.id} - ${bar.name}');
+      debugPrint('✅ [EventsViewModel] Usando bar ${bar.id} - ${bar.name}');
 
       // Configura stream de eventos do bar
+      debugPrint('📡 [EventsViewModel] Configurando stream de eventos para bar ${bar.id}');
       _eventsStream = _eventRepository.upcomingByBar(bar.id);
       
       // Carrega eventos iniciais
+      debugPrint('📅 [EventsViewModel] Carregando snapshot inicial de eventos...');
       final eventsSnapshot = await _eventsStream!.first;
+      debugPrint('📅 [EventsViewModel] Snapshot inicial recebido com ${eventsSnapshot.length} eventos');
+      
       _events = eventsSnapshot;
-      _upcomingEvents = eventsSnapshot.where((event) => 
-        event.startAt.isAfter(DateTime.now())
-      ).toList();
+      // Usa o getter isFuture corrigido que considera eventos de hoje como futuros
+      _upcomingEvents = eventsSnapshot.where((event) {
+        final isFuture = event.isFuture;
+        debugPrint('📅 [EventsViewModel] Evento ${event.id}: ${event.title} em ${event.startAt} - futuro: $isFuture');
+        return isFuture;
+      }).toList();
+      
+      debugPrint('✅ [EventsViewModel] Total de eventos: ${_events.length}, Futuros: ${_upcomingEvents.length}');
       
       _setState(EventsState.success);
     } catch (e) {
+      debugPrint('❌ [EventsViewModel] Erro ao carregar eventos: $e');
       _setError(AppStrings.loadEventsErrorMessage);
-      debugPrint('Erro ao carregar eventos: $e');
     } finally {
       _setLoading(false);
+      debugPrint('🏁 [EventsViewModel] loadEvents finalizado');
     }
   }
 
@@ -657,11 +671,17 @@ class EventsViewModel extends ChangeNotifier {
       // Carrega eventos futuros usando stream
       debugPrint('📅 [EventsViewModel] Buscando próximos eventos do bar...');
       final eventsSnapshot = await _eventRepository.upcomingByBar(bar.id).first;
-      debugPrint('📅 [EventsViewModel] Encontrados ${eventsSnapshot.length} próximos eventos');
+      debugPrint('📅 [EventsViewModel] Encontrados ${eventsSnapshot.length} eventos do repositório');
+      
       _events = eventsSnapshot;
-      _upcomingEvents = eventsSnapshot
+      // Aplica filtro usando o getter isFuture corrigido que considera eventos de hoje como futuros
+      _upcomingEvents = eventsSnapshot.where((event) {
+        final isFuture = event.isFuture;
+        debugPrint('📅 [EventsViewModel] Evento ${event.id}: ${event.title} em ${event.startAt} - futuro: $isFuture');
+        return isFuture;
+      }).toList()
             ..sort((a, b) => a.startAt.compareTo(b.startAt));
-      debugPrint('📅 [EventsViewModel] Eventos ordenados por data');
+      debugPrint('📅 [EventsViewModel] ${_upcomingEvents.length} eventos futuros filtrados e ordenados por data');
 
       _setState(EventsState.success);
       debugPrint('✅ [EventsViewModel] Próximos eventos carregados com sucesso!');

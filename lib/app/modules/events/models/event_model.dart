@@ -173,8 +173,13 @@ class EventModel {
     return startAt.isBefore(now) && startAt.add(Duration(hours: 6)).isAfter(now);
   }
 
-  /// Verifica se o evento é futuro
-  bool get isFuture => startAt.isAfter(DateTime.now());
+  /// Verifica se o evento é futuro (inclui eventos de hoje)
+  bool get isFuture {
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    return startAt.isAfter(startOfToday) || startAt.isAtSameMomentAs(startOfToday) || 
+           (startAt.year == now.year && startAt.month == now.month && startAt.day == now.day);
+  }
 
   /// Retorna a duração do evento em horas
   int get durationInHours {

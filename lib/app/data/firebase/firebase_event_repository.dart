@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/event_repository_domain.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/core/schema/firestore_keys.dart';
@@ -22,16 +23,40 @@ class FirebaseEventRepository implements EventRepositoryDomain {
 
   @override
   Stream<List<EventModel>> upcomingByBar(String barId) {
+    // Usar início do dia atual para incluir todos os eventos de hoje
     final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    debugPrint('🔍 [FirebaseEventRepository] upcomingByBar iniciado para barId: $barId');
+    debugPrint('🔍 [FirebaseEventRepository] Filtro de data: >= ${startOfToday.toIso8601String()} (início do dia atual)');
+    
     return _eventsCollection(barId)
         .where(FirestoreKeys.eventStartAt,
-            isGreaterThanOrEqualTo: Timestamp.fromDate(now))
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfToday))
         .orderBy(FirestoreKeys.eventStartAt, descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => _fromFirestore(doc))
-            .where((event) => _validateEventDates(event)) // valida endAt >= startAt
-            .toList());
+        .map((snapshot) {
+          debugPrint('🔍 [FirebaseEventRepository] Snapshot recebido com ${snapshot.docs.length} documentos');
+          
+          final events = snapshot.docs
+              .map((doc) {
+                debugPrint('🔍 [FirebaseEventRepository] Processando doc: ${doc.id}');
+                debugPrint('🔍 [FirebaseEventRepository] Dados do doc: ${doc.data()}');
+                return _fromFirestore(doc);
+              })
+              .where((event) {
+                final isValid = _validateEventDates(event);
+                debugPrint('🔍 [FirebaseEventRepository] Evento ${event.id}: title=${event.title}, startAt=${event.startAt}, valid=$isValid');
+                return isValid;
+              })
+              .toList();
+              
+          debugPrint('🔍 [FirebaseEventRepository] Total de eventos válidos: ${events.length}');
+          for (final event in events) {
+            debugPrint('🔍 [FirebaseEventRepository] - ${event.id}: ${event.title} em ${event.startAt}');
+          }
+          
+          return events;
+        });
   }
 
   /// Stream de eventos publicados futuros de um bar (para exibição pública)
@@ -52,27 +77,51 @@ class FirebaseEventRepository implements EventRepositoryDomain {
   @override
   Future<String> create(String barId, EventModel event) async {
     try {
+      debugPrint('🔥 [FirebaseEventRepository] Iniciando criação de evento para barId: $barId');
+      debugPrint('🔥 [FirebaseEventRepository] Dados do evento: title=${event.title}, startAt=${event.startAt}, attractions=${event.attractions}');
+      
       // Valida as datas do evento
       if (!_validateEventDates(event)) {
+        debugPrint('❌ [FirebaseEventRepository] Validação de datas falhou');
         throw Exception('Data de fim deve ser maior ou igual à data de início');
       }
 
       final eventId = _eventsCollection(barId).doc().id;
+      debugPrint('🔥 [FirebaseEventRepository] ID gerado para o evento: $eventId');
+      
       final eventWithIds = event.copyWith(
         id: eventId,
         barId: barId,
         createdAt: DateTime.now(), // será sobrescrito pelo _now
         updatedAt: DateTime.now(), // será sobrescrito pelo _now
       );
+      
       final eventData = _toFirestore(eventWithIds)
         ..addAll({
           'createdAt': _now,
           'updatedAt': _now,
         });
 
+      debugPrint('🔥 [FirebaseEventRepository] Dados para Firestore: $eventData');
+      debugPrint('🔥 [FirebaseEventRepository] Caminho da coleção: /bars/$barId/events/$eventId');
+
       await _eventsCollection(barId).doc(eventId).set(eventData);
+      
+      debugPrint('✅ [FirebaseEventRepository] Evento criado com sucesso no Firestore!');
+      debugPrint('✅ [FirebaseEventRepository] Verificando se o evento foi salvo...');
+      
+      // Verificação adicional: tenta ler o evento recém-criado
+      final savedDoc = await _eventsCollection(barId).doc(eventId).get();
+      if (savedDoc.exists) {
+        debugPrint('✅ [FirebaseEventRepository] Confirmado: evento existe no Firestore');
+        debugPrint('✅ [FirebaseEventRepository] Dados salvos: ${savedDoc.data()}');
+      } else {
+        debugPrint('❌ [FirebaseEventRepository] ERRO: evento não foi encontrado após criação!');
+      }
+      
       return eventId;
     } catch (e) {
+      debugPrint('❌ [FirebaseEventRepository] Erro ao criar evento: $e');
       throw Exception('Erro ao criar evento. Tente novamente.');
     }
   }

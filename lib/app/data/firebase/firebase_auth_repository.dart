@@ -200,9 +200,19 @@ class FirebaseAuthRepository implements AuthRepository {
         // Configurar idioma para português
         await _auth.setLanguageCode('pt');
         
-        // Enviar e-mail de verificação sem ActionCodeSettings complexos
-        await user.sendEmailVerification();
-        debugPrint('✅ [FirebaseAuthRepository] E-mail de verificação enviado com sucesso!');
+        // Configurar ActionCodeSettings para deep links com Firebase Hosting
+        final actionCodeSettings = ActionCodeSettings(
+          url: 'https://bar-boss-mobile.web.app/email-verification.html',
+          handleCodeInApp: true,
+          iOSBundleId: 'com.barboss.mobile',
+          androidPackageName: 'com.barboss.mobile',
+          androidInstallApp: true,
+          androidMinimumVersion: '21',
+        );
+        
+        // Enviar e-mail de verificação com ActionCodeSettings para deep linking
+        await user.sendEmailVerification(actionCodeSettings);
+        debugPrint('✅ [FirebaseAuthRepository] E-mail de verificação enviado com sucesso com deep linking!');
         return true;
       }
       debugPrint('⚠️ [FirebaseAuthRepository] Usuário não encontrado ou e-mail já verificado');

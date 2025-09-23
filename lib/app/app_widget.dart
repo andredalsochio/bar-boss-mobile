@@ -6,6 +6,7 @@ import 'package:toastification/toastification.dart';
 
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/providers/theme_provider.dart';
+import 'package:bar_boss_mobile/app/core/services/app_links_service.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/navigation/app_router.dart';
 
@@ -26,6 +27,11 @@ class _AppWidgetState extends State<AppWidget> {
     super.initState();
     _authViewModel = context.read<AuthViewModel>();
     _router = AppRouter.createRouter(_authViewModel);
+    
+    // Inicializar App Links Service após o primeiro frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppLinksService().initialize(context);
+    });
   }
 
   @override

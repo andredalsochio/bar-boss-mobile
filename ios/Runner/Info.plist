@@ -58,6 +58,29 @@
 				<string>com.googleusercontent.apps.779191401505-nvntfl7i61ku97c38vr5aiv82j3tf828</string>
 			</array>
 		</dict>
+		<!-- URL Scheme para App Links -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.barboss.mobile</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.barboss.mobile</string>
+				<string>https</string>
+			</array>
+		</dict>
+		<!-- URL Scheme para barboss -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>barboss</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>barboss</string>
+			</array>
+		</dict>
 
 	</array>
 
@@ -74,5 +97,10 @@
 	<string>Este app precisa acessar a galeria de fotos para selecionar imagens do perfil do bar e promoções dos eventos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Este app pode salvar fotos na galeria após edição.</string>
+	<!-- Associated Domains para Universal Links -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:bar-boss-mobile.web.app</string>
+	</array>
 </dict>
 </plist>

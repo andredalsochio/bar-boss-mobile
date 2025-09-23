@@ -63,7 +63,7 @@ class AuthService {
       if (user != null && !user.emailVerified) {
         // Configurar ActionCodeSettings para deep links
         final actionCodeSettings = ActionCodeSettings(
-          url: 'https://barboss.page.link/emailVerification',
+          url: 'https://bar-boss-mobile.web.app/email-verification.html',
           handleCodeInApp: true,
           iOSBundleId: 'com.barboss.mobile',
           androidPackageName: 'com.barboss.mobile',

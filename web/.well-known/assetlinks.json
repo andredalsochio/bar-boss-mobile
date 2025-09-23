@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.bar_boss_mobile",
+      "sha256_cert_fingerprints": [
+        "51:C7:F4:9A:20:1D:36:6A:8A:E3:ED:ED:35:6B:6B:C8:EB:4B:A3:97:24:CE:9E:9F:F8:EF:EF:CF:05:7D:46:D7"
+      ]
+    }
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["4FN5WF278D.com.barboss.mobile"],
+        "components": [
+          {
+            "/": "/auth/*",
+            "comment": "Matches any URL with path that starts with /auth/"
+          },
+          {
+            "/": "/bar/*",
+            "comment": "Matches any URL with path that starts with /bar/"
+          },
+          {
+            "/": "/event/*",
+            "comment": "Matches any URL with path that starts with /event/"
+          }
+        ]
+      }
+    ]
+  }
+}

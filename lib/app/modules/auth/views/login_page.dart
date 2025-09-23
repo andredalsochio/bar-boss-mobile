@@ -28,10 +28,38 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Verificar parâmetros da URL para verificação de email
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkEmailVerificationFromDeepLink();
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Verifica parâmetros da URL para exibir feedback de verificação de email
+  /// Os parâmetros são definidos pelo AppLinksService quando processa deep links
+  void _checkEmailVerificationFromDeepLink() {
+    final uri = GoRouterState.of(context).uri;
+    final emailVerified = uri.queryParameters['emailVerified'];
+    final fromDeepLink = uri.queryParameters['fromDeepLink'];
+
+    if (emailVerified == 'true' && fromDeepLink == 'true') {
+      // Exibir mensagem de sucesso (AppLinksService já mostrou uma, mas reforçamos aqui)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ E-mail verificado com sucesso! Agora você pode fazer login.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   Future<void> _login() async {

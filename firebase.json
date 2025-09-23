@@ -20,6 +20,56 @@
   "functions": {
     "source": "functions"
   },
+  "hosting": {
+    "public": "web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/__/auth/**",
+        "destination": "/email-verification.html"
+      },
+      {
+        "source": "/__/firebase/auth/**",
+        "destination": "/email-verification.html"
+      },
+      {
+        "source": "/auth/**",
+        "destination": "/email-verification.html"
+      },
+      {
+        "source": "/firebase/auth/**",
+        "destination": "/email-verification.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      {
+        "source": "/.well-known/apple-app-site-association",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      }
+    ]
+  },
   "emulators": {
     "firestore": {
       "port": 8080

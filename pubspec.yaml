@@ -16,13 +16,13 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.4+4
+version: 1.0.5+5
 
 # Para reinstalar dependências iOS:
 # cd ios && pod install
 
 environment:
-  sdk: ^3.7.2
+  sdk: ^3.7.0
   flutter: ">=3.16.0"
 
 # Dependencies specify other packages that your package needs in order to work.
@@ -91,7 +91,7 @@ dependencies:
   toastification: ^2.3.0
   stack_trace: ^1.11.1
   font_awesome_flutter: ^10.7.0
-  intl: ^0.20.2
+  intl: ^0.19.0
   step_progress_indicator: ^1.0.2
   
   # Upload de imagens
@@ -111,7 +111,7 @@ dev_dependencies:
     sdk: flutter
 
   # Lints
-  flutter_lints: ^6.0.0
+  flutter_lints: ^5.0.0
   
   # Gerador de código para Drift
   drift_dev: ^2.15.0

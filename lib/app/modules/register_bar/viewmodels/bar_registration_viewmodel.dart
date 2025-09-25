@@ -1176,6 +1176,16 @@ class BarRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Limpa apenas os campos de senha (Step 3)
+  void clearPasswordFields() {
+    _password = '';
+    _confirmPassword = '';
+    _isPasswordValid = false;
+    _isConfirmPasswordValid = false;
+    _updateStep3ButtonState();
+    notifyListeners();
+  }
+
   /// Verifica se o usuário já tem provedor de senha configurado
   Future<bool> hasPasswordProvider() async {
     final firebaseUser = FirebaseAuth.instance.currentUser;

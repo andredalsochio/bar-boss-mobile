@@ -1,28 +1,13 @@
 {
-  // Caminho personalizado para o SDK do Flutter
-  "dart.flutterSdkPath": "/Users/andredalsochio/development/flutter_versions/flutter_3.32.0",
-
-  // Formatação automática ao salvar
+  "dart.flutterSdkPath": ".fvm/versions/3.32.0",
   "editor.formatOnSave": true,
-
-  // Mostrar a visualização dos widgets no editor
   "dart.previewFlutterUiGuides": true,
-
-  // Mostrar nomes de parâmetros nas chamadas de função
   "dart.previewFlutterUiGuidesCustomTracking": true,
-
-  // Suprimir avisos do pubspec.yaml
   "yaml.validate": true,
-
-  // Habilita linting com base no flutter_lints
   "dart.analysisExcludedFolders": [
     "build"
   ],
-
-  // Preferências visuais (opcional)
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
-
-  // Flutter: mostrar estruturas de widget (barras verticais no editor)
   "dart.flutterUiGuides": true
 }

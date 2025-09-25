@@ -106,3 +106,6 @@ coverage/
 
 # Trae AI
 .trae/
+
+# FVM Version Cache
+.fvm/

@@ -40,13 +40,18 @@ class _Step3PageState extends State<Step3Page> {
     _viewModel = context.read<BarRegistrationViewModel>();
     _authViewModel = context.read<AuthViewModel>();
 
-    // Inicializa os controladores com os valores do ViewModel
-    _passwordController.text = _viewModel.password;
-    _confirmPasswordController.text = _viewModel.confirmPassword;
+    // Inicializa os controladores vazios
+    _passwordController.text = '';
+    _confirmPasswordController.text = '';
 
     // Adiciona listeners para atualizar o ViewModel quando os valores mudarem
     _passwordController.addListener(_updatePassword);
     _confirmPasswordController.addListener(_updateConfirmPassword);
+
+    // Limpa os campos de senha no ViewModel após a construção do widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _viewModel.clearPasswordFields();
+    });
   }
 
   @override
@@ -143,6 +148,9 @@ class _Step3PageState extends State<Step3Page> {
   }
 
   Future<void> _submitRegistration() async {
+    // Fecha o teclado antes de iniciar o processo de cadastro
+    FocusScope.of(context).unfocus();
+    
     if (!_viewModel.isStep3Valid) {
       _validateAndShowErrors();
       return;

@@ -42,9 +42,9 @@ class AuthViewModel extends ChangeNotifier {
   
   // ← NOVO: Variáveis para exponential backoff
   int _emailVerificationAttempts = 0;
-  static const int _maxEmailVerificationAttempts = 10;
-  static const Duration _basePollingInterval = Duration(seconds: 2);
-  static const Duration _maxPollingInterval = Duration(seconds: 30);
+  static const int _maxEmailVerificationAttempts = 15;
+  static const Duration _basePollingInterval = Duration(seconds: 1);
+  static const Duration _maxPollingInterval = Duration(seconds: 15);
   DateTime? _lastEmailVerificationCheck;
   
   // ← NOVO: Variáveis para rastrear mudanças de estado

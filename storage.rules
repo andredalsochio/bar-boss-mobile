@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Firebase Storage Security Rules for Bar Boss Mobile
+// Firebase Storage Security Rules for Agenda de Boteco
 service firebase.storage {
   match /b/{bucket}/o {
     // Allow authenticated users to read and write their own event images

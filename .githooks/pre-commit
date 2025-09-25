@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Hook de pré-commit para Bar Boss
+# Hook de pré-commit para Agenda de Boteco
 # Executa verificações de qualidade antes de permitir o commit
 
 set -e

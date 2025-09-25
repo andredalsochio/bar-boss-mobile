@@ -37,7 +37,7 @@ export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
 
 ### 2. Schema
 
-O arquivo `schema.json` já está configurado com a estrutura do Bar Boss. Você pode modificá-lo conforme necessário.
+O arquivo `schema.json` já está configurado com a estrutura do Agenda de Boteco. Você pode modificá-lo conforme necessário.
 
 ## Uso
 
@@ -111,7 +111,7 @@ O auditor gera relatórios detalhados em JSON contendo:
   "timestamp": "2025-01-15T10:30:00.000Z",
   "schema": {
     "version": "1.0.1",
-    "title": "Bar Boss Firestore Schema"
+    "title": "Agenda de Boteco Firestore Schema"
   },
   "statistics": {
     "totalDocuments": 150,

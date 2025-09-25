@@ -15,13 +15,13 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: Center(
-            child: Text('Bar Boss Mobile'),
+            child: Text('Agenda de Boteco'),
           ),
         ),
       ),
     );
 
     // Verify that the text is displayed
-    expect(find.text('Bar Boss Mobile'), findsOneWidget);
+    expect(find.text('Agenda de Boteco'), findsOneWidget);
   });
 }

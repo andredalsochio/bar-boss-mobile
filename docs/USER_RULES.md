@@ -1,4 +1,4 @@
-# 👤 USER_RULES.md - Bar Boss Mobile
+# 👤 USER_RULES.md - Agenda de Boteco
 
 **Versão:** 3.1  
 **Última Atualização:** 17 de Setembro de 2025  

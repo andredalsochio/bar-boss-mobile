@@ -8,7 +8,7 @@
 
 ## 📋 1. VISÃO GERAL
 
-Este documento descreve o fluxo completo de autenticação e cadastro implementado no Bar Boss Mobile, baseado nas regras de segurança do Firestore atualmente em produção. O sistema suporta dois fluxos principais: **Cadastro Clássico** (email/senha) e **Login Social** (Google, Apple, Facebook).
+Este documento descreve o fluxo completo de autenticação e cadastro implementado no Agenda de Boteco, baseado nas regras de segurança do Firestore atualmente em produção. O sistema suporta dois fluxos principais: **Cadastro Clássico** (email/senha) e **Login Social** (Google, Apple, Facebook).
 
 ### Princípios de Segurança Aplicados
 - **Autenticação obrigatória**: Todas as operações exigem usuário autenticado

@@ -1,4 +1,4 @@
-# 📋 PROJECT_RULES.md - Bar Boss Mobile
+# 📋 PROJECT_RULES.md - Agenda de Boteco
 
 **Versão:** 3.1  
 **Última Atualização:** 17 de Setembro de 2025  
@@ -11,7 +11,7 @@
 ## 🎯 1. Visão Geral
 
 ### Resumo do Projeto
-O **Bar Boss Mobile** é um aplicativo Flutter para gestão de bares e eventos, permitindo que proprietários de estabelecimentos:
+O **Agenda de Boteco** é um aplicativo Flutter para gestão de bares e eventos, permitindo que proprietários de estabelecimentos:
 - Cadastrem seus bares com informações completas
 - Criem e gerenciem eventos/shows
 - Controlem promoções e atrações

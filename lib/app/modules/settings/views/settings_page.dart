@@ -237,7 +237,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void _showAboutDialog(BuildContext context) {
     showAboutDialog(
       context: context,
-      applicationName: 'Bar Boss',
+      applicationName: 'Agenda de Boteco',
       applicationVersion: '1.0.1',
       applicationIcon: const Icon(
         Icons.local_bar,

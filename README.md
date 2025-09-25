@@ -1,4 +1,4 @@
-# 🍺 Bar Boss Mobile
+# 🍺 Agenda de Boteco
 
 **Aplicativo mobile para gestão de eventos em bares e casas noturnas**
 

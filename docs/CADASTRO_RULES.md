@@ -2,7 +2,7 @@
 
 **Versão:** 2.1  
 **Data:** 17 de Setembro de 2025  
-**Objetivo:** Especificação definitiva dos fluxos de cadastro do Bar Boss Mobile
+**Objetivo:** Especificação definitiva dos fluxos de cadastro do Agenda de Boteco
 
 > **📋 NOTA:** Para implementação técnica das regras de segurança, consulte [FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md).
 

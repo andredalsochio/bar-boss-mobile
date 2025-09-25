@@ -2,7 +2,7 @@
 
 **Versão:** 2.1  
 **Última Atualização:** 17 de Setembro de 2025  
-**Objetivo:** Definição da estratégia de armazenamento e cache para o Bar Boss Mobile
+**Objetivo:** Definição da estratégia de armazenamento e cache para o Agenda de Boteco
 
 > **📋 NOTA:** Para regras de segurança e permissões, consulte [FIRESTORE_AUTH_FLOW.md](./FIRESTORE_AUTH_FLOW.md).
 
@@ -10,7 +10,7 @@
 
 ## 📋 1. Visão Geral
 
-Este documento define a arquitetura de armazenamento do Bar Boss Mobile, incluindo Firebase Storage, cache local com Drift, e estratégias de upload/download de imagens.
+Este documento define a arquitetura de armazenamento do Agenda de Boteco, incluindo Firebase Storage, cache local com Drift, e estratégias de upload/download de imagens.
 
 ### Componentes Principais
 - **Firebase Storage:** Armazenamento de imagens na nuvem

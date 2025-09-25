@@ -29,24 +29,30 @@ class AuthViewModel extends ChangeNotifier {
   String? _errorMessage;
   bool _isLoading = false;
   AuthUser? _currentUser;
-  
+
   // Estados específicos dos fluxos
   AuthFlowType? _currentFlowType;
-  EmailVerificationState _emailVerificationState = EmailVerificationState.notRequired;
+  EmailVerificationState _emailVerificationState =
+      EmailVerificationState.notRequired;
   bool _hasCompletedFullRegistration = false;
-  
+
   // Controle de verificação de email
   Timer? _emailVerificationTimer;
   bool _isCheckingEmailVerification = false;
-  Timer? _notificationDebounceTimer; // ← NOVO: Timer para debounce de notificações
-  
-  // ← NOVO: Variáveis para exponential backoff
+  Timer?
+  _notificationDebounceTimer; // ← NOVO: Timer para debounce de notificações
+
+  // ← NOVO: Variáveis para verificação de email otimizada
   int _emailVerificationAttempts = 0;
-  static const int _maxEmailVerificationAttempts = 15;
-  static const Duration _basePollingInterval = Duration(seconds: 1);
-  static const Duration _maxPollingInterval = Duration(seconds: 15);
+  static const int _maxEmailVerificationAttempts = 30;
+  static const Duration _initialDelayBeforePolling = Duration(
+    seconds: 5,
+  ); // Aguardar 5s antes de iniciar
+  static const Duration _pollingInterval = Duration(
+    seconds: 2,
+  ); // Verificar a cada 2s
   DateTime? _lastEmailVerificationCheck;
-  
+
   // ← NOVO: Variáveis para rastrear mudanças de estado
   bool? _previousEmailVerified;
   EmailVerificationState? _previousEmailVerificationState;
@@ -74,7 +80,7 @@ class AuthViewModel extends ChangeNotifier {
     // Inicializar estado anterior
     _previousEmailVerified = _currentUser?.emailVerified;
     _previousEmailVerificationState = _emailVerificationState;
-    
+
     _checkInitialAuthState();
     _subscribeToAuthChanges();
   }
@@ -85,7 +91,7 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   // === GETTERS PRINCIPAIS ===
-  
+
   /// Estado atual da autenticação
   AuthState get state => _state;
 
@@ -112,18 +118,18 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Verifica se o e-mail do usuário atual foi verificado
   bool get isCurrentUserEmailVerified => _currentUser?.emailVerified ?? false;
-  
+
   // === GETTERS ESPECÍFICOS DOS FLUXOS ===
-  
+
   /// Tipo de fluxo atual (email/senha ou social)
   AuthFlowType? get currentFlowType => _currentFlowType;
-  
+
   /// Estado da verificação de email
   EmailVerificationState get emailVerificationState => _emailVerificationState;
-  
+
   /// Indica se o usuário completou o cadastro completo
   bool get hasCompletedFullRegistration => _hasCompletedFullRegistration;
-  
+
   /// Indica se é um usuário de login social (baseado no tipo de fluxo)
   bool get isFromSocialFlow => _currentFlowType == AuthFlowType.social;
 
@@ -133,29 +139,29 @@ class AuthViewModel extends ChangeNotifier {
     if (_cachedHasBarRegistered == null || _lastBarCheckTime == null) {
       return null; // Não verificado ainda
     }
-    
+
     final now = DateTime.now();
     final isExpired = now.difference(_lastBarCheckTime!) > _barCacheExpiry;
-    
+
     if (isExpired) {
       // Cache expirado, invalidar
       _cachedHasBarRegistered = null;
       _lastBarCheckTime = null;
       return null;
     }
-    
+
     return _cachedHasBarRegistered;
   }
-  
+
   /// Indica se precisa verificar email (fluxo email/senha)
-  bool get needsEmailVerification => 
-      _currentFlowType == AuthFlowType.emailPassword && 
+  bool get needsEmailVerification =>
+      _currentFlowType == AuthFlowType.emailPassword &&
       _emailVerificationState == EmailVerificationState.pending;
-  
+
   /// Indica se pode acessar o app (regras de negócio)
   bool get canAccessApp {
     if (!isAuthenticated) return false;
-    
+
     switch (_currentFlowType) {
       case AuthFlowType.emailPassword:
         // Fluxo email/senha: precisa ter email verificado
@@ -167,11 +173,11 @@ class AuthViewModel extends ChangeNotifier {
         return false;
     }
   }
-  
+
   /// Indica se deve mostrar banner de completude (fluxo social)
-  bool get shouldShowCompletionBanner => 
+  bool get shouldShowCompletionBanner =>
       isFromSocialFlow && !_hasCompletedFullRegistration;
-  
+
   /// Indica se está verificando email automaticamente
   bool get isCheckingEmailVerification => _isCheckingEmailVerification;
 
@@ -198,20 +204,23 @@ class AuthViewModel extends ChangeNotifier {
   /// Determina o tipo de fluxo baseado nos provedores do usuário
   Future<void> _determineAuthFlowType() async {
     if (_currentUser == null) return;
-    
+
     final socialProviders = ['google.com', 'apple.com', 'facebook.com'];
-    final hasSocialProvider = _currentUser!.providerIds.any((provider) => 
-        socialProviders.contains(provider));
-    
+    final hasSocialProvider = _currentUser!.providerIds.any(
+      (provider) => socialProviders.contains(provider),
+    );
+
     if (hasSocialProvider) {
       _currentFlowType = AuthFlowType.social;
-      _emailVerificationState = EmailVerificationState.verified; // Social sempre verificado
+      _emailVerificationState =
+          EmailVerificationState.verified; // Social sempre verificado
       debugPrint('🔄 [AuthViewModel] Fluxo determinado: SOCIAL');
     } else {
       _currentFlowType = AuthFlowType.emailPassword;
-      _emailVerificationState = _currentUser!.emailVerified 
-          ? EmailVerificationState.verified 
-          : EmailVerificationState.pending;
+      _emailVerificationState =
+          _currentUser!.emailVerified
+              ? EmailVerificationState.verified
+              : EmailVerificationState.pending;
       debugPrint('🔄 [AuthViewModel] Fluxo determinado: EMAIL/SENHA');
     }
   }
@@ -220,10 +229,15 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> _checkRegistrationCompleteness() async {
     try {
       final userProfile = await _userRepository.getMe();
-      _hasCompletedFullRegistration = userProfile?.completedFullRegistration ?? false;
-      debugPrint('🔄 [AuthViewModel] Cadastro completo: $_hasCompletedFullRegistration');
+      _hasCompletedFullRegistration =
+          userProfile?.completedFullRegistration ?? false;
+      debugPrint(
+        '🔄 [AuthViewModel] Cadastro completo: $_hasCompletedFullRegistration',
+      );
     } catch (e) {
-      debugPrint('❌ [AuthViewModel] Erro ao verificar completude do cadastro: $e');
+      debugPrint(
+        '❌ [AuthViewModel] Erro ao verificar completude do cadastro: $e',
+      );
       _hasCompletedFullRegistration = false;
     }
   }
@@ -231,30 +245,38 @@ class AuthViewModel extends ChangeNotifier {
   StreamSubscription<AuthUser?>? _authSub;
 
   void _subscribeToAuthChanges() {
-    debugPrint('🟠 [AuthViewModel] Iniciando subscription para authStateChanges...');
+    debugPrint(
+      '🟠 [AuthViewModel] Iniciando subscription para authStateChanges...',
+    );
     _authSub = _authRepository.authStateChanges().listen((user) async {
-      debugPrint('🟠 [AuthViewModel] authStateChanges triggered: user=${user?.email ?? "null"}');
+      debugPrint(
+        '🟠 [AuthViewModel] authStateChanges triggered: user=${user?.email ?? "null"}',
+      );
       _currentUser = user;
       if (user != null) {
-        debugPrint('🟠 [AuthViewModel] Usuário autenticado, processando fluxo...');
-        
+        debugPrint(
+          '🟠 [AuthViewModel] Usuário autenticado, processando fluxo...',
+        );
+
         // Garantir que o documento do usuário existe no Firestore
         await _ensureUserDocumentExists(user);
-        
+
         // Determinar tipo de fluxo e estados
         await _determineAuthFlowType();
         await _checkRegistrationCompleteness();
-        
+
         // Iniciar verificação de email se necessário (fluxo email/senha)
-        if (_currentFlowType == AuthFlowType.emailPassword && 
+        if (_currentFlowType == AuthFlowType.emailPassword &&
             _emailVerificationState == EmailVerificationState.pending) {
           _startEmailVerificationPolling();
         }
-        
+
         debugPrint('🟠 [AuthViewModel] Definindo estado como authenticated...');
         _setState(AuthState.authenticated);
       } else {
-        debugPrint('🟠 [AuthViewModel] Usuário não autenticado, limpando estados...');
+        debugPrint(
+          '🟠 [AuthViewModel] Usuário não autenticado, limpando estados...',
+        );
         _clearAuthStates();
         _setState(AuthState.unauthenticated);
       }
@@ -271,14 +293,20 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Garante que o documento do usuário existe no Firestore
   Future<void> _ensureUserDocumentExists(AuthUser user) async {
-    debugPrint('🟡 [AuthViewModel] _ensureUserDocumentExists iniciado para: ${user.email}');
+    debugPrint(
+      '🟡 [AuthViewModel] _ensureUserDocumentExists iniciado para: ${user.email}',
+    );
     try {
-      debugPrint('🟡 [AuthViewModel] Verificando se usuário já existe no Firestore...');
+      debugPrint(
+        '🟡 [AuthViewModel] Verificando se usuário já existe no Firestore...',
+      );
       // Verificar se o usuário já existe
       final existingUser = await _userRepository.getMe();
-      
+
       if (existingUser == null) {
-        debugPrint('🟡 [AuthViewModel] Usuário não existe, criando novo documento...');
+        debugPrint(
+          '🟡 [AuthViewModel] Usuário não existe, criando novo documento...',
+        );
         // Criar novo documento do usuário
         final now = DateTime.now();
         final newUser = UserProfile(
@@ -292,18 +320,26 @@ class AuthViewModel extends ChangeNotifier {
           lastLoginAt: now,
           completedFullRegistration: false,
         );
-        
+
         debugPrint('🟡 [AuthViewModel] Salvando novo usuário no Firestore...');
         await _userRepository.upsert(newUser);
-        debugPrint('✅ [AuthViewModel] Documento do usuário criado: ${user.uid}');
+        debugPrint(
+          '✅ [AuthViewModel] Documento do usuário criado: ${user.uid}',
+        );
       } else {
-        debugPrint('🟡 [AuthViewModel] Usuário existe, agendando atualização de lastLoginAt...');
+        debugPrint(
+          '🟡 [AuthViewModel] Usuário existe, agendando atualização de lastLoginAt...',
+        );
         // Atualizar lastLoginAt para usuários existentes com coalescing
         _updateLastLoginAtWithCoalescing();
-        debugPrint('✅ [AuthViewModel] Documento do usuário atualizado: ${user.uid}');
+        debugPrint(
+          '✅ [AuthViewModel] Documento do usuário atualizado: ${user.uid}',
+        );
       }
     } catch (e) {
-      debugPrint('❌ [AuthViewModel] Erro ao criar/atualizar documento do usuário: $e');
+      debugPrint(
+        '❌ [AuthViewModel] Erro ao criar/atualizar documento do usuário: $e',
+      );
     }
   }
 
@@ -312,15 +348,22 @@ class AuthViewModel extends ChangeNotifier {
   /// Inicia o polling de verificação de email (fluxo email/senha)
   void _startEmailVerificationPolling() {
     if (_emailVerificationTimer?.isActive == true) return;
-    
-    debugPrint('📧 [AuthViewModel] Iniciando polling de verificação de email com exponential backoff...');
+
+    debugPrint(
+      '📧 [AuthViewModel] Iniciando polling de verificação de email com delay inicial de 5s...',
+    );
     _isCheckingEmailVerification = true;
     _emailVerificationAttempts = 0;
     _lastEmailVerificationCheck = null;
     notifyListeners();
-    
-    // Primeira verificação imediata
-    _scheduleNextEmailVerificationCheck();
+
+    // Aguardar 5 segundos antes de iniciar a primeira verificação
+    debugPrint(
+      '📧 [AuthViewModel] Aguardando ${_initialDelayBeforePolling.inSeconds}s antes de iniciar verificações...',
+    );
+    _emailVerificationTimer = Timer(_initialDelayBeforePolling, () {
+      _checkEmailVerificationStatus();
+    });
   }
 
   /// Para o polling de verificação de email
@@ -333,31 +376,22 @@ class AuthViewModel extends ChangeNotifier {
     debugPrint('📧 [AuthViewModel] Polling de verificação de email parado');
   }
 
-  /// Agenda a próxima verificação usando exponential backoff + jitter
+  /// Agenda a próxima verificação com intervalo fixo de 2 segundos
   void _scheduleNextEmailVerificationCheck() {
     if (_emailVerificationAttempts >= _maxEmailVerificationAttempts) {
-      debugPrint('⚠️ [AuthViewModel] Máximo de tentativas de verificação atingido ($_maxEmailVerificationAttempts)');
+      debugPrint(
+        '⚠️ [AuthViewModel] Máximo de tentativas de verificação atingido ($_maxEmailVerificationAttempts)',
+      );
       _stopEmailVerificationPolling();
       return;
     }
 
-    // Calcular intervalo com exponential backoff
-    final backoffMultiplier = math.pow(2, _emailVerificationAttempts).round();
-    var interval = Duration(
-      milliseconds: _basePollingInterval.inMilliseconds * backoffMultiplier,
+    // Usar intervalo fixo de 2 segundos para todas as verificações
+    final interval = _pollingInterval;
+
+    debugPrint(
+      '📧 [AuthViewModel] Agendando próxima verificação em ${interval.inSeconds}s (tentativa ${_emailVerificationAttempts + 1}/$_maxEmailVerificationAttempts)',
     );
-
-    // Aplicar limite máximo
-    if (interval > _maxPollingInterval) {
-      interval = _maxPollingInterval;
-    }
-
-    // Adicionar jitter (±25% do intervalo)
-    final jitterRange = (interval.inMilliseconds * 0.25).round();
-    final jitter = math.Random().nextInt((jitterRange * 2).clamp(1, 1000)) - jitterRange;
-    interval = Duration(milliseconds: interval.inMilliseconds + jitter);
-
-    debugPrint('📧 [AuthViewModel] Agendando próxima verificação em ${interval.inSeconds}s (tentativa ${_emailVerificationAttempts + 1}/$_maxEmailVerificationAttempts)');
 
     _emailVerificationTimer = Timer(interval, () {
       _checkEmailVerificationStatus();
@@ -376,28 +410,32 @@ class AuthViewModel extends ChangeNotifier {
         return;
       }
     }
-    
+
     _lastEmailVerificationCheck = now;
     _emailVerificationAttempts++;
-    
+
     try {
-      debugPrint('🔍 [AuthViewModel] Verificando email (tentativa $_emailVerificationAttempts/$_maxEmailVerificationAttempts)');
+      debugPrint(
+        '🔍 [AuthViewModel] Verificando email (tentativa $_emailVerificationAttempts/$_maxEmailVerificationAttempts)',
+      );
       final isVerified = await _authRepository.checkEmailVerified();
-      
+
       if (isVerified) {
         debugPrint('✅ [AuthViewModel] Email verificado com sucesso!');
-        
+
         // ← CORREÇÃO CRÍTICA: Atualizar _currentUser após reload()
         // O FirebaseAuthRepository fez reload(), mas precisamos sincronizar nosso estado interno
         final updatedUser = _authRepository.currentUser;
         if (updatedUser != null) {
           _currentUser = updatedUser;
-          debugPrint('🔄 [AuthViewModel] _currentUser atualizado após reload - emailVerified: ${_currentUser?.emailVerified}');
+          debugPrint(
+            '🔄 [AuthViewModel] _currentUser atualizado após reload - emailVerified: ${_currentUser?.emailVerified}',
+          );
         }
-        
+
         _emailVerificationState = EmailVerificationState.verified;
         _stopEmailVerificationPolling();
-        
+
         // ← NOVO: Debounce para evitar múltiplas notificações
         _debounceNotifyListeners();
       } else {
@@ -424,22 +462,27 @@ class AuthViewModel extends ChangeNotifier {
   void _notifyListenersIfChanged() {
     final currentEmailVerified = _currentUser?.emailVerified ?? false;
     final currentEmailVerificationState = _emailVerificationState;
-    
+
     // Verificar se houve mudança no estado de verificação de email
     final emailVerifiedChanged = _previousEmailVerified != currentEmailVerified;
-    final emailVerificationStateChanged = _previousEmailVerificationState != currentEmailVerificationState;
-    
+    final emailVerificationStateChanged =
+        _previousEmailVerificationState != currentEmailVerificationState;
+
     if (emailVerifiedChanged || emailVerificationStateChanged) {
-      debugPrint('🔄 [AuthViewModel] Estado mudou - emailVerified: $_previousEmailVerified → $currentEmailVerified, state: $_previousEmailVerificationState → $currentEmailVerificationState');
-      
+      debugPrint(
+        '🔄 [AuthViewModel] Estado mudou - emailVerified: $_previousEmailVerified → $currentEmailVerified, state: $_previousEmailVerificationState → $currentEmailVerificationState',
+      );
+
       // Atualizar estado anterior
       _previousEmailVerified = currentEmailVerified;
       _previousEmailVerificationState = currentEmailVerificationState;
-      
+
       // Notificar listeners (incluindo GoRouter)
       notifyListeners();
     } else {
-      debugPrint('⏭️ [AuthViewModel] Nenhuma mudança de estado, pulando notificação');
+      debugPrint(
+        '⏭️ [AuthViewModel] Nenhuma mudança de estado, pulando notificação',
+      );
     }
   }
 
@@ -476,48 +519,50 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Faz login com e-mail e senha (Fluxo Email/Senha)
   /// Após login bem-sucedido, usuário vai para verificação de email se necessário
-  Future<void> loginWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
-    debugPrint('🔐 [AuthViewModel] Iniciando login EMAIL/SENHA: ${email.substring(0, 3)}***');
+  Future<void> loginWithEmailAndPassword(String email, String password) async {
+    debugPrint(
+      '🔐 [AuthViewModel] Iniciando login EMAIL/SENHA: ${email.substring(0, 3)}***',
+    );
     try {
       _setLoading(true);
       _clearError();
-      
+
       final result = await _authRepository.signInWithEmail(email, password);
       debugPrint('🔐 [AuthViewModel] Resultado: isSuccess=${result.isSuccess}');
-      
+
       if (result.isSuccess && result.user != null) {
         debugPrint('✅ [AuthViewModel] Login EMAIL/SENHA bem-sucedido!');
-        
+
         // Definir tipo de fluxo
         _currentFlowType = AuthFlowType.emailPassword;
         _currentUser = result.user;
-        
+
         // Verificar status de verificação de email
         final isEmailVerified = result.user!.emailVerified;
-        _emailVerificationState = isEmailVerified 
-            ? EmailVerificationState.verified 
-            : EmailVerificationState.pending;
-        
+        _emailVerificationState =
+            isEmailVerified
+                ? EmailVerificationState.verified
+                : EmailVerificationState.pending;
+
         debugPrint('🔐 [AuthViewModel] Email verificado: $isEmailVerified');
-        
+
         // Se email não verificado, iniciar polling
         if (!isEmailVerified) {
-          debugPrint('📧 [AuthViewModel] Email não verificado, iniciando polling...');
+          debugPrint(
+            '📧 [AuthViewModel] Email não verificado, iniciando polling...',
+          );
           _startEmailVerificationPolling();
         }
-        
+
         _setState(AuthState.authenticated);
         debugPrint('✅ [AuthViewModel] Fluxo EMAIL/SENHA configurado');
-        
+
         // Pré-carregar cache de bar em background
         _preloadBarCache();
-        
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
-        final errorMsg = result.errorMessage ?? 'Erro ao fazer login com e-mail.';
+        final errorMsg =
+            result.errorMessage ?? 'Erro ao fazer login com e-mail.';
         _setError(errorMsg);
         ToastService.instance.showError(
           message: errorMsg,
@@ -526,7 +571,8 @@ class AuthViewModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ [AuthViewModel] Exceção durante login EMAIL/SENHA: $e');
-      const errorMsg = 'Erro ao fazer login com e-mail. Por favor, tente novamente.';
+      const errorMsg =
+          'Erro ao fazer login com e-mail. Por favor, tente novamente.';
       _setError(errorMsg);
       ToastService.instance.showError(
         message: errorMsg,
@@ -544,34 +590,36 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-      
+
       final result = await _authRepository.signInWithGoogle();
       debugPrint('🔵 [AuthViewModel] Resultado: isSuccess=${result.isSuccess}');
-      
+
       if (result.isSuccess && result.user != null) {
         debugPrint('✅ [AuthViewModel] Login SOCIAL (Google) bem-sucedido!');
-        
+
         // Definir tipo de fluxo
         _currentFlowType = AuthFlowType.social;
         _currentUser = result.user;
-        
+
         // Email sempre verificado em login social
         _emailVerificationState = EmailVerificationState.verified;
-        
+
         // Verificar se completou cadastro completo
         await _checkRegistrationCompleteness();
-        
-        debugPrint('🔵 [AuthViewModel] Cadastro completo: $_hasCompletedFullRegistration');
-        
+
+        debugPrint(
+          '🔵 [AuthViewModel] Cadastro completo: $_hasCompletedFullRegistration',
+        );
+
         _setState(AuthState.authenticated);
         debugPrint('✅ [AuthViewModel] Fluxo SOCIAL configurado');
-        
+
         // Pré-carregar cache de bar em background
         _preloadBarCache();
-        
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
-        final errorMsg = result.errorMessage ?? 'Erro ao fazer login com Google.';
+        final errorMsg =
+            result.errorMessage ?? 'Erro ao fazer login com Google.';
         _setError(errorMsg);
         ToastService.instance.showError(
           message: errorMsg,
@@ -580,7 +628,8 @@ class AuthViewModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ [AuthViewModel] Exceção durante login SOCIAL (Google): $e');
-      const errorMsg = 'Erro ao fazer login com Google. Por favor, tente novamente.';
+      const errorMsg =
+          'Erro ao fazer login com Google. Por favor, tente novamente.';
       _setError(errorMsg);
       ToastService.instance.showError(
         message: errorMsg,
@@ -588,46 +637,52 @@ class AuthViewModel extends ChangeNotifier {
       );
     } finally {
       _setLoading(false);
-      debugPrint('🔵 [AuthViewModel] Login com Google finalizado (loading=false)');
+      debugPrint(
+        '🔵 [AuthViewModel] Login com Google finalizado (loading=false)',
+      );
     }
   }
 
   /// Atualiza lastLoginAt com coalescing para evitar writes desnecessários
   Future<void> _updateLastLoginAtWithCoalescing() async {
     final now = DateTime.now();
-    
+
     // Verificar se já houve uma atualização recente
     if (_lastLoginAtUpdateTime != null) {
       final timeSinceLastUpdate = now.difference(_lastLoginAtUpdateTime!);
       if (timeSinceLastUpdate < _lastLoginAtCoalescingWindow) {
-        debugPrint('⏰ [AuthViewModel] Coalescing lastLoginAt - última atualização há ${timeSinceLastUpdate.inMinutes}min');
+        debugPrint(
+          '⏰ [AuthViewModel] Coalescing lastLoginAt - última atualização há ${timeSinceLastUpdate.inMinutes}min',
+        );
         return; // Não atualizar se foi muito recente
       }
     }
-    
+
     // Cancelar timer anterior se existir
     _lastLoginAtUpdateTimer?.cancel();
-    
+
     // Agendar atualização com debounce de 2 segundos
     _lastLoginAtUpdateTimer = Timer(const Duration(seconds: 2), () async {
       try {
         final currentUser = _currentUser;
         if (currentUser == null) return;
-        
+
         debugPrint('📝 [AuthViewModel] Atualizando lastLoginAt (coalesced)...');
-        
+
         // Buscar usuário atual do Firestore
-         final existingUser = await _userRepository.getMe();
-         if (existingUser != null) {
-           final updatedUser = existingUser.copyWith(
-             lastLoginAt: DateTime.now(),
-           );
-           await _userRepository.upsert(updatedUser);
-           _lastLoginAtUpdateTime = DateTime.now();
-           debugPrint('✅ [AuthViewModel] lastLoginAt atualizado (coalesced)');
-         }
+        final existingUser = await _userRepository.getMe();
+        if (existingUser != null) {
+          final updatedUser = existingUser.copyWith(
+            lastLoginAt: DateTime.now(),
+          );
+          await _userRepository.upsert(updatedUser);
+          _lastLoginAtUpdateTime = DateTime.now();
+          debugPrint('✅ [AuthViewModel] lastLoginAt atualizado (coalesced)');
+        }
       } catch (e) {
-        debugPrint('❌ [AuthViewModel] Erro ao atualizar lastLoginAt (coalesced): $e');
+        debugPrint(
+          '❌ [AuthViewModel] Erro ao atualizar lastLoginAt (coalesced): $e',
+        );
       }
     });
   }
@@ -642,14 +697,16 @@ class AuthViewModel extends ChangeNotifier {
       debugPrint('🚪 [AuthViewModel] Chamando _authRepository.signOut()...');
       await _authRepository.signOut();
       debugPrint('✅ [AuthViewModel] Logout realizado com sucesso!');
-      
+
       // Invalidar cache de bar
       _invalidateBarCache();
-      
+
       // ← NOVO: Notificar outros ViewModels para limpeza
-      debugPrint('🧹 [AuthViewModel] Notificando outros ViewModels para limpeza...');
+      debugPrint(
+        '🧹 [AuthViewModel] Notificando outros ViewModels para limpeza...',
+      );
       _onLogoutCallback?.call();
-      
+
       _currentUser = null;
       _setState(AuthState.unauthenticated);
       debugPrint('✅ [AuthViewModel] Estado alterado para unauthenticated');
@@ -671,21 +728,29 @@ class AuthViewModel extends ChangeNotifier {
   /// Envia e-mail de redefinição de senha
   /// SEMPRE retorna sucesso por questões de segurança (anti-enumeração)
   Future<void> sendPasswordResetEmail(String email) async {
-    debugPrint('📧 [AuthViewModel] Iniciando envio de e-mail de redefinição de senha para: ${email.substring(0, 3)}***');
+    debugPrint(
+      '📧 [AuthViewModel] Iniciando envio de e-mail de redefinição de senha para: ${email.substring(0, 3)}***',
+    );
     _setLoading(true);
     _clearError();
 
     try {
-      debugPrint('📧 [AuthViewModel] Chamando _authRepository.sendPasswordResetEmail...');
+      debugPrint(
+        '📧 [AuthViewModel] Chamando _authRepository.sendPasswordResetEmail...',
+      );
       await _authRepository.sendPasswordResetEmail(email);
-      debugPrint('✅ [AuthViewModel] Processamento de reset de senha concluído!');
+      debugPrint(
+        '✅ [AuthViewModel] Processamento de reset de senha concluído!',
+      );
     } catch (e) {
       debugPrint('❌ [AuthViewModel] Erro ao processar reset de senha: $e');
       // NÃO definir erro nem relançar exceção por segurança
       // O usuário sempre verá mensagem de sucesso
     } finally {
       _setLoading(false);
-      debugPrint('📧 [AuthViewModel] Processamento de reset de senha finalizado (loading=false)');
+      debugPrint(
+        '📧 [AuthViewModel] Processamento de reset de senha finalizado (loading=false)',
+      );
     }
   }
 
@@ -698,30 +763,42 @@ class AuthViewModel extends ChangeNotifier {
       return cached;
     }
 
-    debugPrint('🏪 [AuthViewModel] Verificando se usuário tem bar cadastrado...');
+    debugPrint(
+      '🏪 [AuthViewModel] Verificando se usuário tem bar cadastrado...',
+    );
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) {
-        debugPrint('❌ [AuthViewModel] Usuário não autenticado - retornando false');
+        debugPrint(
+          '❌ [AuthViewModel] Usuário não autenticado - retornando false',
+        );
         _updateBarCache(false);
         return false;
       }
-      debugPrint('🏪 [AuthViewModel] Usuário autenticado: ${currentUser.email}');
-      
+      debugPrint(
+        '🏪 [AuthViewModel] Usuário autenticado: ${currentUser.email}',
+      );
+
       debugPrint('🏪 [AuthViewModel] Buscando perfil do usuário...');
       final userProfile = await _userRepository.getMe();
       if (userProfile?.currentBarId != null) {
-        debugPrint('✅ [AuthViewModel] Usuário tem currentBarId: ${userProfile!.currentBarId}');
+        debugPrint(
+          '✅ [AuthViewModel] Usuário tem currentBarId: ${userProfile!.currentBarId}',
+        );
         _updateBarCache(true);
         return true;
       }
-      debugPrint('🏪 [AuthViewModel] currentBarId é null, verificando bars cadastrados...');
-      
+      debugPrint(
+        '🏪 [AuthViewModel] currentBarId é null, verificando bars cadastrados...',
+      );
+
       // Fallback: verificar se tem bars cadastrados
       final bars = await _barRepository.listMyBars(currentUser.uid).first;
       final hasBar = bars.isNotEmpty;
-      debugPrint('🏪 [AuthViewModel] Resultado da verificação de bars: $hasBar (${bars.length} bars encontrados)');
-      
+      debugPrint(
+        '🏪 [AuthViewModel] Resultado da verificação de bars: $hasBar (${bars.length} bars encontrados)',
+      );
+
       _updateBarCache(hasBar);
       return hasBar;
     } catch (e) {
@@ -737,7 +814,7 @@ class AuthViewModel extends ChangeNotifier {
     _lastBarCheckTime = DateTime.now();
     debugPrint('🏪 [AuthViewModel] Cache atualizado: hasBar=$hasBar');
   }
-  
+
   /// Invalida o cache de verificação de bar
   void _invalidateBarCache() {
     _cachedHasBarRegistered = null;
@@ -748,24 +825,27 @@ class AuthViewModel extends ChangeNotifier {
   /// Pré-carrega o cache de bar em background para otimizar navegação
   void _preloadBarCache() {
     debugPrint('🏪 [AuthViewModel] Pré-carregando cache de bar...');
-    hasBarRegistered().then((hasBar) {
-      debugPrint('🏪 [AuthViewModel] Cache pré-carregado: hasBar=$hasBar');
-    }).catchError((e) {
-      debugPrint('❌ [AuthViewModel] Erro ao pré-carregar cache de bar: $e');
-    });
+    hasBarRegistered()
+        .then((hasBar) {
+          debugPrint('🏪 [AuthViewModel] Cache pré-carregado: hasBar=$hasBar');
+        })
+        .catchError((e) {
+          debugPrint('❌ [AuthViewModel] Erro ao pré-carregar cache de bar: $e');
+        });
   }
-  
+
   /// Verifica se o usuário logou via provedor social
   bool get isFromSocialProvider {
     if (_currentUser == null) return false;
-    
+
     // Apenas Google está ativo no momento
     // TODO: Adicionar 'apple.com' e 'facebook.com' quando implementados
     final socialProviders = ['google.com'];
-    return _currentUser!.providerIds.any((provider) => 
-        socialProviders.contains(provider));
+    return _currentUser!.providerIds.any(
+      (provider) => socialProviders.contains(provider),
+    );
   }
-  
+
   /// Obtém o perfil do usuário atual
   Future<UserProfile?> getCurrentUserProfile() async {
     debugPrint('👤 [AuthViewModel] Obtendo perfil do usuário atual...');
@@ -774,7 +854,9 @@ class AuthViewModel extends ChangeNotifier {
       if (profile != null) {
         debugPrint('✅ [AuthViewModel] Perfil obtido: ${profile.email}');
         debugPrint('👤 [AuthViewModel] currentBarId: ${profile.currentBarId}');
-        debugPrint('👤 [AuthViewModel] completedFullRegistration: ${profile.completedFullRegistration}');
+        debugPrint(
+          '👤 [AuthViewModel] completedFullRegistration: ${profile.completedFullRegistration}',
+        );
       } else {
         debugPrint('❌ [AuthViewModel] Perfil não encontrado');
       }
@@ -784,60 +866,84 @@ class AuthViewModel extends ChangeNotifier {
       return null;
     }
   }
-  
+
   /// Verifica se deve mostrar o banner de completar cadastro
   Future<bool> shouldShowProfileCompleteCard() async {
-    debugPrint('🎯 [AuthViewModel] Verificando se deve mostrar banner de completar cadastro...');
+    debugPrint(
+      '🎯 [AuthViewModel] Verificando se deve mostrar banner de completar cadastro...',
+    );
     if (!isFromSocialProvider) {
-      debugPrint('🎯 [AuthViewModel] Usuário não é de provedor social - não mostrar banner');
+      debugPrint(
+        '🎯 [AuthViewModel] Usuário não é de provedor social - não mostrar banner',
+      );
       return false;
     }
-    debugPrint('🎯 [AuthViewModel] Usuário é de provedor social, verificando completude...');
-    
+    debugPrint(
+      '🎯 [AuthViewModel] Usuário é de provedor social, verificando completude...',
+    );
+
     try {
       final profile = await getCurrentUserProfile();
       if (profile == null) {
         debugPrint('🎯 [AuthViewModel] Perfil não encontrado - mostrar banner');
         return true;
       }
-      
+
       // Para login social, mostrar banner se não completou o registro completo
       final shouldShow = !profile.completedFullRegistration;
-      debugPrint('🎯 [AuthViewModel] completedFullRegistration: ${profile.completedFullRegistration}, shouldShow: $shouldShow');
+      debugPrint(
+        '🎯 [AuthViewModel] completedFullRegistration: ${profile.completedFullRegistration}, shouldShow: $shouldShow',
+      );
       return shouldShow;
     } catch (e) {
-      debugPrint('❌ [AuthViewModel] Erro ao verificar completude do perfil: $e');
+      debugPrint(
+        '❌ [AuthViewModel] Erro ao verificar completude do perfil: $e',
+      );
       return false;
     }
   }
-  
+
   /// Verifica se o usuário pode criar eventos
   Future<bool> canCreateEvent() async {
-    debugPrint('🎪 [AuthViewModel] Verificando se usuário pode criar eventos...');
+    debugPrint(
+      '🎪 [AuthViewModel] Verificando se usuário pode criar eventos...',
+    );
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) {
-        debugPrint('❌ [AuthViewModel] Usuário não autenticado - não pode criar eventos');
+        debugPrint(
+          '❌ [AuthViewModel] Usuário não autenticado - não pode criar eventos',
+        );
         return false;
       }
-      debugPrint('🎪 [AuthViewModel] Usuário autenticado: ${currentUser.email}');
-      
+      debugPrint(
+        '🎪 [AuthViewModel] Usuário autenticado: ${currentUser.email}',
+      );
+
       // Verifica se tem currentBarId
       debugPrint('🎪 [AuthViewModel] Verificando currentBarId...');
       final userProfile = await _userRepository.getMe();
       if (userProfile?.currentBarId != null) {
-        debugPrint('✅ [AuthViewModel] Usuário tem currentBarId: ${userProfile!.currentBarId} - pode criar eventos');
+        debugPrint(
+          '✅ [AuthViewModel] Usuário tem currentBarId: ${userProfile!.currentBarId} - pode criar eventos',
+        );
         return true;
       }
-      debugPrint('🎪 [AuthViewModel] currentBarId é null, verificando se é membro de algum bar...');
-      
+      debugPrint(
+        '🎪 [AuthViewModel] currentBarId é null, verificando se é membro de algum bar...',
+      );
+
       // Verifica se é membro de algum bar
       final bars = await _barRepository.listMyBars(currentUser.uid).first;
       final canCreate = bars.isNotEmpty;
-      debugPrint('🎪 [AuthViewModel] Resultado da verificação de membros: $canCreate (${bars.length} bars encontrados)');
+      debugPrint(
+        '🎪 [AuthViewModel] Resultado da verificação de membros: $canCreate (${bars.length} bars encontrados)',
+      );
       return canCreate;
     } catch (e) {
-      debugPrint('❌ [AuthViewModel] Erro ao verificar permissão para criar evento: $e');
+      debugPrint(
+        '❌ [AuthViewModel] Erro ao verificar permissão para criar evento: $e',
+      );
       return false;
     }
   }
@@ -955,12 +1061,18 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Envia e-mail de verificação
   Future<bool> sendEmailVerification() async {
-    debugPrint('📧 [AuthViewModel] Iniciando envio de e-mail de verificação...');
+    debugPrint(
+      '📧 [AuthViewModel] Iniciando envio de e-mail de verificação...',
+    );
     try {
-      debugPrint('📧 [AuthViewModel] Chamando _authRepository.sendEmailVerification()...');
+      debugPrint(
+        '📧 [AuthViewModel] Chamando _authRepository.sendEmailVerification()...',
+      );
       final success = await _authRepository.sendEmailVerification();
       if (success) {
-        debugPrint('✅ [AuthViewModel] E-mail de verificação enviado com sucesso!');
+        debugPrint(
+          '✅ [AuthViewModel] E-mail de verificação enviado com sucesso!',
+        );
       } else {
         debugPrint('⚠️ [AuthViewModel] Falha ao enviar e-mail de verificação');
       }
@@ -973,9 +1085,13 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Verifica se o e-mail foi verificado
   Future<bool> checkEmailVerified() async {
-    debugPrint('🔍 [AuthViewModel] Verificando status de verificação do e-mail...');
+    debugPrint(
+      '🔍 [AuthViewModel] Verificando status de verificação do e-mail...',
+    );
     try {
-      debugPrint('🔍 [AuthViewModel] Chamando _authRepository.checkEmailVerified()...');
+      debugPrint(
+        '🔍 [AuthViewModel] Chamando _authRepository.checkEmailVerified()...',
+      );
       final isVerified = await _authRepository.checkEmailVerified();
       debugPrint('🔍 [AuthViewModel] Status de verificação: $isVerified');
       return isVerified;
@@ -1030,7 +1146,7 @@ class AuthViewModel extends ChangeNotifier {
   /// Getter para saber quantos steps foram completados (para banner)
   int get completedStepsCount {
     if (_hasCompletedFullRegistration) return 3;
-    
+
     // Aqui você pode implementar lógica mais granular
     // verificando quais steps específicos foram completados
     // Por enquanto, retorna 0 se não completou tudo

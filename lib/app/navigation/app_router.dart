@@ -249,13 +249,22 @@ class AppRouter {
   ) {
     try {
       final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+      
+      // Primeiro, verificar se o usuário está autenticado
+      if (!authViewModel.isAuthenticated) {
+        debugPrint('🔒 [AppRouter] Usuário não autenticado - redirecionando para login');
+        return AppRoutes.login;
+      }
+      
       final hasBarCached = authViewModel.hasBarRegisteredCached;
       
       // Se não há cache, permitir navegação e verificar assincronamente
       if (hasBarCached == null) {
+        debugPrint('🏪 [AppRouter] Cache de bar não disponível - verificando assincronamente');
         // Verificar em background sem bloquear navegação
         authViewModel.hasBarRegistered().then((hasBar) {
-          if (!hasBar && context.mounted) {
+          if (!hasBar && context.mounted && authViewModel.isAuthenticated) {
+            debugPrint('🏪 [AppRouter] Usuário autenticado sem bar - redirecionando para cadastro');
             // Se não tem bar, navegar para cadastro
             context.go(AppRoutes.registerStep1);
           }
@@ -265,12 +274,14 @@ class AppRouter {
       
       // Se tem cache e não tem bar, redirecionar
       if (!hasBarCached) {
+        debugPrint('🏪 [AppRouter] Cache indica que usuário não tem bar - redirecionando para cadastro');
         return AppRoutes.registerStep1;
       }
       
+      debugPrint('🏪 [AppRouter] Usuário tem bar cadastrado - permitindo navegação');
       return null; // Permite navegação
     } catch (e) {
-      debugPrint('Erro no guard de bar: $e');
+      debugPrint('❌ [AppRouter] Erro no guard de bar: $e');
       return AppRoutes.login; // Redireciona para login em caso de erro
     }
   }

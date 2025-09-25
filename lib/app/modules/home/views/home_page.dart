@@ -37,28 +37,65 @@ class _HomePageState extends State<HomePage> {
     _authViewModel = context.read<AuthViewModel>();
     _homeViewModel = context.read<HomeViewModel>();
     
-    // Carrega os dados após o build inicial para evitar setState durante build
+    // Carregamento assíncrono pós-frame otimizado para reduzir jank inicial
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
+      _loadDataOptimized();
     });
   }
 
-  Future<void> _loadData() async {
-    debugPrint('🏠 DEBUG HomePage: Iniciando _loadData()');
+  /// Carregamento otimizado com priorização para reduzir jank inicial
+  Future<void> _loadDataOptimized() async {
+    debugPrint('🏠 DEBUG HomePage: Iniciando carregamento otimizado...');
     
     try {
-      debugPrint('🏠 DEBUG HomePage: Carregando UserProfile...');
+      // Fase 1: Carregamento crítico (UserProfile) - bloqueia UI mínimo
+      debugPrint('🏠 DEBUG HomePage: Fase 1 - Carregando UserProfile (crítico)...');
       await _homeViewModel.loadUserProfile();
       
-      debugPrint('🏠 DEBUG HomePage: Carregando CurrentBar...');
-      await _homeViewModel.loadCurrentBar();
+      // Aguarda próximo frame para evitar jank
+      await Future.delayed(Duration.zero);
       
-      debugPrint('🏠 DEBUG HomePage: Carregando UpcomingEvents...');
-      await _eventsViewModel.loadUpcomingEvents();
+      // Fase 2: Carregamento paralelo de dados secundários
+      debugPrint('🏠 DEBUG HomePage: Fase 2 - Carregando dados secundários em paralelo...');
       
-      debugPrint('🏠 DEBUG HomePage: _loadData() concluído com sucesso');
+      final futures = <Future<void>>[];
+      
+      // CurrentBar - importante mas não crítico
+      futures.add(_loadCurrentBarAsync());
+      
+      // UpcomingEvents - pode ser carregado independentemente
+      futures.add(_loadUpcomingEventsAsync());
+      
+      // Aguarda todos os carregamentos secundários
+      await Future.wait(futures);
+      
+      debugPrint('🏠 DEBUG HomePage: Carregamento otimizado concluído com sucesso');
     } catch (e) {
-      debugPrint('❌ DEBUG HomePage: Erro em _loadData(): $e');
+      debugPrint('❌ DEBUG HomePage: Erro no carregamento otimizado: $e');
+    }
+  }
+
+  /// Carrega CurrentBar de forma assíncrona com tratamento de erro isolado
+  Future<void> _loadCurrentBarAsync() async {
+    try {
+      debugPrint('🏠 DEBUG HomePage: Carregando CurrentBar (assíncrono)...');
+      await _homeViewModel.loadCurrentBar();
+      debugPrint('🏠 DEBUG HomePage: CurrentBar carregado com sucesso');
+    } catch (e) {
+      debugPrint('❌ DEBUG HomePage: Erro ao carregar CurrentBar: $e');
+      // Não propaga erro para não afetar outros carregamentos
+    }
+  }
+
+  /// Carrega UpcomingEvents de forma assíncrona com tratamento de erro isolado
+  Future<void> _loadUpcomingEventsAsync() async {
+    try {
+      debugPrint('🏠 DEBUG HomePage: Carregando UpcomingEvents (assíncrono)...');
+      await _eventsViewModel.loadUpcomingEvents();
+      debugPrint('🏠 DEBUG HomePage: UpcomingEvents carregados com sucesso');
+    } catch (e) {
+      debugPrint('❌ DEBUG HomePage: Erro ao carregar UpcomingEvents: $e');
+      // Não propaga erro para não afetar outros carregamentos
     }
   }
 

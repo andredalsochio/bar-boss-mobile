@@ -3,6 +3,7 @@ import 'package:search_cep/search_cep.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'dart:async';
 
 import 'package:bar_boss_mobile/app/domain/repositories/auth_repository.dart';
 import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.dart';
@@ -43,6 +44,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
   StepValidationState _step1ValidationState = StepValidationState.initial;
   StepValidationState _step2ValidationState = StepValidationState.initial;
   StepValidationState _step3ValidationState = StepValidationState.initial;
+
+  // Debounce e circuit-breaker para busca de CEP
+  Timer? _cepSearchTimer;
+  static const Duration _cepSearchDelay = Duration(milliseconds: 800);
+  int _cepSearchFailureCount = 0;
+  DateTime? _lastCepSearchFailure;
+  static const int _maxCepSearchFailures = 3;
+  static const Duration _cepCircuitBreakerCooldown = Duration(minutes: 2);
 
   // Dados do bar - Passo 1 (Informações de contato)
   String _email = '';
@@ -219,9 +228,14 @@ class BarRegistrationViewModel extends ChangeNotifier {
     _updateStep2ButtonState();
     notifyListeners();
 
-    // Se o CEP for válido, busca o endereço
+    // Cancela busca anterior se existir
+    _cepSearchTimer?.cancel();
+
+    // Se o CEP for válido, agenda busca com debounce
     if (_isCepValid) {
-      _searchCep();
+      _cepSearchTimer = Timer(_cepSearchDelay, () {
+        _searchCepWithCircuitBreaker();
+      });
     }
   }
 
@@ -519,6 +533,53 @@ class BarRegistrationViewModel extends ChangeNotifier {
         _confirmPassword.isNotEmpty && _confirmPassword == _password;
   }
 
+  // Busca o endereço pelo CEP com circuit-breaker
+  Future<void> _searchCepWithCircuitBreaker() async {
+    debugPrint('🔍 [VIEWMODEL] _searchCepWithCircuitBreaker: Verificando circuit-breaker');
+    
+    // Verifica se o circuit-breaker está ativo
+    if (_isCepCircuitBreakerOpen()) {
+      debugPrint('⚡ [VIEWMODEL] _searchCepWithCircuitBreaker: Circuit-breaker ativo, cancelando busca');
+      return;
+    }
+    
+    await _searchCep();
+  }
+
+  // Verifica se o circuit-breaker está aberto
+  bool _isCepCircuitBreakerOpen() {
+    if (_cepSearchFailureCount < _maxCepSearchFailures) {
+      return false;
+    }
+    
+    if (_lastCepSearchFailure == null) {
+      return false;
+    }
+    
+    final timeSinceLastFailure = DateTime.now().difference(_lastCepSearchFailure!);
+    return timeSinceLastFailure < _cepCircuitBreakerCooldown;
+  }
+
+  // Registra falha na busca de CEP
+  void _recordCepSearchFailure() {
+    _cepSearchFailureCount++;
+    _lastCepSearchFailure = DateTime.now();
+    debugPrint('❌ [VIEWMODEL] _recordCepSearchFailure: Falhas: $_cepSearchFailureCount');
+    
+    if (_cepSearchFailureCount >= _maxCepSearchFailures) {
+      debugPrint('⚡ [VIEWMODEL] Circuit-breaker ativado por ${_cepCircuitBreakerCooldown.inMinutes} minutos');
+    }
+  }
+
+  // Reseta o circuit-breaker após sucesso
+  void _resetCepCircuitBreaker() {
+    if (_cepSearchFailureCount > 0) {
+      debugPrint('✅ [VIEWMODEL] _resetCepCircuitBreaker: Circuit-breaker resetado');
+      _cepSearchFailureCount = 0;
+      _lastCepSearchFailure = null;
+    }
+  }
+
   // Busca o endereço pelo CEP
   Future<void> _searchCep() async {
     debugPrint('🔍 [VIEWMODEL] _searchCep: Iniciando busca de CEP');
@@ -548,12 +609,16 @@ class BarRegistrationViewModel extends ChangeNotifier {
       result.fold(
         (error) {
           debugPrint('❌ [VIEWMODEL] _searchCep: Erro na API ViaCEP: $error');
+          _recordCepSearchFailure();
         },
         (info) {
           debugPrint('✅ [VIEWMODEL] _searchCep: Sucesso na busca do CEP');
           debugPrint('🔍 [VIEWMODEL] _searchCep: Logradouro: ${info.logradouro}');
           debugPrint('🔍 [VIEWMODEL] _searchCep: UF: ${info.uf}');
           debugPrint('🔍 [VIEWMODEL] _searchCep: Localidade: ${info.localidade}');
+          
+          // Reseta circuit-breaker após sucesso
+          _resetCepCircuitBreaker();
           
           // Atualiza os campos de endereço
           setStreet(info.logradouro ?? '');
@@ -568,6 +633,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('❌ [VIEWMODEL] _searchCep: Erro crítico na busca do CEP: $e');
       debugPrint('❌ [VIEWMODEL] _searchCep: Stack trace: ${StackTrace.current}');
+      _recordCepSearchFailure();
     } finally {
       debugPrint('🔍 [VIEWMODEL] _searchCep: Finalizando busca de CEP');
       _setLoading(false);
@@ -1457,5 +1523,12 @@ class BarRegistrationViewModel extends ChangeNotifier {
     debugPrint('🎉 DEBUG Login Social Step 3: Bar criado com sucesso para usuário ${currentUser.uid}');
     debugPrint('🎉 DEBUG Login Social Step 3: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true');
     debugPrint('🎉 DEBUG Login Social Step 3: UserProfile atualizado com currentBarId=$normalizedCnpj e completedFullRegistration=true');
+  }
+
+  @override
+  void dispose() {
+    // Cancela timer de busca de CEP se estiver ativo
+    _cepSearchTimer?.cancel();
+    super.dispose();
   }
 }

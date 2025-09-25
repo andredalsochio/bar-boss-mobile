@@ -7,6 +7,8 @@ import 'package:toastification/toastification.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/providers/theme_provider.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
 import 'package:bar_boss_mobile/app/navigation/app_router.dart';
 
 /// Widget principal do aplicativo
@@ -26,6 +28,29 @@ class _AppWidgetState extends State<AppWidget> {
     super.initState();
     _authViewModel = context.read<AuthViewModel>();
     _router = AppRouter.createRouter(_authViewModel);
+    
+    // ← NOVO: Configurar callback de logout para limpeza de ViewModels
+    _authViewModel.setLogoutCallback(() {
+      debugPrint('🧹 [AppWidget] Executando limpeza de ViewModels após logout...');
+      
+      // Limpar HomeViewModel
+      try {
+        final homeViewModel = context.read<HomeViewModel>();
+        homeViewModel.clearDataAfterLogout();
+        debugPrint('✅ [AppWidget] HomeViewModel limpo');
+      } catch (e) {
+        debugPrint('⚠️ [AppWidget] Erro ao limpar HomeViewModel: $e');
+      }
+      
+      // Limpar EventsViewModel
+      try {
+        final eventsViewModel = context.read<EventsViewModel>();
+        eventsViewModel.clearDataAfterLogout();
+        debugPrint('✅ [AppWidget] EventsViewModel limpo');
+      } catch (e) {
+        debugPrint('⚠️ [AppWidget] Erro ao limpar EventsViewModel: $e');
+      }
+    });
   }
 
   @override

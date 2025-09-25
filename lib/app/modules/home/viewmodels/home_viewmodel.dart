@@ -324,9 +324,15 @@ class HomeViewModel extends ChangeNotifier {
     _barsSubscription?.cancel();
     
     final currentUser = _authRepository.currentUser;
-    if (currentUser != null) {
+    if (currentUser != null && _authViewModel.isAuthenticated) {
       _barsSubscription = _barRepository.listMyBars(currentUser.uid).listen(
         (bars) {
+          // Verificar se ainda está logado antes de processar dados
+          if (!_authViewModel.isAuthenticated) {
+            debugPrint('🚫 HomeViewModel: Usuário não está mais logado, ignorando dados de bares');
+            return;
+          }
+          
           _userBars = bars;
           _currentBar = bars.isNotEmpty ? bars.first : null;
           debugPrint('HomeViewModel: Bares carregados: ${bars.length}');
@@ -341,10 +347,20 @@ class HomeViewModel extends ChangeNotifier {
           notifyListeners();
         },
         onError: (error) {
+          // Verificar se o erro é de permissão e usuário não está logado
+          if (!_authViewModel.isAuthenticated && error.toString().contains('permission-denied')) {
+            debugPrint('🚫 HomeViewModel: PERMISSION_DENIED após logout - cancelando stream de bares');
+            _barsSubscription?.cancel();
+            return;
+          }
+          
           _setError('Erro ao carregar bares: $error');
           debugPrint('Erro no stream de bares: $error');
         },
       );
+    } else {
+      debugPrint('🚫 HomeViewModel: Usuário não autenticado, não iniciando stream de bares');
+      _clearAllData();
     }
   }
   
@@ -352,14 +368,33 @@ class HomeViewModel extends ChangeNotifier {
   void _startEventsStream(String barId) {
     _eventsSubscription?.cancel();
     
+    // Verificar se ainda está logado antes de iniciar stream
+    if (!_authViewModel.isAuthenticated) {
+      debugPrint('🚫 HomeViewModel: Usuário não está logado, não iniciando stream de eventos');
+      return;
+    }
+    
     _eventsSubscription = _eventRepository.upcomingByBar(barId).listen(
       (events) {
+        // Verificar se ainda está logado antes de processar dados
+        if (!_authViewModel.isAuthenticated) {
+          debugPrint('🚫 HomeViewModel: Usuário não está mais logado, ignorando dados de eventos');
+          return;
+        }
+        
         _upcomingEvents = events;
         _nextEvent = events.isNotEmpty ? events.first : null;
         debugPrint('HomeViewModel: Eventos carregados: ${events.length}');
         notifyListeners();
       },
       onError: (error) {
+        // Verificar se o erro é de permissão e usuário não está logado
+        if (!_authViewModel.isAuthenticated && error.toString().contains('permission-denied')) {
+          debugPrint('🚫 HomeViewModel: PERMISSION_DENIED após logout - cancelando stream de eventos');
+          _eventsSubscription?.cancel();
+          return;
+        }
+        
         debugPrint('Erro no stream de eventos: $error');
         // Não definir erro global para eventos, apenas log
       },
@@ -372,5 +407,26 @@ class HomeViewModel extends ChangeNotifier {
     _upcomingEvents = [];
     _nextEvent = null;
     notifyListeners();
+  }
+  
+  /// Limpa todos os dados e cancela streams (chamado no logout)
+  void _clearAllData() {
+    _barsSubscription?.cancel();
+    _eventsSubscription?.cancel();
+    _userBars = [];
+    _currentBar = null;
+    _upcomingEvents = [];
+    _nextEvent = null;
+    _currentUserProfile = null;
+    _isProfileCompleteCardDismissed = false;
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
+  }
+  
+  /// Método público para limpar dados após logout
+  void clearDataAfterLogout() {
+    debugPrint('🧹 HomeViewModel: Limpando dados após logout');
+    _clearAllData();
   }
 }

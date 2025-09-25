@@ -111,8 +111,8 @@ class EventsViewModel extends ChangeNotifier {
 
   /// Carrega todos os eventos do bar
   Future<void> loadEvents() async {
-    debugPrint('🔄 [EventsViewModel] loadEvents iniciado');
-    _setLoading(true);
+    debugPrint('🔄 [EventsViewModel] Iniciando carregamento de eventos...');
+    _setState(EventsState.loading);
     _clearError();
 
     try {
@@ -130,6 +130,12 @@ class EventsViewModel extends ChangeNotifier {
       // Escuta o primeiro bar disponível para configurar stream de eventos
       debugPrint('🏪 [EventsViewModel] Buscando bares do usuário...');
       final barsSnapshot = await _barsStream!.first;
+      
+      // Verificar se ainda está autenticado após operação assíncrona
+      if (_authRepository.currentUser == null) {
+        debugPrint('🚫 [EventsViewModel] Usuário não está mais autenticado, cancelando operação');
+        return;
+      }
       
       debugPrint('🔍 [EventsViewModel] Usuário ${currentUser.uid} tem ${barsSnapshot.length} bares');
       for (int i = 0; i < barsSnapshot.length; i++) {
@@ -154,6 +160,13 @@ class EventsViewModel extends ChangeNotifier {
       // Carrega eventos iniciais
       debugPrint('📅 [EventsViewModel] Carregando snapshot inicial de eventos...');
       final eventsSnapshot = await _eventsStream!.first;
+      
+      // Verificar se ainda está autenticado após operação assíncrona
+      if (_authRepository.currentUser == null) {
+        debugPrint('🚫 [EventsViewModel] Usuário não está mais autenticado, cancelando operação');
+        return;
+      }
+      
       debugPrint('📅 [EventsViewModel] Snapshot inicial recebido com ${eventsSnapshot.length} eventos');
       
       _events = eventsSnapshot;
@@ -755,5 +768,27 @@ class EventsViewModel extends ChangeNotifier {
   /// Define o estado de erro (método público para validação inline)
   void setErrorState(String message) {
     _setError(message);
+  }
+  
+  /// Limpa dados após logout
+  void clearDataAfterLogout() {
+    debugPrint('🧹 [EventsViewModel] Limpando dados após logout');
+    _events = [];
+    _upcomingEvents = [];
+    _currentEvent = null;
+    _eventsStream = null;
+    _barsStream = null;
+    _errorMessage = null;
+    _setState(EventsState.initial);
+  }
+  
+  @override
+  void dispose() {
+    debugPrint('🗑️ [EventsViewModel] Dispose chamado');
+    // Streams são automaticamente cancelados quando não há mais listeners
+    // Mas vamos limpar as referências
+    _eventsStream = null;
+    _barsStream = null;
+    super.dispose();
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:bar_boss_mobile/app/core/constants/app_strings.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
@@ -37,6 +38,31 @@ class AuthViewModel extends ChangeNotifier {
   // Controle de verificação de email
   Timer? _emailVerificationTimer;
   bool _isCheckingEmailVerification = false;
+  Timer? _notificationDebounceTimer; // ← NOVO: Timer para debounce de notificações
+  
+  // ← NOVO: Variáveis para exponential backoff
+  int _emailVerificationAttempts = 0;
+  static const int _maxEmailVerificationAttempts = 10;
+  static const Duration _basePollingInterval = Duration(seconds: 2);
+  static const Duration _maxPollingInterval = Duration(seconds: 30);
+  DateTime? _lastEmailVerificationCheck;
+  
+  // ← NOVO: Variáveis para rastrear mudanças de estado
+  bool? _previousEmailVerified;
+  EmailVerificationState? _previousEmailVerificationState;
+
+  // ← NOVO: Callback para notificar outros ViewModels sobre logout
+  VoidCallback? _onLogoutCallback;
+
+  // Controle de coalescing para lastLoginAt
+  Timer? _lastLoginAtUpdateTimer;
+  DateTime? _lastLoginAtUpdateTime;
+  static const Duration _lastLoginAtCoalescingWindow = Duration(minutes: 5);
+
+  // Cache para otimização do GoRouter redirect
+  bool? _cachedHasBarRegistered;
+  DateTime? _lastBarCheckTime;
+  static const Duration _barCacheExpiry = Duration(minutes: 5);
 
   AuthViewModel({
     required AuthRepository authRepository,
@@ -45,8 +71,17 @@ class AuthViewModel extends ChangeNotifier {
   }) : _authRepository = authRepository,
        _barRepository = barRepository,
        _userRepository = userRepository {
+    // Inicializar estado anterior
+    _previousEmailVerified = _currentUser?.emailVerified;
+    _previousEmailVerificationState = _emailVerificationState;
+    
     _checkInitialAuthState();
     _subscribeToAuthChanges();
+  }
+
+  /// Define o callback que será chamado durante o logout
+  void setLogoutCallback(VoidCallback? callback) {
+    _onLogoutCallback = callback;
   }
 
   // === GETTERS PRINCIPAIS ===
@@ -91,6 +126,26 @@ class AuthViewModel extends ChangeNotifier {
   
   /// Indica se é um usuário de login social (baseado no tipo de fluxo)
   bool get isFromSocialFlow => _currentFlowType == AuthFlowType.social;
+
+  /// Getter síncrono para verificação de bar (otimizado para GoRouter)
+  /// Retorna valor em cache se disponível, null se não verificado ainda
+  bool? get hasBarRegisteredCached {
+    if (_cachedHasBarRegistered == null || _lastBarCheckTime == null) {
+      return null; // Não verificado ainda
+    }
+    
+    final now = DateTime.now();
+    final isExpired = now.difference(_lastBarCheckTime!) > _barCacheExpiry;
+    
+    if (isExpired) {
+      // Cache expirado, invalidar
+      _cachedHasBarRegistered = null;
+      _lastBarCheckTime = null;
+      return null;
+    }
+    
+    return _cachedHasBarRegistered;
+  }
   
   /// Indica se precisa verificar email (fluxo email/senha)
   bool get needsEmailVerification => 
@@ -242,12 +297,9 @@ class AuthViewModel extends ChangeNotifier {
         await _userRepository.upsert(newUser);
         debugPrint('✅ [AuthViewModel] Documento do usuário criado: ${user.uid}');
       } else {
-        debugPrint('🟡 [AuthViewModel] Usuário existe, atualizando lastLoginAt...');
-        // Atualizar lastLoginAt para usuários existentes
-        final updatedUser = existingUser.copyWith(
-          lastLoginAt: DateTime.now(),
-        );
-        await _userRepository.upsert(updatedUser);
+        debugPrint('🟡 [AuthViewModel] Usuário existe, agendando atualização de lastLoginAt...');
+        // Atualizar lastLoginAt para usuários existentes com coalescing
+        _updateLastLoginAtWithCoalescing();
         debugPrint('✅ [AuthViewModel] Documento do usuário atualizado: ${user.uid}');
       }
     } catch (e) {
@@ -261,14 +313,14 @@ class AuthViewModel extends ChangeNotifier {
   void _startEmailVerificationPolling() {
     if (_emailVerificationTimer?.isActive == true) return;
     
-    debugPrint('📧 [AuthViewModel] Iniciando polling de verificação de email...');
+    debugPrint('📧 [AuthViewModel] Iniciando polling de verificação de email com exponential backoff...');
     _isCheckingEmailVerification = true;
+    _emailVerificationAttempts = 0;
+    _lastEmailVerificationCheck = null;
     notifyListeners();
     
-    _emailVerificationTimer = Timer.periodic(
-      const Duration(seconds: 3), 
-      (timer) => _checkEmailVerificationStatus()
-    );
+    // Primeira verificação imediata
+    _scheduleNextEmailVerificationCheck();
   }
 
   /// Para o polling de verificação de email
@@ -276,22 +328,118 @@ class AuthViewModel extends ChangeNotifier {
     _emailVerificationTimer?.cancel();
     _emailVerificationTimer = null;
     _isCheckingEmailVerification = false;
+    _emailVerificationAttempts = 0;
+    _lastEmailVerificationCheck = null;
     debugPrint('📧 [AuthViewModel] Polling de verificação de email parado');
+  }
+
+  /// Agenda a próxima verificação usando exponential backoff + jitter
+  void _scheduleNextEmailVerificationCheck() {
+    if (_emailVerificationAttempts >= _maxEmailVerificationAttempts) {
+      debugPrint('⚠️ [AuthViewModel] Máximo de tentativas de verificação atingido ($_maxEmailVerificationAttempts)');
+      _stopEmailVerificationPolling();
+      return;
+    }
+
+    // Calcular intervalo com exponential backoff
+    final backoffMultiplier = math.pow(2, _emailVerificationAttempts).round();
+    var interval = Duration(
+      milliseconds: _basePollingInterval.inMilliseconds * backoffMultiplier,
+    );
+
+    // Aplicar limite máximo
+    if (interval > _maxPollingInterval) {
+      interval = _maxPollingInterval;
+    }
+
+    // Adicionar jitter (±25% do intervalo)
+    final jitterRange = (interval.inMilliseconds * 0.25).round();
+    final jitter = math.Random().nextInt((jitterRange * 2).clamp(1, 1000)) - jitterRange;
+    interval = Duration(milliseconds: interval.inMilliseconds + jitter);
+
+    debugPrint('📧 [AuthViewModel] Agendando próxima verificação em ${interval.inSeconds}s (tentativa ${_emailVerificationAttempts + 1}/$_maxEmailVerificationAttempts)');
+
+    _emailVerificationTimer = Timer(interval, () {
+      _checkEmailVerificationStatus();
+    });
   }
 
   /// Verifica o status de verificação de email
   Future<void> _checkEmailVerificationStatus() async {
+    // Implementar cooldown mínimo entre verificações
+    final now = DateTime.now();
+    if (_lastEmailVerificationCheck != null) {
+      final timeSinceLastCheck = now.difference(_lastEmailVerificationCheck!);
+      if (timeSinceLastCheck < const Duration(seconds: 1)) {
+        debugPrint('⏱️ [AuthViewModel] Cooldown ativo, pulando verificação');
+        _scheduleNextEmailVerificationCheck();
+        return;
+      }
+    }
+    
+    _lastEmailVerificationCheck = now;
+    _emailVerificationAttempts++;
+    
     try {
+      debugPrint('🔍 [AuthViewModel] Verificando email (tentativa $_emailVerificationAttempts/$_maxEmailVerificationAttempts)');
       final isVerified = await _authRepository.checkEmailVerified();
       
       if (isVerified) {
         debugPrint('✅ [AuthViewModel] Email verificado com sucesso!');
+        
+        // ← CORREÇÃO CRÍTICA: Atualizar _currentUser após reload()
+        // O FirebaseAuthRepository fez reload(), mas precisamos sincronizar nosso estado interno
+        final updatedUser = _authRepository.currentUser;
+        if (updatedUser != null) {
+          _currentUser = updatedUser;
+          debugPrint('🔄 [AuthViewModel] _currentUser atualizado após reload - emailVerified: ${_currentUser?.emailVerified}');
+        }
+        
         _emailVerificationState = EmailVerificationState.verified;
         _stopEmailVerificationPolling();
-        notifyListeners();
+        
+        // ← NOVO: Debounce para evitar múltiplas notificações
+        _debounceNotifyListeners();
+      } else {
+        // Email ainda não verificado, agendar próxima tentativa
+        _scheduleNextEmailVerificationCheck();
       }
     } catch (e) {
       debugPrint('❌ [AuthViewModel] Erro ao verificar status do email: $e');
+      // Em caso de erro, ainda agendar próxima tentativa (com backoff)
+      _scheduleNextEmailVerificationCheck();
+    }
+  }
+
+  /// ← NOVO: Método para debounce de notificações
+  /// Evita múltiplas chamadas de notifyListeners() em sequência
+  void _debounceNotifyListeners() {
+    _notificationDebounceTimer?.cancel();
+    _notificationDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _notifyListenersIfChanged();
+    });
+  }
+
+  /// ← NOVO: Notifica listeners apenas se houve mudança real no estado
+  void _notifyListenersIfChanged() {
+    final currentEmailVerified = _currentUser?.emailVerified ?? false;
+    final currentEmailVerificationState = _emailVerificationState;
+    
+    // Verificar se houve mudança no estado de verificação de email
+    final emailVerifiedChanged = _previousEmailVerified != currentEmailVerified;
+    final emailVerificationStateChanged = _previousEmailVerificationState != currentEmailVerificationState;
+    
+    if (emailVerifiedChanged || emailVerificationStateChanged) {
+      debugPrint('🔄 [AuthViewModel] Estado mudou - emailVerified: $_previousEmailVerified → $currentEmailVerified, state: $_previousEmailVerificationState → $currentEmailVerificationState');
+      
+      // Atualizar estado anterior
+      _previousEmailVerified = currentEmailVerified;
+      _previousEmailVerificationState = currentEmailVerificationState;
+      
+      // Notificar listeners (incluindo GoRouter)
+      notifyListeners();
+    } else {
+      debugPrint('⏭️ [AuthViewModel] Nenhuma mudança de estado, pulando notificação');
     }
   }
 
@@ -319,6 +467,8 @@ class AuthViewModel extends ChangeNotifier {
   void dispose() {
     _authSub?.cancel();
     _stopEmailVerificationPolling();
+    _notificationDebounceTimer?.cancel(); // ← NOVO: Cancelar timer de debounce
+    _lastLoginAtUpdateTimer?.cancel(); // ← NOVO: Cancelar timer de coalescing
     super.dispose();
   }
 
@@ -361,6 +511,9 @@ class AuthViewModel extends ChangeNotifier {
         
         _setState(AuthState.authenticated);
         debugPrint('✅ [AuthViewModel] Fluxo EMAIL/SENHA configurado');
+        
+        // Pré-carregar cache de bar em background
+        _preloadBarCache();
         
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
@@ -413,6 +566,9 @@ class AuthViewModel extends ChangeNotifier {
         _setState(AuthState.authenticated);
         debugPrint('✅ [AuthViewModel] Fluxo SOCIAL configurado');
         
+        // Pré-carregar cache de bar em background
+        _preloadBarCache();
+        
       } else {
         debugPrint('❌ [AuthViewModel] Falha no login: ${result.errorMessage}');
         final errorMsg = result.errorMessage ?? 'Erro ao fazer login com Google.';
@@ -436,6 +592,46 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  /// Atualiza lastLoginAt com coalescing para evitar writes desnecessários
+  Future<void> _updateLastLoginAtWithCoalescing() async {
+    final now = DateTime.now();
+    
+    // Verificar se já houve uma atualização recente
+    if (_lastLoginAtUpdateTime != null) {
+      final timeSinceLastUpdate = now.difference(_lastLoginAtUpdateTime!);
+      if (timeSinceLastUpdate < _lastLoginAtCoalescingWindow) {
+        debugPrint('⏰ [AuthViewModel] Coalescing lastLoginAt - última atualização há ${timeSinceLastUpdate.inMinutes}min');
+        return; // Não atualizar se foi muito recente
+      }
+    }
+    
+    // Cancelar timer anterior se existir
+    _lastLoginAtUpdateTimer?.cancel();
+    
+    // Agendar atualização com debounce de 2 segundos
+    _lastLoginAtUpdateTimer = Timer(const Duration(seconds: 2), () async {
+      try {
+        final currentUser = _currentUser;
+        if (currentUser == null) return;
+        
+        debugPrint('📝 [AuthViewModel] Atualizando lastLoginAt (coalesced)...');
+        
+        // Buscar usuário atual do Firestore
+         final existingUser = await _userRepository.getMe();
+         if (existingUser != null) {
+           final updatedUser = existingUser.copyWith(
+             lastLoginAt: DateTime.now(),
+           );
+           await _userRepository.upsert(updatedUser);
+           _lastLoginAtUpdateTime = DateTime.now();
+           debugPrint('✅ [AuthViewModel] lastLoginAt atualizado (coalesced)');
+         }
+      } catch (e) {
+        debugPrint('❌ [AuthViewModel] Erro ao atualizar lastLoginAt (coalesced): $e');
+      }
+    });
+  }
+
   /// Faz logout
   Future<void> logout() async {
     debugPrint('🚪 [AuthViewModel] Iniciando logout...');
@@ -446,6 +642,14 @@ class AuthViewModel extends ChangeNotifier {
       debugPrint('🚪 [AuthViewModel] Chamando _authRepository.signOut()...');
       await _authRepository.signOut();
       debugPrint('✅ [AuthViewModel] Logout realizado com sucesso!');
+      
+      // Invalidar cache de bar
+      _invalidateBarCache();
+      
+      // ← NOVO: Notificar outros ViewModels para limpeza
+      debugPrint('🧹 [AuthViewModel] Notificando outros ViewModels para limpeza...');
+      _onLogoutCallback?.call();
+      
       _currentUser = null;
       _setState(AuthState.unauthenticated);
       debugPrint('✅ [AuthViewModel] Estado alterado para unauthenticated');
@@ -487,11 +691,19 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Verifica se o usuário tem um bar cadastrado
   Future<bool> hasBarRegistered() async {
+    // Verificar cache primeiro
+    final cached = hasBarRegisteredCached;
+    if (cached != null) {
+      debugPrint('🏪 [AuthViewModel] Usando valor em cache: $cached');
+      return cached;
+    }
+
     debugPrint('🏪 [AuthViewModel] Verificando se usuário tem bar cadastrado...');
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) {
         debugPrint('❌ [AuthViewModel] Usuário não autenticado - retornando false');
+        _updateBarCache(false);
         return false;
       }
       debugPrint('🏪 [AuthViewModel] Usuário autenticado: ${currentUser.email}');
@@ -500,6 +712,7 @@ class AuthViewModel extends ChangeNotifier {
       final userProfile = await _userRepository.getMe();
       if (userProfile?.currentBarId != null) {
         debugPrint('✅ [AuthViewModel] Usuário tem currentBarId: ${userProfile!.currentBarId}');
+        _updateBarCache(true);
         return true;
       }
       debugPrint('🏪 [AuthViewModel] currentBarId é null, verificando bars cadastrados...');
@@ -508,11 +721,38 @@ class AuthViewModel extends ChangeNotifier {
       final bars = await _barRepository.listMyBars(currentUser.uid).first;
       final hasBar = bars.isNotEmpty;
       debugPrint('🏪 [AuthViewModel] Resultado da verificação de bars: $hasBar (${bars.length} bars encontrados)');
+      
+      _updateBarCache(hasBar);
       return hasBar;
     } catch (e) {
       debugPrint('❌ [AuthViewModel] Erro ao verificar bar: $e');
+      _updateBarCache(false);
       return false;
     }
+  }
+
+  /// Atualiza o cache de verificação de bar
+  void _updateBarCache(bool hasBar) {
+    _cachedHasBarRegistered = hasBar;
+    _lastBarCheckTime = DateTime.now();
+    debugPrint('🏪 [AuthViewModel] Cache atualizado: hasBar=$hasBar');
+  }
+  
+  /// Invalida o cache de verificação de bar
+  void _invalidateBarCache() {
+    _cachedHasBarRegistered = null;
+    _lastBarCheckTime = null;
+    debugPrint('🏪 [AuthViewModel] Cache de bar invalidado');
+  }
+
+  /// Pré-carrega o cache de bar em background para otimizar navegação
+  void _preloadBarCache() {
+    debugPrint('🏪 [AuthViewModel] Pré-carregando cache de bar...');
+    hasBarRegistered().then((hasBar) {
+      debugPrint('🏪 [AuthViewModel] Cache pré-carregado: hasBar=$hasBar');
+    }).catchError((e) {
+      debugPrint('❌ [AuthViewModel] Erro ao pré-carregar cache de bar: $e');
+    });
   }
   
   /// Verifica se o usuário logou via provedor social

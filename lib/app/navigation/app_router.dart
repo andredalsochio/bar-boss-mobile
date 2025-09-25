@@ -138,51 +138,75 @@ class AppRouter {
   }
 
   /// Guard de autenticação e redirecionamento
+  /// Lógica principal de redirecionamento baseada no estado de autenticação
   static String? _handleRedirect(
     BuildContext context,
     GoRouterState state,
     AuthViewModel authViewModel,
   ) {
     final isLoggedIn = authViewModel.isAuthenticated;
-    final isLoggingIn = state.matchedLocation == AppRoutes.login;
-    final isRegistering = state.matchedLocation.startsWith('/register');
-    final isEmailVerificationFlow = state.matchedLocation == AppRoutes.emailVerification ||
-        state.matchedLocation == AppRoutes.forgotPassword;
+    final currentLocation = state.matchedLocation;
+    
+    // Log de debug para diagnóstico
+    debugPrint('🔄 [AppRouter] Redirect check - Location: $currentLocation, LoggedIn: $isLoggedIn');
+    
+    // Definir rotas permitidas por estado
+    const publicRoutes = [
+      AppRoutes.login,
+      AppRoutes.registerStep1,
+      AppRoutes.registerStep2,
+      AppRoutes.registerStep3,
+      AppRoutes.forgotPassword,
+    ];
 
-    // Se o usuário não está logado e não está na tela de login, cadastro ou verificação
-    if (!isLoggedIn && !isLoggingIn && !isRegistering && !isEmailVerificationFlow) {
+    // ← NOVO: Verificação idempotente - se já está na rota certa, não redirecionar
+    if (!isLoggedIn && publicRoutes.contains(currentLocation)) {
+      debugPrint('✅ [AppRouter] Usuário não logado em rota pública - sem redirect');
+      return null;
+    }
+
+    // Se o usuário não está logado, redirecionar para login
+    if (!isLoggedIn) {
+      debugPrint('🔄 [AppRouter] Usuário não logado - redirecionando para login');
       return AppRoutes.login;
     }
 
-    // Se o usuário está logado
-    if (isLoggedIn) {
-      // Verificar se o e-mail está verificado
-      final emailVerified = authViewModel.isCurrentUserEmailVerified;
-      final isFromSocialProvider = authViewModel.isFromSocialProvider;
-      
-      // Se está na tela de login e (e-mail verificado OU é de provedor social), vai para home
-      if (isLoggingIn && (emailVerified || isFromSocialProvider)) {
-        return AppRoutes.home;
+    // === USUÁRIO LOGADO ===
+    final emailVerified = authViewModel.isCurrentUserEmailVerified;
+    final isFromSocialFlow = authViewModel.isFromSocialFlow;
+    final canAccessApp = emailVerified || isFromSocialFlow;
+    
+    debugPrint('📧 [AppRouter] Email verified: $emailVerified, Social: $isFromSocialFlow, CanAccess: $canAccessApp');
+
+    // ← MELHORADO: Lógica mais clara para verificação de email
+    if (!canAccessApp) {
+      // Se não pode acessar o app e já está na tela de verificação, não redirecionar
+      if (currentLocation == AppRoutes.emailVerification) {
+        debugPrint('✅ [AppRouter] Usuário na tela de verificação - sem redirect');
+        return null;
       }
       
-      // Se e-mail não verificado e não está na tela de verificação
-      // IMPORTANTE: Usuários de login social não precisam verificar e-mail
-      if (!emailVerified && !isFromSocialProvider && state.matchedLocation != AppRoutes.emailVerification) {
-        return AppRoutes.emailVerification;
-      }
-      
-      // Se e-mail verificado OU é de provedor social e está na tela de verificação, vai para home
-      if ((emailVerified || isFromSocialProvider) && state.matchedLocation == AppRoutes.emailVerification) {
-        return AppRoutes.home;
-      }
-      
-      // Guard de completude de perfil (apenas se e-mail verificado OU é de provedor social)
-      if ((emailVerified || isFromSocialProvider) && !isLoggingIn && !isRegistering && !isEmailVerificationFlow) {
-        return _handleProfileCompletenessGuard(context, state);
-      }
+      // Se não pode acessar e não está na tela de verificação, redirecionar
+      debugPrint('🔄 [AppRouter] Email não verificado - redirecionando para verificação');
+      return AppRoutes.emailVerification;
     }
 
-    // Não redireciona
+    // ← NAVEGAÇÃO AUTOMÁTICA: Se pode acessar e está na tela de verificação, ir para home
+    if (canAccessApp && currentLocation == AppRoutes.emailVerification) {
+      debugPrint('🎉 [AppRouter] Email verificado - navegação automática para home');
+      return AppRoutes.home;
+    }
+
+    // ← NOVO: Se está em rota pública mas pode acessar o app, ir para home
+    if (canAccessApp && publicRoutes.contains(currentLocation)) {
+      debugPrint('🔄 [AppRouter] Usuário autenticado em rota pública - redirecionando para home');
+      return AppRoutes.home;
+    }
+
+    // ← MELHORADO: Guard de completude mais simples (não bloqueia, apenas informa)
+    // A verificação de completude será feita na HomePage via banner
+    
+    debugPrint('✅ [AppRouter] Nenhum redirect necessário');
     return null;
   }
 
@@ -203,24 +227,36 @@ class AppRouter {
   }
 
   /// Guard para verificar se o usuário tem bar cadastrado
-  /// Bloqueia acesso a telas de eventos se não tiver bar
-  static Future<String?> _handleBarRegistrationGuard(
+  /// Usa cache para evitar chamadas assíncronas no redirect
+  static String? _handleBarRegistrationGuard(
     BuildContext context,
     GoRouterState state,
-  ) async {
+  ) {
     try {
       final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
-      final hasBar = await authViewModel.hasBarRegistered();
+      final hasBarCached = authViewModel.hasBarRegisteredCached;
       
-      if (!hasBar) {
-        // Redireciona para cadastro de bar se não tiver
+      // Se não há cache, permitir navegação e verificar assincronamente
+      if (hasBarCached == null) {
+        // Verificar em background sem bloquear navegação
+        authViewModel.hasBarRegistered().then((hasBar) {
+          if (!hasBar && context.mounted) {
+            // Se não tem bar, navegar para cadastro
+            context.go(AppRoutes.registerStep1);
+          }
+        });
+        return null; // Permite navegação imediata
+      }
+      
+      // Se tem cache e não tem bar, redirecionar
+      if (!hasBarCached) {
         return AppRoutes.registerStep1;
       }
       
       return null; // Permite navegação
     } catch (e) {
       debugPrint('Erro no guard de bar: $e');
-      return '/login'; // Redireciona para login em caso de erro
+      return AppRoutes.login; // Redireciona para login em caso de erro
     }
   }
 }

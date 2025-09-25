@@ -197,6 +197,21 @@ class AppRouter {
       return AppRoutes.home;
     }
 
+    // ← NOVO: Verificar se usuário de login social pode acessar rotas de registro
+    const registerRoutes = [
+      AppRoutes.registerStep1,
+      AppRoutes.registerStep2,
+      AppRoutes.registerStep3,
+    ];
+    
+    // Se está em rota de registro e é usuário social que não completou cadastro, permitir acesso
+    if (registerRoutes.contains(currentLocation) && 
+        isFromSocialFlow && 
+        !authViewModel.hasCompletedFullRegistration) {
+      debugPrint('✅ [AppRouter] Usuário social em rota de registro - permitindo acesso para completar cadastro');
+      return null;
+    }
+    
     // ← NOVO: Se está em rota pública mas pode acessar o app, ir para home
     if (canAccessApp && publicRoutes.contains(currentLocation)) {
       debugPrint('🔄 [AppRouter] Usuário autenticado em rota pública - redirecionando para home');

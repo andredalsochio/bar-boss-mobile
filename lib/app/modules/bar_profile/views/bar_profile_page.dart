@@ -8,6 +8,7 @@ import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/services/image_picker_service.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
+import 'package:bar_boss_mobile/app/core/services/connectivity_service.dart';
 
 /// Tela de perfil do bar
 class BarProfilePage extends StatefulWidget {
@@ -17,7 +18,7 @@ class BarProfilePage extends StatefulWidget {
   State<BarProfilePage> createState() => _BarProfilePageState();
 }
 
-class _BarProfilePageState extends State<BarProfilePage> {
+class _BarProfilePageState extends State<BarProfilePage> with ConnectivityMixin {
   @override
   void initState() {
     super.initState();
@@ -455,7 +456,14 @@ class _BarProfilePageState extends State<BarProfilePage> {
     );
   }
 
-  void _showPhotoOptions(BarProfileViewModel viewModel) {
+  Future<void> _showPhotoOptions(BarProfileViewModel viewModel) async {
+    // Verifica conectividade antes de exibir opções de foto
+    if (!await checkConnectivity(context, 'alterar foto do perfil')) {
+      return;
+    }
+
+    if (!mounted) return;
+
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -506,6 +514,12 @@ class _BarProfilePageState extends State<BarProfilePage> {
      try {
        final imageFile = await ImagePickerService.pickImageFromCamera(context);
        if (imageFile != null) {
+         // Verifica conectividade antes de fazer upload
+         if (!mounted) return;
+         if (!await checkConnectivity(context, 'fazer upload da foto')) {
+           return;
+         }
+         
          await viewModel.uploadProfilePhoto(imageFile);
          _showUploadResult(viewModel);
        } else {
@@ -524,6 +538,12 @@ class _BarProfilePageState extends State<BarProfilePage> {
      try {
        final imageFile = await ImagePickerService.pickImageFromGallery();
        if (imageFile != null) {
+         // Verifica conectividade antes de fazer upload
+         if (!mounted) return;
+         if (!await checkConnectivity(context, 'fazer upload da foto')) {
+           return;
+         }
+         
          await viewModel.uploadProfilePhoto(imageFile);
          _showUploadResult(viewModel);
        } else {
@@ -540,6 +560,12 @@ class _BarProfilePageState extends State<BarProfilePage> {
  
    Future<void> _removePhoto(BarProfileViewModel viewModel) async {
      try {
+       // Verifica conectividade antes de remover foto
+       if (!mounted) return;
+       if (!await checkConnectivity(context, 'remover foto do perfil')) {
+         return;
+       }
+       
        await viewModel.removeProfilePhoto();
        ToastService.instance.showSuccess(message: 'Foto removida com sucesso!');
      } catch (e) {

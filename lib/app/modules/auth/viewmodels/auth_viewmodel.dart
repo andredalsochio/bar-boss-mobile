@@ -227,13 +227,27 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Verifica se o usuário completou o cadastro completo
   Future<void> _checkRegistrationCompleteness() async {
+    debugPrint('🔍 [AuthViewModel] Verificando completude do cadastro...');
     try {
       final userProfile = await _userRepository.getMe();
+      final previousValue = _hasCompletedFullRegistration;
       _hasCompletedFullRegistration =
           userProfile?.completedFullRegistration ?? false;
-      debugPrint(
-        '🔄 [AuthViewModel] Cadastro completo: $_hasCompletedFullRegistration',
-      );
+      
+      // Telemetria detalhada
+      debugPrint('📊 [AuthViewModel] TELEMETRIA - Completude do Cadastro:');
+      debugPrint('  - UserProfile encontrado: ${userProfile != null}');
+      debugPrint('  - UID: ${userProfile?.uid ?? "null"}');
+      debugPrint('  - Email: ${userProfile?.email ?? "null"}');
+      debugPrint('  - completedFullRegistration: ${userProfile?.completedFullRegistration ?? "null"}');
+      debugPrint('  - currentBarId: ${userProfile?.currentBarId ?? "null"}');
+      debugPrint('  - Valor anterior: $previousValue');
+      debugPrint('  - Valor atual: $_hasCompletedFullRegistration');
+      debugPrint('  - Mudança detectada: ${previousValue != _hasCompletedFullRegistration}');
+      
+      if (previousValue != _hasCompletedFullRegistration) {
+        debugPrint('🔄 [AuthViewModel] MUDANÇA DE ESTADO: $previousValue → $_hasCompletedFullRegistration');
+      }
     } catch (e) {
       debugPrint(
         '❌ [AuthViewModel] Erro ao verificar completude do cadastro: $e',
@@ -760,12 +774,14 @@ class AuthViewModel extends ChangeNotifier {
     final cached = hasBarRegisteredCached;
     if (cached != null) {
       debugPrint('🏪 [AuthViewModel] Usando valor em cache: $cached');
+      debugPrint('📊 [AuthViewModel] TELEMETRIA - Cache Hit:');
+      debugPrint('  - Valor em cache: $cached');
+      debugPrint('  - Último check: $_lastBarCheckTime');
       return cached;
     }
 
-    debugPrint(
-      '🏪 [AuthViewModel] Verificando se usuário tem bar cadastrado...',
-    );
+    debugPrint('🔍 [AuthViewModel] Cache miss - verificando se usuário tem bar cadastrado...');
+    debugPrint('📊 [AuthViewModel] TELEMETRIA - Iniciando verificação fresh:');
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) {
@@ -795,14 +811,19 @@ class AuthViewModel extends ChangeNotifier {
       // Fallback: verificar se tem bars cadastrados
       final bars = await _barRepository.listMyBars(currentUser.uid).first;
       final hasBar = bars.isNotEmpty;
-      debugPrint(
-        '🏪 [AuthViewModel] Resultado da verificação de bars: $hasBar (${bars.length} bars encontrados)',
-      );
+      
+      // Telemetria detalhada do resultado
+      debugPrint('📊 [AuthViewModel] TELEMETRIA - Resultado da Verificação:');
+      debugPrint('  - currentBarId no perfil: ${userProfile?.currentBarId ?? "null"}');
+      debugPrint('  - Bars encontrados: ${bars.length}');
+      debugPrint('  - hasBar (resultado): $hasBar');
+      debugPrint('  - Método usado: ${userProfile?.currentBarId != null ? "currentBarId" : "listMyBars"}');
 
       _updateBarCache(hasBar);
       return hasBar;
     } catch (e) {
       debugPrint('❌ [AuthViewModel] Erro ao verificar bar: $e');
+      debugPrint('📊 [AuthViewModel] TELEMETRIA - Erro na verificação, retornando false');
       _updateBarCache(false);
       return false;
     }
@@ -810,9 +831,19 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Atualiza o cache de verificação de bar
   void _updateBarCache(bool hasBar) {
+    final previousValue = _cachedHasBarRegistered;
     _cachedHasBarRegistered = hasBar;
     _lastBarCheckTime = DateTime.now();
-    debugPrint('🏪 [AuthViewModel] Cache atualizado: hasBar=$hasBar');
+    
+    // Telemetria detalhada
+    debugPrint('📊 [AuthViewModel] TELEMETRIA - Atualização do Cache:');
+    debugPrint('  - Valor anterior: $previousValue');
+    debugPrint('  - Valor novo: $hasBar');
+    debugPrint('  - Mudança detectada: ${previousValue != hasBar}');
+    debugPrint('  - Timestamp: $_lastBarCheckTime');
+    debugPrint('  - Notificando listeners: true');
+    
+    notifyListeners(); // ✅ Notificar listeners quando cache é atualizado
   }
 
   /// Invalida o cache de verificação de bar

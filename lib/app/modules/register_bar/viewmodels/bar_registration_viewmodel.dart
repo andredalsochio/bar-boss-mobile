@@ -1273,6 +1273,21 @@ class BarRegistrationViewModel extends ChangeNotifier {
       debugPrint('🎉 DEBUG Login Social Step 2: Profile completo - contactsComplete=true, addressComplete=true, passwordComplete=true (senha já existia)');
       debugPrint('🎉 DEBUG Login Social Step 2: UserProfile atualizado com currentBarId=$barId e completedFullRegistration=true');
 
+      // Sincronizar AuthViewModel após persistência
+      debugPrint('🔄 [BarRegistrationViewModel] Sincronizando AuthViewModel após persistência (Step 2)...');
+      
+      // 1. Invalidar cache de bar
+      _authViewModel.invalidateBarCache();
+      
+      // 2. Atualizar status de completude do cadastro
+      await _authViewModel.refreshRegistrationStatus();
+      
+      // 3. Aguardar repovoamento do cache antes de liberar navegação
+      debugPrint('🔄 [BarRegistrationViewModel] Aguardando repovoamento do cache...');
+      await _authViewModel.hasBarRegistered(); // Força repovoamento
+      
+      debugPrint('✅ [BarRegistrationViewModel] AuthViewModel sincronizado com sucesso (Step 2)!');
+
       debugPrint('🎉 [STEP3_VM] Finalizado com sucesso');
       ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
       _setRegistrationState(RegistrationState.success);
@@ -1319,9 +1334,20 @@ class BarRegistrationViewModel extends ChangeNotifier {
       
       debugPrint('🎉 [BarRegistrationViewModel] Cadastro social finalizado com sucesso');
       
-      // Invalidar cache do AuthViewModel para forçar refresh do estado
-      debugPrint('🔄 [BarRegistrationViewModel] Invalidando cache do AuthViewModel');
+      // Sincronizar AuthViewModel após persistência
+      debugPrint('🔄 [BarRegistrationViewModel] Sincronizando AuthViewModel após persistência...');
+      
+      // 1. Invalidar cache de bar
       _authViewModel.invalidateBarCache();
+      
+      // 2. Atualizar status de completude do cadastro
+      await _authViewModel.refreshRegistrationStatus();
+      
+      // 3. Aguardar repovoamento do cache antes de liberar navegação
+      debugPrint('🔄 [BarRegistrationViewModel] Aguardando repovoamento do cache...');
+      await _authViewModel.hasBarRegistered(); // Força repovoamento
+      
+      debugPrint('✅ [BarRegistrationViewModel] AuthViewModel sincronizado com sucesso!');
       
       ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
       _setRegistrationState(RegistrationState.success);

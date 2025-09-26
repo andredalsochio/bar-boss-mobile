@@ -47,7 +47,7 @@
 	<true/>
 
 	<!-- Configurações para Google Sign-In -->
-	<!-- Substitua YOUR_REVERSED_CLIENT_ID pelo valor REVERSED_CLIENT_ID do GoogleService-Info.plist -->
+	<!-- URL scheme baseado no REVERSED_CLIENT_ID do GoogleService-Info.plist -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -55,7 +55,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.779191401505-nvntfl7i61ku97c38vr5aiv82j3tf828</string>
+				<string>com.googleusercontent.apps.779191401505-3jqq1kvmnp9b3l50b75lacjan4fvf15f</string>
 			</array>
 		</dict>
 
@@ -64,8 +64,9 @@
 
 
 
+	<!-- Client ID para Google Sign-In -->
 	<key>GIDClientID</key>
-	<string>779191401505-nvntfl7i61ku97c38vr5aiv82j3tf828.apps.googleusercontent.com</string>
+	<string>779191401505-3jqq1kvmnp9b3l50b75lacjan4fvf15f.apps.googleusercontent.com</string>
 
 	<!-- Permissões para câmera e galeria -->
 	<key>NSCameraUsageDescription</key>

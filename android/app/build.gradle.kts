@@ -47,3 +47,17 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Firebase BOM para garantir compatibilidade de versões
+    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+    
+    // Firebase App Check com Play Integrity
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    
+    // Firebase Auth (já incluído via Flutter, mas garantindo compatibilidade)
+    implementation("com.google.firebase:firebase-auth")
+    
+    // Firebase Firestore (já incluído via Flutter, mas garantindo compatibilidade)
+    implementation("com.google.firebase:firebase-firestore")
+}

@@ -59,11 +59,13 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCEOV29Gizf6FUos0ngB92KJvt0YKrT3Oo',
-    appId: '1:779191401505:ios:e086dbc3989f9dc03e3760',
+    appId: '1:779191401505:ios:01b664d3816c64d83e3760',
     messagingSenderId: '779191401505',
     projectId: 'bar-boss-mobile',
     storageBucket: 'bar-boss-mobile.firebasestorage.app',
-    iosBundleId: 'com.example.barBossMobile',
+    androidClientId: '779191401505-6ei473sei0e4fhmb0e5f02mb233vlir2.apps.googleusercontent.com',
+    iosClientId: '779191401505-3jqq1kvmnp9b3l50b75lacjan4fvf15f.apps.googleusercontent.com',
+    iosBundleId: 'com.barboss.mobile',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

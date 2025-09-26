@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:provider/provider.dart';
@@ -19,10 +20,14 @@ void main() async {
   // Inicializa o Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Configura o App Check (DEV: usa provider de debug)
+  // Configura o App Check por ambiente
   await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
+    androidProvider: kReleaseMode 
+        ? AndroidProvider.playIntegrity   // Produção: Play Integrity
+        : AndroidProvider.debug,          // Desenvolvimento: Debug Token
+    appleProvider: kReleaseMode
+        ? AppleProvider.appAttest         // Produção: App Attest
+        : AppleProvider.debug,            // Desenvolvimento: Debug Token
   );
 
   // Inicializa a localização de datas

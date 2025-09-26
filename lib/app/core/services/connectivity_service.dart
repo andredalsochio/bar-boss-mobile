@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'throttling_service.dart';
 
 /// Mixin para verificação de conectividade de internet
 /// 
 /// Fornece métodos reutilizáveis para verificar se o dispositivo
 /// está conectado à internet antes de executar operações que requerem rede.
+/// Integra com ThrottlingService para mitigar problemas de "Too many attempts".
 /// 
 /// Uso:
 /// ```dart
@@ -18,6 +20,7 @@ import 'package:flutter/material.dart';
 /// ```
 mixin ConnectivityMixin {
   final Connectivity _connectivity = Connectivity();
+  final ThrottlingService _throttlingService = ThrottlingService();
 
   /// Verifica se há conectividade com a internet
   /// 
@@ -47,7 +50,13 @@ mixin ConnectivityMixin {
   /// 
   /// Retorna `true` se há conexão, `false` se não há e o dialog foi exibido
   Future<bool> checkConnectivity(BuildContext context, String action) async {
-    if (!await hasInternetConnection()) {
+    // Usa throttling para evitar múltiplas verificações simultâneas
+    final hasConnection = await _throttlingService.executeWithThrottling<bool>(
+      operationKey: 'connectivity_check',
+      operation: () => hasInternetConnection(),
+    );
+
+    if (!hasConnection) {
       if (context.mounted) {
         await _showNoInternetDialog(context, action);
       }

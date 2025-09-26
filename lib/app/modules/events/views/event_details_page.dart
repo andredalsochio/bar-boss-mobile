@@ -522,7 +522,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                            try {
                              // Carrega o evento antes de excluir
                              await viewModel.loadEvent(widget.eventId);
-                             await viewModel.deleteEvent();
+                             await viewModel.deleteEvent(context: context);
                               if (mounted) {
                                 Navigator.of(context).pop(); // Fecha o dialog
                                 context.pop(); // Volta para a tela anterior

@@ -834,6 +834,14 @@ class AuthViewModel extends ChangeNotifier {
         });
   }
 
+  /// Método público para invalidar o cache de bar
+  /// Usado após operações que alteram o estado de registro do bar
+  void invalidateBarCache() {
+    debugPrint('🔄 [AuthViewModel] Invalidando cache de bar (chamada pública)');
+    _invalidateBarCache();
+    notifyListeners(); 
+  }
+
   /// Verifica se o usuário logou via provedor social
   bool get isFromSocialProvider {
     if (_currentUser == null) return false;

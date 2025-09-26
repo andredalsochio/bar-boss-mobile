@@ -11,12 +11,13 @@ import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/core/services/image_processing_service.dart';
+import 'package:bar_boss_mobile/app/core/services/connectivity_service.dart';
 
 /// Estados possíveis da operação de eventos
 enum EventsState { initial, loading, success, error }
 
 /// ViewModel para gerenciar eventos
-class EventsViewModel extends ChangeNotifier {
+class EventsViewModel extends ChangeNotifier with ConnectivityMixin {
   final EventRepositoryDomain _eventRepository;
   final BarRepositoryDomain _barRepository;
   final AuthRepository _authRepository;
@@ -503,8 +504,18 @@ class EventsViewModel extends ChangeNotifier {
   }
 
   /// Salva o evento (cria ou atualiza)
-  Future<void> saveEvent() async {
+  Future<void> saveEvent({BuildContext? context}) async {
     debugPrint('💾 [EventsViewModel] Iniciando salvamento de evento...');
+    
+    // Verifica conectividade antes de prosseguir
+    if (context != null) {
+      final hasConnection = await checkConnectivity(context, 'salvar o evento');
+      if (!hasConnection) {
+        debugPrint('❌ [EventsViewModel] Sem conexão - cancelando salvamento');
+        return;
+      }
+    }
+    
     if (!isFormValid) {
       debugPrint('❌ [EventsViewModel] Formulário inválido - cancelando salvamento');
       _setError(AppStrings.formValidationErrorMessage);
@@ -707,10 +718,19 @@ class EventsViewModel extends ChangeNotifier {
   }
 
   /// Exclui o evento atual
-  Future<void> deleteEvent() async {
+  Future<void> deleteEvent({BuildContext? context}) async {
     if (_currentEvent == null) {
       debugPrint('⚠️ [EventsViewModel] Tentativa de excluir evento nulo');
       return;
+    }
+
+    // Verifica conectividade antes de prosseguir
+    if (context != null) {
+      final hasConnection = await checkConnectivity(context, 'excluir o evento');
+      if (!hasConnection) {
+        debugPrint('❌ [EventsViewModel] Sem conexão - cancelando exclusão');
+        return;
+      }
     }
 
     debugPrint('🗑️ [EventsViewModel] Iniciando exclusão do evento: ${_currentEvent!.id}');

@@ -530,7 +530,7 @@ class _EventFormPageState extends State<EventFormPage> {
               return;
             }
             
-            await viewModel.saveEvent();
+            await viewModel.saveEvent(context: context);
             if (mounted && viewModel.state == EventsState.success) {
               Navigator.of(context).pop();
             }
@@ -545,7 +545,7 @@ class _EventFormPageState extends State<EventFormPage> {
             onPressed: viewModel.isLoading ? null : () async {
               final confirmed = await _showDeleteConfirmation();
               if (confirmed == true) {
-                await viewModel.deleteEvent();
+                await viewModel.deleteEvent(context: context);
                 if (mounted && viewModel.state == EventsState.success) {
                   Navigator.of(context).pop();
                 }

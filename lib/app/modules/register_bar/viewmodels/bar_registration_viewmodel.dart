@@ -10,6 +10,7 @@ import 'package:bar_boss_mobile/app/domain/repositories/bar_repository_domain.da
 import 'package:bar_boss_mobile/app/domain/repositories/user_repository.dart';
 import 'package:bar_boss_mobile/app/domain/entities/user_profile.dart';
 import 'package:bar_boss_mobile/app/modules/register_bar/models/bar_model.dart';
+import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:bar_boss_mobile/app/core/services/toast_service.dart';
 import 'package:bar_boss_mobile/app/core/services/hybrid_validation_service.dart';
 import 'package:bar_boss_mobile/app/core/utils/normalization_helpers.dart';
@@ -29,6 +30,7 @@ class BarRegistrationViewModel extends ChangeNotifier {
   final BarRepositoryDomain _barRepository;
   final AuthRepository _authRepository;
   final UserRepository _userRepository;
+  final AuthViewModel _authViewModel;
 
   // Estado atual do cadastro
   RegistrationState _registrationState = RegistrationState.initial;
@@ -100,9 +102,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
     required BarRepositoryDomain barRepository,
     required AuthRepository authRepository,
     required UserRepository userRepository,
+    required AuthViewModel authViewModel,
   }) : _barRepository = barRepository,
        _authRepository = authRepository,
-       _userRepository = userRepository;
+       _userRepository = userRepository,
+       _authViewModel = authViewModel;
 
   // Getters para o estado
   RegistrationState get registrationState => _registrationState;
@@ -1314,6 +1318,11 @@ class BarRegistrationViewModel extends ChangeNotifier {
       await _executeAtomicSocialRegistration(firebaseUser, normalizedCnpj);
       
       debugPrint('🎉 [BarRegistrationViewModel] Cadastro social finalizado com sucesso');
+      
+      // Invalidar cache do AuthViewModel para forçar refresh do estado
+      debugPrint('🔄 [BarRegistrationViewModel] Invalidando cache do AuthViewModel');
+      _authViewModel.invalidateBarCache();
+      
       ToastService.instance.showSuccess(message: 'Cadastro finalizado com sucesso!');
       _setRegistrationState(RegistrationState.success);
     } catch (e) {

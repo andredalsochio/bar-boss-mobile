@@ -258,11 +258,21 @@ class AppRouter {
       
       final hasBarCached = authViewModel.hasBarRegisteredCached;
       
+      // DEBUG: Logs detalhados do estado
+      debugPrint('🔍 [AppRouter] DEBUG Estado completo:');
+      debugPrint('  - isAuthenticated: ${authViewModel.isAuthenticated}');
+      debugPrint('  - hasBarCached: $hasBarCached');
+      debugPrint('  - hasCompletedFullRegistration: ${authViewModel.hasCompletedFullRegistration}');
+      debugPrint('  - currentUser: ${authViewModel.currentUser?.uid}');
+      debugPrint('  - authViewModel hashCode: ${authViewModel.hashCode}');
+      debugPrint('  - location: ${state.uri.toString()}');
+      
       // Se não há cache, permitir navegação e verificar assincronamente
       if (hasBarCached == null) {
         debugPrint('🏪 [AppRouter] Cache de bar não disponível - verificando assincronamente');
         // Verificar em background sem bloquear navegação
         authViewModel.hasBarRegistered().then((hasBar) {
+          debugPrint('🔍 [AppRouter] Verificação assíncrona retornou: hasBar=$hasBar');
           if (!hasBar && context.mounted && authViewModel.isAuthenticated) {
             debugPrint('🏪 [AppRouter] Usuário autenticado sem bar - redirecionando para cadastro');
             // Se não tem bar, navegar para cadastro
@@ -275,6 +285,7 @@ class AppRouter {
       // Se tem cache e não tem bar, redirecionar
       if (!hasBarCached) {
         debugPrint('🏪 [AppRouter] Cache indica que usuário não tem bar - redirecionando para cadastro');
+        debugPrint('🔍 [AppRouter] PROBLEMA IDENTIFICADO: Cache stale após cadastro social');
         return AppRoutes.registerStep1;
       }
       

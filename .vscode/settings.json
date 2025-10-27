@@ -1,28 +1,54 @@
 {
-  // Caminho personalizado para o SDK do Flutter
-  "dart.flutterSdkPath": "/Users/andredalsochio/development/flutter_versions/flutter_3.32.0",
+  // SDKs
+  // Caminho do Flutter (fixo de acordo com seu ambiente)
+  "dart.flutterSdkPath": "/Users/andredalsochio/.fvm/flutter_sdk",
+  // Opcional: aponta explicitamente para o Dart SDK dentro do Flutter (via FVM)
+  "dart.sdkPath": "/Users/andredalsochio/.fvm/flutter_sdk/bin/cache/dart-sdk",
+  // Como o projeto Flutter está em um subdiretório (bar_boss_mobile/), aumentamos a profundidade de busca
+  "dart.projectSearchDepth": 3,
 
-  // Formatação automática ao salvar
+  // Qualidade de código e produtividade
   "editor.formatOnSave": true,
-
-  // Mostrar a visualização dos widgets no editor
+  // Guias de UI do Flutter no editor
   "dart.previewFlutterUiGuides": true,
-
-  // Mostrar nomes de parâmetros nas chamadas de função
   "dart.previewFlutterUiGuidesCustomTracking": true,
-
-  // Suprimir avisos do pubspec.yaml
+  // Validação de YAML
   "yaml.validate": true,
 
-  // Habilita linting com base no flutter_lints
+  // Excluir pastas pesadas da análise do Dart (compatível com estrutura atual)
   "dart.analysisExcludedFolders": [
-    "build"
+    "bar_boss_mobile/build",
+    "bar_boss_mobile/.dart_tool",
+    "bar_boss_mobile/ios/Pods",
+    "bar_boss_mobile/android/.gradle",
+    "bar_boss_mobile/android/build"
   ],
 
-  // Preferências visuais (opcional)
+  // Preferências visuais
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
+  // Mostrar estruturas de widget (barras verticais no editor)
+  "dart.flutterUiGuides": true,
+  // Réguas visuais para manter o comprimento de linha consistente
+  "editor.rulers": [100],
+  // Define o comprimento de linha que o formatador do Dart deve tentar respeitar
+  "dart.lineLength": 100,
 
-  // Flutter: mostrar estruturas de widget (barras verticais no editor)
-  "dart.flutterUiGuides": true
+  // Otimizações de desempenho do VS Code (reduzem carga do file watcher e busca)
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/.dart_tool/**": true,
+    "**/build/**": true,
+    "**/ios/Pods/**": true,
+    "**/android/.gradle/**": true,
+    "**/android/build/**": true
+  },
+  "search.exclude": {
+    "**/.git/**": true,
+    "**/.dart_tool/**": true,
+    "**/build/**": true,
+    "**/ios/Pods/**": true,
+    "**/android/.gradle/**": true,
+    "**/android/build/**": true
+  }
 }

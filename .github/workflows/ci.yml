@@ -180,15 +180,14 @@ jobs:
         run: |
           # Criar firebase.json se não existir
           if [ ! -f firebase.json ]; then
-            cat > firebase.json <<'JSON'
-            {
-              "emulators": {
-                "firestore": { "port": 8080 },
-                "auth": { "port": 9099 },
-                "ui": { "enabled": true, "port": 4000 }
-              }
-            }
-JSON
+            printf '%s\n' \
+              '{' \
+              '  "emulators": {' \
+              '    "firestore": { "port": 8080 },' \
+              '    "auth": { "port": 9099 },' \
+              '    "ui": { "enabled": true, "port": 4000 }' \
+              '  }' \
+              '}' > firebase.json
           fi
 
           # Executar testes com emulador
@@ -253,12 +252,11 @@ JSON
         run: |
           # Criar firebase.json se não existir
           if [ ! -f firebase.json ]; then
-            cat > firebase.json <<'JSON'
-            {
-              "firestore": { "rules": "firestore.rules" },
-              "emulators": { "firestore": { "port": 8080 } }
-            }
-JSON
+            printf '%s\n' \
+              '{' \
+              '  "firestore": { "rules": "firestore.rules" },' \
+              '  "emulators": { "firestore": { "port": 8080 } }' \
+              '}' > firebase.json
           fi
 
           # Validar sintaxe das regras

@@ -115,6 +115,10 @@ dev_dependencies:
   # Lints
   flutter_lints: ^5.0.0
   
+  # Geração de ícones e splash nativos
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.6
+  
   # Gerador de código para Drift
   drift_dev: ^2.15.0
   build_runner: ^2.4.8
@@ -157,3 +161,31 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Configuração dos ícones do app (Android e iOS)
+# Gera todos os tamanhos oficiais a partir das imagens em assets/app_icons.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/app_icons/app_icon.png
+  remove_alpha_ios: true
+  min_sdk_android: 23
+  adaptive_icon_background: "#FFFFFF" # Fundo neutro inspirado no logo
+  adaptive_icon_foreground: assets/app_icons/app_icon_foreground.png
+  
+# Configuração das telas de splash (Android/iOS)
+# Centra o logo em um fundo neutro claro, com suporte a modo escuro.
+flutter_native_splash:
+  color: "#FFFFFF"
+  color_dark: "#121212"
+  image: assets/splash/splash_logo.png
+  image_dark: assets/splash/splash_logo_dark.png
+  android_12:
+    image: assets/splash/splash_logo_android12.png
+    image_dark: assets/splash/splash_logo_android12_dark.png
+    icon_background_color: "#FFFFFF"
+    icon_background_color_dark: "#121212"
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: true
+  web: false

@@ -109,3 +109,7 @@ coverage/
 
 # FVM Version Cache
 .fvm/
+
+# Node.js dependencies (ignore nested node_modules such as tools/node_modules)
+node_modules/
+**/node_modules/

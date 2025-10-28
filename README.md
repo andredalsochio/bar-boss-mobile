@@ -159,3 +159,41 @@ Este projeto está licenciado sob a [MIT License](LICENSE).
 ---
 
 **Desenvolvido com ❤️ usando Flutter**
+# Bar Boss Mobile
+## Geração de Ícones e Splash (Android/iOS)
+
+Este projeto já está preparado para gerar todos os ícones e telas de splash nativas conforme especificações oficiais da Apple e Google usando `flutter_launcher_icons` e `flutter_native_splash`.
+
+### Passo a passo
+
+1. Coloque o arquivo do logo em `assets/branding/boteco-logo.jpeg` (PNG transparente ou SVG também são aceitos).
+2. Instale dependências (já feito):
+   - `flutter pub get`
+   - `npm install` dentro de `tools/`
+3. Gere os arquivos‑fonte normalizados (centralização, padding e tamanhos corretos):
+   - `npm run --prefix tools generate:brand`
+   - Isto cria:
+     - `assets/app_icons/app_icon.png` (1024x1024)
+     - `assets/app_icons/app_icon_foreground.png` (1024x1024)
+     - `assets/splash/splash_logo.png` (512x512)
+     - `assets/splash/splash_logo_dark.png` (512x512)
+     - `assets/splash/splash_logo_android12.png` (960x960)
+     - `assets/splash/splash_logo_android12_dark.png` (960x960)
+4. Gere os ícones:
+   - `dart run flutter_launcher_icons`
+5. Gere as telas de splash:
+   - `dart run flutter_native_splash:create`
+
+### Especificações atendidas
+
+- **Android (ícones)**: mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi (48/72/96/144/192 px), adaptive icon (foreground transparente + background sólido).
+- **Android 12 (splash)**: usa cor de janela e ícone animado, imagens 960x960 com máscara em círculo (~640 px).
+- **iOS (ícones)**: todos os tamanhos do AppIcon.appiconset (20/29/40/60 pt em @1x/@2x/@3x, iPad 76/83.5 pt, App Store 1024x1024).
+- **iOS (splash)**: LaunchScreen.storyboard com logo centralizado e fundo sólido.
+
+### Cores
+
+- Claro: `#FFFFFF`
+- Escuro: `#121212`
+
+Para alterar, edite `flutter_native_splash` e `adaptive_icon_background` no `pubspec.yaml` e regenere.

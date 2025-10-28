@@ -133,6 +133,7 @@ class AppStrings {
 
   static const String noEventsMessage = 'Nenhum evento encontrado';
   static const String createFirstEventMessage = 'Crie seu primeiro evento';
+  static const String noEventsFriendlyMessage = 'Sem eventos por enquanto — bora criar o primeiro?';
   static const String deleteEventConfirmationTitle = 'Excluir evento';
   static const String deleteEventConfirmationMessage = 'Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.';
   static const String deleteEventTooltip = 'Excluir evento';

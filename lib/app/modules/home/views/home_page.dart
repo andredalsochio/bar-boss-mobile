@@ -16,6 +16,7 @@ import 'package:bar_boss_mobile/app/modules/auth/viewmodels/auth_viewmodel.dart'
 import 'package:bar_boss_mobile/app/modules/events/viewmodels/events_viewmodel.dart';
 import 'package:bar_boss_mobile/app/modules/events/models/event_model.dart';
 import 'package:bar_boss_mobile/app/modules/home/viewmodels/home_viewmodel.dart';
+import 'package:bar_boss_mobile/app/modules/home/widgets/empty_events_state.dart';
 
 /// Tela inicial do aplicativo
 class HomePage extends StatefulWidget {
@@ -240,48 +241,25 @@ class _HomePageState extends State<HomePage> {
 
 
                 if (viewModel.upcomingEvents.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.event_busy,
-                          size: AppSizes.iconSizeLarge,
-                          color: AppColors.textSecondary(context),
-                        ),
-                        const SizedBox(height: AppSizes.spacingMedium),
-                        Text(
-                          AppStrings.noEventsMessage,
-                          style: TextStyle(
-                            fontSize: AppSizes.fontSizeMedium,
-                            color: AppColors.textSecondary(context),
-                          ),
-                        ),
-                        const SizedBox(height: AppSizes.spacingLarge),
-                        Consumer<HomeViewModel>(
-                          builder: (context, homeViewModel, _) {
-                            return ButtonWidget(
-                              text: AppStrings.createFirstEventMessage,
-                              onPressed: () {
-                                debugPrint('🎯 DEBUG Home: Botão criar evento pressionado');
-                                debugPrint('🎯 DEBUG Home: homeViewModel.hasBar = ${homeViewModel.hasBar}');
-                                debugPrint('🎯 DEBUG Home: homeViewModel.userBars.length = ${homeViewModel.userBars.length}');
-                                debugPrint('🎯 DEBUG Home: homeViewModel.currentBar = ${homeViewModel.currentBar?.id}');
-                                
-                                if (homeViewModel.hasBar) {
-                                  debugPrint('🎯 DEBUG Home: Navegando para criação de evento (hasBar=true)');
-                                  context.pushNamed('eventForm');
-                                } else {
-                                  debugPrint('🚫 DEBUG Home: Usuário sem bar - exibindo modal');
-                                  _showNoBarModal(context);
-                                }
-                              },
-                              icon: Icons.add_circle,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                  return Consumer<HomeViewModel>(
+                    builder: (context, homeViewModel, _) {
+                      return EmptyEventsState(
+                        onCreateEvent: () {
+                          debugPrint('🎯 DEBUG Home: Botão criar evento pressionado');
+                          debugPrint('🎯 DEBUG Home: homeViewModel.hasBar = ${homeViewModel.hasBar}');
+                          debugPrint('🎯 DEBUG Home: homeViewModel.userBars.length = ${homeViewModel.userBars.length}');
+                          debugPrint('🎯 DEBUG Home: homeViewModel.currentBar = ${homeViewModel.currentBar?.id}');
+
+                          if (homeViewModel.hasBar) {
+                            debugPrint('🎯 DEBUG Home: Navegando para criação de evento (hasBar=true)');
+                            context.pushNamed('eventForm');
+                          } else {
+                            debugPrint('🚫 DEBUG Home: Usuário sem bar - exibindo modal');
+                            _showNoBarModal(context);
+                          }
+                        },
+                      );
+                    },
                   );
                 }
 

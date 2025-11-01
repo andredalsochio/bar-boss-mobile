@@ -1,5 +1,6 @@
 {
-  "dart.flutterSdkPath": "/Users/andredalsochio/development/flutter_versions/versions/3.35.6",
+  "dart.flutterSdkPath": "/Users/andredalsochio/fvm/versions/3.35.6",
+  "dart.sdkPath": "/Users/andredalsochio/fvm/versions/3.35.6/bin/cache/dart-sdk",
   "editor.formatOnSave": true,
   "dart.previewFlutterUiGuides": true,
   "dart.previewFlutterUiGuidesCustomTracking": true,

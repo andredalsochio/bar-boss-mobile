@@ -1,12 +1,11 @@
 {
   // SDKs
   // Caminho do Flutter (fixo de acordo com seu ambiente)
-  "dart.flutterSdkPath": "/Users/andredalsochio/.fvm/flutter_sdk",
+  "dart.flutterSdkPath": "/Users/andredalsochio/fvm/versions/3.35.5",
   // Opcional: aponta explicitamente para o Dart SDK dentro do Flutter (via FVM)
-  "dart.sdkPath": "/Users/andredalsochio/.fvm/flutter_sdk/bin/cache/dart-sdk",
+  "dart.sdkPath": "/Users/andredalsochio/fvm/versions/3.35.5/bin/cache/dart-sdk",
   // Como o projeto Flutter está em um subdiretório (bar_boss_mobile/), aumentamos a profundidade de busca
   "dart.projectSearchDepth": 3,
-
   // Qualidade de código e produtividade
   "editor.formatOnSave": true,
   // Guias de UI do Flutter no editor
@@ -14,7 +13,6 @@
   "dart.previewFlutterUiGuidesCustomTracking": true,
   // Validação de YAML
   "yaml.validate": true,
-
   // Excluir pastas pesadas da análise do Dart (compatível com estrutura atual)
   "dart.analysisExcludedFolders": [
     "bar_boss_mobile/build",
@@ -23,17 +21,17 @@
     "bar_boss_mobile/android/.gradle",
     "bar_boss_mobile/android/build"
   ],
-
   // Preferências visuais
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
   // Mostrar estruturas de widget (barras verticais no editor)
   "dart.flutterUiGuides": true,
   // Réguas visuais para manter o comprimento de linha consistente
-  "editor.rulers": [100],
+  "editor.rulers": [
+    100
+  ],
   // Define o comprimento de linha que o formatador do Dart deve tentar respeitar
   "dart.lineLength": 100,
-
   // Otimizações de desempenho do VS Code (reduzem carga do file watcher e busca)
   "files.watcherExclude": {
     "**/.git/**": true,

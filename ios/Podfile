@@ -32,9 +32,8 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  # 🔧 Usar bibliotecas estáticas por padrão (mais compatível com plugins Flutter)
-  # Habilitar modular headers para pods Swift que exigem modulemaps
-  use_modular_headers!
+  # 🔧 Usar frameworks estáticos para evitar exigência de modular headers
+  use_frameworks! :linkage => :static
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 

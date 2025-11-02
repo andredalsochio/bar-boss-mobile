@@ -3,17 +3,13 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
-    // END: FlutterFire Configuration
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Carrega propriedades da keystore de release a partir de android/key.properties
-val keystorePropertiesFile = rootProject.file("android/key.properties")
+val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) {
         FileInputStream(keystorePropertiesFile).use { load(it) }
@@ -21,7 +17,7 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.example.bar_boss_mobile"
+    namespace = "br.com.bar_boss_mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -35,30 +31,24 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.bar_boss_mobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        // Firebase Auth requer minSdk 23+
+        applicationId = "br.com.bar_boss_mobile"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    // Configuração de assinatura para release utilizando key.properties (com verificação segura)
     signingConfigs {
-        val storeFilePath = keystoreProperties.getProperty("storeFile")
-        val storePasswordProp = keystoreProperties.getProperty("storePassword")
-        val keyAliasProp = keystoreProperties.getProperty("keyAlias")
-        val keyPasswordProp = keystoreProperties.getProperty("keyPassword")
+        val storeFilePath = keystoreProperties["storeFile"]?.toString()
+        val storePasswordProp = keystoreProperties["storePassword"]?.toString()
+        val keyAliasProp = keystoreProperties["keyAlias"]?.toString()
+        val keyPasswordProp = keystoreProperties["keyPassword"]?.toString()
 
         val hasReleaseKeystoreProps =
             !storeFilePath.isNullOrBlank() &&
             !storePasswordProp.isNullOrBlank() &&
             !keyAliasProp.isNullOrBlank() &&
-            !keyPasswordProp.isNullOrBlank() &&
-            file(storeFilePath!!).exists()
+            !keyPasswordProp.isNullOrBlank()
 
         if (hasReleaseKeystoreProps) {
             create("release") {
@@ -67,17 +57,30 @@ android {
                 keyAlias = keyAliasProp
                 keyPassword = keyPasswordProp
             }
+        } else {
+            println("⚠️  Keystore de release não configurada ou arquivo ausente.")
         }
     }
 
     buildTypes {
         release {
-            // Mantém sem minificação e sem shrink de recursos
             isMinifyEnabled = false
             isShrinkResources = false
-            // Usa a assinatura de release quando disponível; caso contrário, usa debug para não falhar o build
             val releaseConfig = signingConfigs.findByName("release")
-            signingConfig = releaseConfig ?: signingConfigs.getByName("debug")
+            check(releaseConfig != null) {
+                "Release signing is not configured. Create android/key.properties and a release keystore."
+            }
+            signingConfig = releaseConfig
+        }
+
+        debug {
+            signingConfig = signingConfigs.findByName("debug")
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
 }
@@ -87,15 +90,8 @@ flutter {
 }
 
 dependencies {
-    // Firebase BOM para garantir compatibilidade de versões
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
-
-    // Firebase App Check com Play Integrity
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
-
-    // Firebase Auth (já incluído via Flutter, mas garantindo compatibilidade)
     implementation("com.google.firebase:firebase-auth")
-
-    // Firebase Firestore (já incluído via Flutter, mas garantindo compatibilidade)
     implementation("com.google.firebase:firebase-firestore")
 }
